@@ -2,21 +2,17 @@
 import { BookOpen, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../../button";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 
 export const Header: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const { isSignedIn } = useUser();
 
     useEffect(() => {
-        if (isMenuOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
+        document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
+        return () => { document.body.style.overflow = 'unset'; };
     }, [isMenuOpen]);
+
     return (
         <div>
             <header className="bg-gradient-to-b from-accent to-background sticky top-0 z-50">
@@ -42,12 +38,22 @@ export const Header: React.FC = () => {
                             <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">Features</a>
                             <a href="#occasions" className="text-sm font-medium hover:text-primary transition-colors">Occasions</a>
                             <a href="#testimonials" className="text-sm font-medium hover:text-primary transition-colors">Testimonials</a>
-                            <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                                Log In
-                            </Button>
-                            <Button className="bg-primary hover:bg-primary/90">
-                                Get Started
-                            </Button>
+                            {isSignedIn ? (
+                                <UserButton afterSignOutUrl="/" />
+                            ) : (
+                                <>
+                                    <SignInButton mode="modal">
+                                        <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
+                                            Log In
+                                        </Button>
+                                    </SignInButton>
+                                    <SignUpButton mode="modal">
+                                        <Button className="bg-primary hover:bg-primary/90">
+                                            Get Started
+                                        </Button>
+                                    </SignUpButton>
+                                </>
+                            )}
                         </nav>
                     </div>
                 </div>
