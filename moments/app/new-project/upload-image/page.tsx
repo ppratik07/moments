@@ -15,7 +15,7 @@ export default function AddPhoto() {
     const [uploading, setUploading] = useState(false);
     const { isSignedIn } = useCurrentUser();
     const router = useRouter();
-    const { projectName } = useProjectStore();
+    const { projectName,imageKey } = useProjectStore();
     const handleNext = () => {
         if (!projectName) {
             console.log('No project name set!');
@@ -31,6 +31,7 @@ export default function AddPhoto() {
         setPreview(previewUrl);
 
         setUploading(true);
+        useProjectStore.getState().setImageKey(imageKey);
 
         try {
             // Get pre-signed URL
