@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import axios from 'axios';
 import { PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ChatSupportButton from '@/components/ChatSupportButton';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
+import { HTTP_BACKEND } from '@/utils/config';
 
 export default function AddPhoto() {
     const [preview, setPreview] = useState<string | null>(null);
@@ -16,42 +18,58 @@ export default function AddPhoto() {
     const { isSignedIn } = useCurrentUser();
     const router = useRouter();
     const { projectName,imageKey } = useProjectStore();
-    const handleNext = () => {
-        if (!projectName) {
-            console.log('No project name set!');
-            return;
-        }
-        router.push(`/new-project/upload-image/${projectName}`);
-    };
+    // const handleNext = () => {
+    //     if (!projectName) {
+    //         console.log('No project name set!');
+    //         return;
+    //     }
+    //     router.push(`/new-project/upload-image/${projectName}`);
+    // };
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
+    
         const previewUrl = URL.createObjectURL(file);
         setPreview(previewUrl);
-
+    
         setUploading(true);
-        useProjectStore.getState().setImageKey(imageKey);
-
+    
         try {
-            // Get pre-signed URL
-            const res = await fetch(`/api/upload-url?fileType=${encodeURIComponent(file.type)}`);
-            const { uploadUrl, key } = await res.json();
-
-            // Upload to S3
-            await fetch(uploadUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': file.type },
-                body: file,
+          //  Getting pre-signed URL
+          const res = await axios.get(`${HTTP_BACKEND}/api/get-presign-url`, {
+            params: {
+              fileType: file.type,
+            },
+          });
+    
+          const { uploadUrl, key } = res.data;
+    
+        // Upload file to R2 using presigned URL
+          try {
+            await axios.put(uploadUrl, file, {
+              headers: {
+                'Content-Type': file.type,
+              },
             });
-
-            console.log('Uploaded to S3 at:', key);
+            console.log('Upload successful!');
+          } catch (error) {
+            if (axios.isAxiosError(error)) {
+              console.error('Axios error:', error.response?.data, error.response?.status);
+            } else {
+              console.error('Unknown error:', error);
+            }
+          }
+    
+          //  Save uploaded key to zustand store
+          useProjectStore.getState().setImageKey(key);
+    
+          console.log('Uploaded to S3 at:', key);
         } catch (err) {
-            console.error('Upload failed:', err);
+          console.error('Upload failed:', err);
         } finally {
-            setUploading(false);
+          setUploading(false);
         }
-    };
+      };
 
     return (
         <div>
@@ -90,8 +108,8 @@ export default function AddPhoto() {
                     </label>
                     <div className="flex justify-center mt-6">
                         <Button
-                            //disabled={uploading}
-                            onClick={handleNext}
+                            disabled={uploading}
+                            // onClick={handleNext}
                             className="bg-primary hover:bg-primary/90 justify-center cursor-pointer"
                         >
                             Next
