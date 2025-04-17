@@ -17,59 +17,63 @@ export default function AddPhoto() {
     const [uploading, setUploading] = useState(false);
     const { isSignedIn } = useCurrentUser();
     const router = useRouter();
-    const { projectName,imageKey } = useProjectStore();
-    // const handleNext = () => {
-    //     if (!projectName) {
-    //         console.log('No project name set!');
-    //         return;
-    //     }
-    //     router.push(`/new-project/upload-image/${projectName}`);
-    // };
+    const { projectName, imageKey } = useProjectStore();
+    const handleNext = () => {
+        if (!projectName ) {
+            alert('No project name set!');
+            return;
+        }
+        if (!imageKey) {
+            alert('Please upload image first');
+            return;
+        }
+        router.push(`/new-project/upload-image/${projectName}`);
+    };
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-    
+
         const previewUrl = URL.createObjectURL(file);
         setPreview(previewUrl);
-    
+
         setUploading(true);
-    
+
         try {
-          //  Getting pre-signed URL
-          const res = await axios.get(`${HTTP_BACKEND}/api/get-presign-url`, {
-            params: {
-              fileType: file.type,
-            },
-          });
-    
-          const { uploadUrl, key } = res.data;
-    
-        // Upload file to R2 using presigned URL
-          try {
-            await axios.put(uploadUrl, file, {
-              headers: {
-                'Content-Type': file.type,
-              },
+            //  Getting pre-signed URL
+            const res = await axios.get(`${HTTP_BACKEND}/api/get-presign-url`, {
+                params: {
+                    fileType: file.type,
+                },
             });
-            console.log('Upload successful!');
-          } catch (error) {
-            if (axios.isAxiosError(error)) {
-              console.error('Axios error:', error.response?.data, error.response?.status);
-            } else {
-              console.error('Unknown error:', error);
+
+            const { uploadUrl, key } = res.data;
+
+            // Upload file to R2 using presigned URL
+            try {
+                await axios.put(uploadUrl, file, {
+                    headers: {
+                        'Content-Type': file.type,
+                    },
+                });
+                console.log('Upload successful!');
+            } catch (error) {
+                if (axios.isAxiosError(error)) {
+                    console.error('Axios error:', error.response?.data, error.response?.status);
+                } else {
+                    console.error('Unknown error:', error);
+                }
             }
-          }
-    
-          //  Save uploaded key to zustand store
-          useProjectStore.getState().setImageKey(key);
-    
-          console.log('Uploaded to S3 at:', key);
+
+            //  Save uploaded key to zustand store
+            useProjectStore.getState().setImageKey(key);
+
+            console.log('Uploaded to S3 at:', key);
         } catch (err) {
-          console.error('Upload failed:', err);
+            console.error('Upload failed:', err);
         } finally {
-          setUploading(false);
+            setUploading(false);
         }
-      };
+    };
 
     return (
         <div>
@@ -109,7 +113,7 @@ export default function AddPhoto() {
                     <div className="flex justify-center mt-6">
                         <Button
                             disabled={uploading}
-                            // onClick={handleNext}
+                            onClick={handleNext}
                             className="bg-primary hover:bg-primary/90 justify-center cursor-pointer"
                         >
                             Next
