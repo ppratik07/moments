@@ -7,11 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/landing/Header';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import ChatSupportButton from '@/components/ChatSupportButton';
+import { useRouter } from 'next/navigation';
+import { useProjectStore } from '@/store/useProjectStore';
 
 export default function AddPhoto() {
     const [preview, setPreview] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
     const { isSignedIn } = useCurrentUser();
+    const router = useRouter();
+    const { projectName } = useProjectStore();
+    const handleNext = () => {
+        if (!projectName) {
+            console.log('No project name set!');
+            return;
+        }
+        router.push(`/new-project/upload-image/${projectName}`);
+    };
     const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -78,7 +89,8 @@ export default function AddPhoto() {
                     </label>
                     <div className="flex justify-center mt-6">
                         <Button
-                            disabled={uploading}
+                            //disabled={uploading}
+                            onClick={handleNext}
                             className="bg-primary hover:bg-primary/90 justify-center cursor-pointer"
                         >
                             Next

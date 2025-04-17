@@ -13,22 +13,29 @@ import { useDeliveryDate } from '@/hooks/useDeliveryDate';
 import { HeadsUpModal } from '@/components/ModalPopup';
 import Link from 'next/link';
 import ChatSupportButton from '@/components/ChatSupportButton';
+import { useRouter } from 'next/navigation';
+import { useProjectStore } from '@/store/useProjectStore';
+
 
 export default function StartProjectForm() {
     const [date, setDate] = useState<string | null>(null);
     const { isSignedIn } = useCurrentUser();
+    const router = useRouter();
     const [showModal, setShowModal] = useState(false);
     const { calculatedDate, showHeadsUp } = useDeliveryDate(date);
     const [project, setProject] = useState<string | null>(null);
+    const [bookName, setBookName] = useState<string | null>(null);
+    const {setProjectName} = useProjectStore();
     useEffect(() => {
         if (showHeadsUp) {
             setShowModal(true);
         }
     }, [showHeadsUp]);
     const handleSubmit = (e : React.FormEvent<HTMLFormElement>)=>{
-        if(!project ) return;
-        const slug = encodeURIComponent(project.trim().toLowerCase().replace(/\s+/g, '-'));
-        router.push(`/new-project/upload-image/${slug}`);
+        e.preventDefault();
+        if (!project) return;
+        setProjectName(project); // Store in Zustand
+        router.push(`/new-project/upload-image`);
     }
     return (
         <div className="min-h-screen bg-white">
@@ -61,7 +68,10 @@ export default function StartProjectForm() {
                             className="mb-4 mt-2" />
 
                         <Label htmlFor="recipient">Who is this book for?</Label>
-                        <Input id="recipient" placeholder="(person, couple, or group of people)" className="mb-4 mt-2" />
+                        <Input id="recipient" type='text'
+                        value={bookName??''}
+                        onChange={(e)=> setBookName(e.target.value)}
+                         placeholder="(person, couple, or group of people)" className="mb-4 mt-2" />
 
                         <Label htmlFor="dueDate">When do you need the book?</Label>
                         <div className="relative mb-4">
