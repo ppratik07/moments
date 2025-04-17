@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { Header } from '@/components/landing/Header';
+import { getImageUrl } from '@/helpers/getImageUrl';
 
 export default function NewEventPage() {
     const [showModal, setShowModal] = useState(true);
@@ -63,7 +64,7 @@ export default function NewEventPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                     {imageKey ? (
                         <Image
-                            src={imageKey}
+                            src={imageKey ? getImageUrl(imageKey) : ''}
                             alt="Celebration"
                             width={500}
                             height={300}
