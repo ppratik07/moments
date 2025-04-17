@@ -31,7 +31,7 @@ export default function StartProjectForm() {
             setShowModal(true);
         }
     }, [showHeadsUp]);
-    const handleSubmit = (e : React.FormEvent<HTMLFormElement>)=>{
+    const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         if (!project) return;
         setProjectName(project); // Store in Zustand
