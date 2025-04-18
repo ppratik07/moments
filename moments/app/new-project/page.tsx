@@ -19,7 +19,6 @@ import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
 
-
 export default function StartProjectForm() {
     const [date, setDate] = useState<string | null>(null);
     const { isSignedIn } = useCurrentUser();
@@ -32,13 +31,31 @@ export default function StartProjectForm() {
     const [lastName, setLastName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [eventType, setEventType] = useState<string | null>(null);
-    const { setProjectName } = useProjectStore();
+    // const [eventDescription, setEventDescription] = useState<string | null>(null); 
+    const { setProjectName, setEventDescription } = useProjectStore();
 
     useEffect(() => {
         if (showHeadsUp) {
             setShowModal(true);
         }
     }, [showHeadsUp]);
+
+    const handleEventTypeChange = async (name: string) => {
+        setEventType(name);
+
+        try {
+            const res = await axios.get(`${HTTP_BACKEND}/event-type`, {
+                params: { name },
+            });
+
+            if (res.data && res.data.description) {
+                setEventDescription(res.data.description); // Store event description in the state
+            }
+        } catch (error) {
+            console.error("Error fetching event type description:", error);
+            toast.error("Error fetching event description.");
+        }
+    };
 
     const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
@@ -68,8 +85,7 @@ export default function StartProjectForm() {
         // Store in Zustand
         setProjectName(project || '');
         router.push(`/new-project/upload-image`);
-    }
-
+    };
 
     return (
         <div className="min-h-screen bg-white">
@@ -121,7 +137,7 @@ export default function StartProjectForm() {
                         </div>
 
                         <Label htmlFor="eventType">Event Type</Label>
-                        <Select value={eventType || ''} onValueChange={setEventType}>
+                        <Select value={eventType || ''} onValueChange={handleEventTypeChange}>
                             <SelectTrigger className="w-full mt-2">
                                 <SelectValue placeholder="Select an event type" />
                             </SelectTrigger>
@@ -148,7 +164,6 @@ export default function StartProjectForm() {
                                 <SelectItem value="Just Because">Just Because</SelectItem>
                             </SelectContent>
                         </Select>
-
                     </div>
 
                     {!isSignedIn && (<div>

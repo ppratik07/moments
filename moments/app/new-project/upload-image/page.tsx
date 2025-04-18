@@ -11,6 +11,7 @@ import ChatSupportButton from '@/components/ChatSupportButton';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { HTTP_BACKEND } from '@/utils/config';
+import { toast } from 'sonner';
 
 export default function AddPhoto() {
     const [preview, setPreview] = useState<string | null>(null);
@@ -20,11 +21,11 @@ export default function AddPhoto() {
     const { projectName, imageKey } = useProjectStore();
     const handleNext = () => {
         if (!projectName ) {
-            alert('No project name set!');
+            toast.error('No project name set!');
             return;
         }
         if (!imageKey) {
-            alert('Please upload image first');
+            toast.error('Please upload image first');
             return;
         }
         router.push(`/new-project/upload-image/${projectName}`);
@@ -50,12 +51,12 @@ export default function AddPhoto() {
 
             // Upload file to R2 using presigned URL
             try {
-                await axios.put(uploadUrl, file, {
+               const fileUpload =  await axios.put(uploadUrl, file, {
                     headers: {
                         'Content-Type': file.type,
                     },
                 });
-                console.log('Upload successful!');
+                console.log('Upload successful!',fileUpload);
             } catch (error) {
                 if (axios.isAxiosError(error)) {
                     console.error('Axios error:', error.response?.data, error.response?.status);
