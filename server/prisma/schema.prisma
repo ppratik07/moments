@@ -19,3 +19,9 @@ model User {
   last_name  String
   email      String @unique
 }
+
+model EventType {
+  id          String @id @default(uuid())
+  name        String @unique
+  description String @db.Text
+}
