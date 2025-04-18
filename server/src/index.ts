@@ -63,8 +63,8 @@ app.post('/api/users',async(req,res)=>{{
   }
   const user = await prisma.user.create({
     data:{
-      firstName,
-      lastName,
+      first_name: firstName,
+      last_name: lastName,
       email
     }
   })

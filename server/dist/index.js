@@ -68,8 +68,8 @@ app.post('/api/users', (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const user = yield prisma.user.create({
             data: {
-                firstName,
-                lastName,
+                first_name: firstName,
+                last_name: lastName,
                 email
             }
         });
