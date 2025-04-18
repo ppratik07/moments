@@ -3,7 +3,7 @@ import cors from "cors";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 dotenv.config();
 
@@ -56,23 +56,51 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 
 //store the user info
-app.post('/api/users',async(req,res)=>{{
-  const { firstName, lastName, email} = req.body;
-  if(!firstName || !lastName || !email){
-    res.status(400).json({message: 'All fields are required'});
-  }
-  const user = await prisma.user.create({
-    data:{
-      first_name: firstName,
-      last_name: lastName,
-      email
+app.post("/api/users", async (req, res) => {
+  {
+    const { firstName, lastName, email } = req.body;
+    if (!firstName || !lastName || !email) {
+      res.status(400).json({ message: "All fields are required" });
     }
-  })
-  res.status(200).send({
-    message: 'User created successfully',
-    user
-  });
-}})
+    const user = await prisma.user.create({
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+      },
+    });
+    res.status(200).send({
+      message: "User created successfully",
+      user,
+    });
+  }
+});
+
+//Get the event type and description
+
+app.get("/event-type", async (req, res) => {
+  const { name } = req.query;
+  if (!name || typeof name !== "string") {
+    res.status(400).json({ error: "Event type name is required" });
+  }
+
+  try {
+    const eventType = await prisma.eventType.findUnique({
+      where: { name: name as string },
+    });
+
+    if (!eventType) {
+      res.status(404).json({ error: "Event type not found" });
+    }
+
+    if (eventType) {
+      res.json({ description: eventType.description });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
