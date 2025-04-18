@@ -3,6 +3,7 @@ import cors from "cors";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
+import { PrismaClient } from "@prisma/client";
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -11,6 +12,8 @@ const PORT = process.env.PORT || 8080;
 
 app.use(cors());
 app.use(express.json());
+
+const prisma = new PrismaClient();
 
 // S3/R2 Client Configuration
 const s3 = new S3Client({
@@ -22,6 +25,7 @@ const s3 = new S3Client({
   },
 });
 
+//getting the image url and storing it in r2 storage
 app.get("/api/get-presign-url", async (req, res) => {
   const fileType = req.query.fileType as string;
 
@@ -50,6 +54,25 @@ app.get("/api/get-presign-url", async (req, res) => {
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection:", reason);
 });
+
+//store the user info
+app.post('/api/users',async(req,res)=>{{
+  const { firstName, lastName, email} = req.body;
+  if(!firstName || !lastName || !email){
+    res.status(400).json({message: 'All fields are required'});
+  }
+  const user = await prisma.user.create({
+    data:{
+      firstName,
+      lastName,
+      email
+    }
+  })
+  res.status(200).send({
+    message: 'User created successfully',
+    user
+  });
+}})
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
