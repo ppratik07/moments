@@ -18,11 +18,13 @@ const client_s3_1 = require("@aws-sdk/client-s3");
 const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const uuid_1 = require("uuid");
 const dotenv_1 = __importDefault(require("dotenv"));
+const client_1 = require("@prisma/client");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+const prisma = new client_1.PrismaClient();
 // S3/R2 Client Configuration
 const s3 = new client_s3_1.S3Client({
     region: "auto",
@@ -32,6 +34,7 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
 });
+//getting the image url and storing it in r2 storage
 app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const fileType = req.query.fileType;
     if (!fileType) {
@@ -56,6 +59,26 @@ app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, 
 process.on("unhandledRejection", (reason, promise) => {
     console.error("Unhandled Rejection:", reason);
 });
+//store the user info
+app.post('/api/users', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    {
+        const { firstName, lastName, email } = req.body;
+        if (!firstName || !lastName || !email) {
+            res.status(400).json({ message: 'All fields are required' });
+        }
+        const user = yield prisma.user.create({
+            data: {
+                firstName,
+                lastName,
+                email
+            }
+        });
+        res.status(200).send({
+            message: 'User created successfully',
+            user
+        });
+    }
+}));
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });
