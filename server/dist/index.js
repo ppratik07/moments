@@ -60,23 +60,45 @@ process.on("unhandledRejection", (reason, promise) => {
     console.error("Unhandled Rejection:", reason);
 });
 //store the user info
-app.post('/api/users', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     {
         const { firstName, lastName, email } = req.body;
         if (!firstName || !lastName || !email) {
-            res.status(400).json({ message: 'All fields are required' });
+            res.status(400).json({ message: "All fields are required" });
         }
         const user = yield prisma.user.create({
             data: {
                 first_name: firstName,
                 last_name: lastName,
-                email
-            }
+                email,
+            },
         });
         res.status(200).send({
-            message: 'User created successfully',
-            user
+            message: "User created successfully",
+            user,
         });
+    }
+}));
+//Get the event type and description
+app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name } = req.query;
+    if (!name || typeof name !== "string") {
+        res.status(400).json({ error: "Event type name is required" });
+    }
+    try {
+        const eventType = yield prisma.eventType.findUnique({
+            where: { name: name },
+        });
+        if (!eventType) {
+            res.status(404).json({ error: "Event type not found" });
+        }
+        if (eventType) {
+            res.json({ description: eventType.description });
+        }
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
     }
 }));
 app.listen(PORT, () => {
