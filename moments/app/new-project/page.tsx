@@ -43,12 +43,13 @@ export default function StartProjectForm() {
     const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
         const missingFields = [];
-        if (!project) missingFields.push("project name");
+        if (!project) missingFields.push("project name,");
         if (!bookName) missingFields.push("Who is this book for?");
-        if (!date) missingFields.push('due date');
+        if (!date) missingFields.push('due date &');
+        if (!eventType) missingFields.push('Event type');
 
         if (missingFields.length > 0) {
-            toast.error(`Please enter ${missingFields.join(" and ")}`);
+            toast.error(`Please enter ${missingFields.join("")}`);
             return;
         }
         if (!isSignedIn) {
