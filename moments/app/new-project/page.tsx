@@ -18,6 +18,7 @@ import { useProjectStore } from '@/store/useProjectStore';
 import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function StartProjectForm() {
     const [date, setDate] = useState<string | null>(null);
@@ -33,6 +34,14 @@ export default function StartProjectForm() {
     const [eventType, setEventType] = useState<string | null>(null);
     // const [eventDescription, setEventDescription] = useState<string | null>(null); 
     const { setProjectName, setEventDescription } = useProjectStore();
+    const initializeProjectId = () => {
+        const id = uuidv4();
+        useProjectStore.getState().setProjectId(id);
+    };
+    
+    useEffect(() => {
+        initializeProjectId();
+    }, []);
 
     useEffect(() => {
         if (showHeadsUp) {
