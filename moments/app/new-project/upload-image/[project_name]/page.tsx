@@ -16,7 +16,13 @@ export default function NewEventPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const params = useParams();
   const { setImageKey,projectId } = useProjectStore();
-  const shareLink = `${window.location.origin}/contribution/${projectId}`;
+  const [shareLink, setShareLink] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setShareLink(`${window.location.origin}/contribution/${projectId}`);
+    }
+  }, [projectId]);
   const {
     imageKey: storedImageKey,
   } = useProjectStore();
