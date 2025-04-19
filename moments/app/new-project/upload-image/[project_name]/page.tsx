@@ -6,16 +6,17 @@ import { useParams } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { Header } from '@/components/landing/Header';
 import { getImageUrl } from '@/helpers/getImageUrl';
-import { uploadFileToR2 } from '@/lib/upload';
+import { useImageUpload } from '@/hooks/useImageUpload';
 
 export default function NewEventPage() {
+  const [preview, setPreview] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const shareLink = 'http://momentsmemorybooks.com/34534';
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const params = useParams();
-
+  const { setImageKey } = useProjectStore();
   const {
     imageKey: storedImageKey,
   } = useProjectStore();
@@ -43,22 +44,15 @@ export default function NewEventPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const { handleImageChange } = useImageUpload({
+    onSuccess: (key, file) => {
+      const previewUrl = URL.createObjectURL(file);
+      setPreview(previewUrl);
+      setProjectImageKeyState(key);
+      setImageKey(key);
 
-    // Show preview
-    const previewUrl = URL.createObjectURL(file);
-    setProjectImageKeyState(previewUrl);
-
-    try {
-      const uploadedKey = await uploadFileToR2(file);
-      setProjectImageKeyState(uploadedKey); // update local
-      //setProjectImageKey(uploadedKey);      // persist to Zustand
-    } catch (err) {
-      console.error("Image upload failed", err);
-    }
-  };
+    },
+  });
 
   return (
     // Top Navigation
@@ -145,17 +139,18 @@ export default function NewEventPage() {
 
             <label className="block font-semibold mb-2">Project Photo</label>
             <div className="mb-4 relative">
-              {projectImageKey && (
+              {(projectImageKey || preview) && (
                 <Image
                   src={
-                    typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
+                    preview ||
+                    (typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
                       ? projectImageKey
-                      : getImageUrl(projectImageKey) || ''
+                      : getImageUrl(projectImageKey) || '')
                   }
-                  alt="Project"
-                  className="rounded-md"
-                  width={300}
-                  height={250}
+                  alt="Celebration"
+                  width={600}
+                  height={400}
+                  className="shadow-md rounded-lg"
                 />
               )}
               <button

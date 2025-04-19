@@ -1,60 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-import axios from 'axios';
-import Image from 'next/image';
 import { PlusCircle } from 'lucide-react';
-import { toast } from 'sonner';
-import { HTTP_BACKEND } from '@/utils/config';
+import Image from 'next/image';
+import { useImageUpload } from '@/hooks/useImageUpload'; 
 
 interface ImageUploaderProps {
   onUploadSuccess: (key: string) => void;
   initialPreview?: string | null;
   label?: string;
-  uploadEndpoint?: string; // defaults to `/api/get-presign-url`
+  uploadEndpoint?: string;
 }
 
 export default function ImageUploader({
   onUploadSuccess,
   initialPreview = null,
   label = 'Add a Photo',
-  uploadEndpoint = `${HTTP_BACKEND}/api/get-presign-url`,
+  uploadEndpoint,
 }: ImageUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(initialPreview);
-  const [uploading, setUploading] = useState(false);
+  const { handleImageChange, uploading, preview, setPreview } = useImageUpload({
+    onSuccess: (key: string) => onUploadSuccess(key),
+    uploadEndpoint,
+  });
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const previewUrl = URL.createObjectURL(file);
-    setPreview(previewUrl);
-    setUploading(true);
-
-    try {
-      const res = await axios.get(uploadEndpoint, {
-        params: {
-          fileType: file.type,
-        },
-      });
-
-      const { uploadUrl, key } = res.data;
-
-      await axios.put(uploadUrl, file, {
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      onUploadSuccess(key);
-      toast.success('Image uploaded successfully!');
-    } catch (err) {
-      console.error('Upload failed:', err);
-      toast.error('Upload failed. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
+  // Set initial preview if provided
+  if (initialPreview && !preview) {
+    setPreview(initialPreview);
+  }
 
   return (
     <label
