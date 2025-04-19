@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
@@ -9,7 +9,7 @@ import { getImageUrl } from '@/helpers/getImageUrl';
 import { uploadFileToR2 } from '@/lib/upload';
 
 export default function NewEventPage() {
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const shareLink = 'http://momentsmemorybooks.com/34534';
@@ -18,19 +18,24 @@ export default function NewEventPage() {
 
   const {
     imageKey: storedImageKey,
-    //setImageKey,
   } = useProjectStore();
 
-  //Getting the values from zustand
   const fallbackProjectName = useProjectStore.getState().projectName || params.project_name || '';
-  const fallbackProjectDescription = useProjectStore.getState().eventDescription ||'';
+  const fallbackProjectDescription = useProjectStore.getState().eventDescription || '';
   const decodedProjectName = typeof fallbackProjectName === 'string' ? fallbackProjectName.replace(/%20/g, " ") : '';
 
-  const [projectName, setProjectName] = useState<string>(decodedProjectName);
-  const [projectDescription, setProjectDescription] = useState<string>(
-    Array.isArray(fallbackProjectDescription) ? fallbackProjectDescription.join(' ') : fallbackProjectDescription
-  );
-  const [projectImageKey, setProjectImageKeyState] = useState<string | null>(storedImageKey ?? null);
+  const [projectName, setProjectName] = useState<string>('');
+  const [projectDescription, setProjectDescription] = useState<string>('');
+  const [projectImageKey, setProjectImageKeyState] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Initialize state on the client
+    setProjectName(decodedProjectName);
+    setProjectDescription(
+      Array.isArray(fallbackProjectDescription) ? fallbackProjectDescription.join(' ') : fallbackProjectDescription
+    );
+    setProjectImageKeyState(storedImageKey ?? null);
+  }, [decodedProjectName, fallbackProjectDescription, storedImageKey]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareLink);
