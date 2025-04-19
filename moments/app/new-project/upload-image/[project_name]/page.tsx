@@ -13,10 +13,10 @@ export default function NewEventPage() {
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const shareLink = 'http://momentsmemorybooks.com/34534';
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const params = useParams();
-  const { setImageKey } = useProjectStore();
+  const { setImageKey,projectId } = useProjectStore();
+  const shareLink = `${window.location.origin}/contribution/${projectId}`;
   const {
     imageKey: storedImageKey,
   } = useProjectStore();
@@ -29,6 +29,19 @@ export default function NewEventPage() {
   const [projectDescription, setProjectDescription] = useState<string>('');
   const [projectImageKey, setProjectImageKeyState] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (projectId && projectName && projectImageKey && projectDescription) {
+      localStorage.setItem(
+        `project-${projectId}`,
+        JSON.stringify({
+          projectName,
+          imageKey: projectImageKey,
+          eventDescription: projectDescription,
+        })
+      );
+    }
+  }, [projectId, projectName, projectImageKey, projectDescription]);
+  
   useEffect(() => {
     // Initialize state on the client
     setProjectName(decodedProjectName);
@@ -214,3 +227,4 @@ export default function NewEventPage() {
     </div>
   );
 }
+
