@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 type ProjectState = {
   projectName: string;
@@ -11,13 +12,21 @@ type ProjectState = {
   setEventDescription: (description: string) => void; 
 };
 
-export const useProjectStore = create<ProjectState>((set) => ({
-  projectName: '',
-  imageKey: '',
-  eventType: null,
-  eventDescription: null, // Initial state is null
-  setProjectName: (name) => set({ projectName: name }),
-  setImageKey: (key) => set({ imageKey: key }),
-  setEventType: (type) => set({ eventType: type }),
-  setEventDescription: (description) => set({ eventDescription: description }), 
-}));
+export const useProjectStore = create<ProjectState>()(
+  persist(
+    (set) => ({
+      projectName: "",
+      imageKey: "",
+      eventType: null,
+      eventDescription: null,
+      setProjectName: (name) => set({ projectName: name }),
+      setImageKey: (key) => set({ imageKey: key }),
+      setEventType: (type) => set({ eventType: type }),
+      setEventDescription: (description) => set({ eventDescription: description }),
+    }),
+    {
+      name: "project-storage", //  name for local-storage key
+    }
+  )
+)
+

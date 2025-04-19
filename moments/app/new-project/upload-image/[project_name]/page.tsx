@@ -23,11 +23,13 @@ export default function NewEventPage() {
 
   //Getting the values from zustand
   const fallbackProjectName = useProjectStore.getState().projectName || params.project_name || '';
-  const fallbackProjectDescription = useProjectStore.getState().eventDescription || params.project_description || '';
+  const fallbackProjectDescription = useProjectStore.getState().eventDescription ||'';
   const decodedProjectName = typeof fallbackProjectName === 'string' ? fallbackProjectName.replace(/%20/g, " ") : '';
 
   const [projectName, setProjectName] = useState<string>(decodedProjectName);
-  const [, setProjectDescription] = useState<string>('');
+  const [projectDescription, setProjectDescription] = useState<string>(
+    Array.isArray(fallbackProjectDescription) ? fallbackProjectDescription.join(' ') : fallbackProjectDescription
+  );
   const [projectImageKey, setProjectImageKeyState] = useState<string | null>(storedImageKey ?? null);
 
   const handleCopy = () => {
@@ -54,6 +56,7 @@ export default function NewEventPage() {
   };
 
   return (
+    // Top Navigation
     <div className="min-h-screen bg-white">
       <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-6">
         <div className="flex items-center gap-2">
@@ -82,7 +85,7 @@ export default function NewEventPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div>
             <h1 className="text-4xl font-bold mb-4">{projectName}</h1>
-            <p className="text-lg text-gray-700 mb-4">{fallbackProjectDescription}</p>
+            <p className="text-lg text-gray-700 mb-4">{projectDescription}</p>
             <Button variant="outline">How it Works</Button>
           </div>
 
