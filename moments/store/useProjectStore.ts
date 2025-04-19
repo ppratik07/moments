@@ -6,10 +6,12 @@ type ProjectState = {
   imageKey: string;
   eventType : string | null;
   eventDescription : string | null;
+  projectId : string | null;
   setProjectName: (name: string) => void;
   setImageKey: (key: string) => void;
   setEventType: (type: string) => void;
   setEventDescription: (description: string) => void; 
+  setProjectId:(id: string) => void;
 };
 
 export const useProjectStore = create<ProjectState>()(
@@ -19,10 +21,12 @@ export const useProjectStore = create<ProjectState>()(
       imageKey: "",
       eventType: null,
       eventDescription: null,
+      projectId : null,
       setProjectName: (name) => set({ projectName: name }),
       setImageKey: (key) => set({ imageKey: key }),
       setEventType: (type) => set({ eventType: type }),
       setEventDescription: (description) => set({ eventDescription: description }),
+      setProjectId: (id) => set({ projectId: id }),
     }),
     {
       name: "project-storage", //  name for local-storage key
