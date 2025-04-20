@@ -1,4 +1,3 @@
-// components/LayoutPickerModal.tsx
 'use client';
 
 import { Dialog } from '@headlessui/react';
@@ -7,7 +6,10 @@ import { LayoutGrid } from 'lucide-react';
 const layoutCategories = [
   {
     title: 'Message Only',
-    layouts: [[[1]], [[2]]],
+    layouts: [
+      [[1]], 
+      [[2]],
+    ],
   },
   {
     title: 'Photos Only',
@@ -65,15 +67,15 @@ export default function LayoutPickerModal({
               <h3 className="text-sm font-semibold text-gray-800 mb-3">{category.title}</h3>
               <div className="flex flex-wrap gap-3">
                 {category.layouts.map((rows, layoutIdx) => {
-                  const layoutId = layoutIdx + catIdx * 10;
+                  const layoutId = catIdx * 10 + layoutIdx; // Unique layout ID based on category and index
                   const isSelected = selectedLayout === layoutId;
                   return (
                     <button
-                      key={layoutIdx}
+                      key={layoutId} // Ensure the button key is unique for each layout
                       className={`border transition-colors duration-200 ${
                         isSelected ? 'border-purple-600 ring-2 ring-purple-200' : 'border-gray-200'
                       } rounded-md p-2 bg-white hover:shadow-md`}
-                      onClick={() => onSelect(layoutId)}
+                      onClick={() => onSelect(layoutId)} // Handle layout selection
                     >
                       <div className="w-20 h-16 bg-gray-50 grid gap-1 p-1">
                         {rows.map((cols, i) => (
@@ -81,7 +83,7 @@ export default function LayoutPickerModal({
                             {cols.map((col, j) => (
                               <div
                                 key={j}
-                                className="bg-blue-300 rounded-sm"
+                                className={`bg-blue-300 rounded-sm transition-all duration-300 ${isSelected ? 'transform scale-110' : ''}`}
                                 style={{ flex: col, height: '100%' }}
                               />
                             ))}
