@@ -1,14 +1,24 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { getImageUrl } from '@/helpers/getImageUrl';
 import { Header } from '@/components/landing/Header';
 import { Button } from '@/components/ui/button';
 import ChatSupportButton from '@/components/ChatSupportButton';
+import Uppy from '@uppy/core';
+import Transloadit from '@uppy/transloadit';
+import { DashboardModal } from '@uppy/react';
+import '@uppy/core/dist/style.css';
+import '@uppy/dashboard/dist/style.css';
 
 export default function ContributionPage() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [signature, setSignature] = useState('Your Name Here');
+    const [message, setMessage] = useState('');
+    const [showUploader, setShowUploader] = useState(false);
+    const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
     const { projectId } = useParams();
 
     interface ProjectData {
@@ -16,6 +26,33 @@ export default function ContributionPage() {
         eventDescription: string;
         imageKey?: string;
     }
+    const uppy = useMemo(() => {
+        return new Uppy({
+            restrictions: { maxNumberOfFiles: 1 },
+            autoProceed: false,
+        }).use(Transloadit, {
+            key: 'SMO6nFCGrkeFYxVIXAgxaTOrYlNe70wU', // Replace this with your Transloadit API key
+            assemblyOptions: {
+                params: {
+                    auth: {
+                        key: 'SMO6nFCGrkeFYxVIXAgxaTOrYlNe70wU', // Add your Transloadit API key here
+                    },
+                    template_id: '5750d3cb5a3d41d188aebdbaf77f3f43', // Replace this with your template ID
+                },
+            },
+        });
+    }, []);
+    useEffect(() => {
+        uppy.on('complete', (result) => {
+            const url = result.successful?.[0]?.uploadURL ?? null;
+            if (url) {
+                setUploadedImageUrl(url);
+            }
+            setShowUploader(false);
+        });
+
+        return () => uppy.destroy();
+    }, [uppy]);
 
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
@@ -91,27 +128,42 @@ export default function ContributionPage() {
                         {/* Contribution Layout Card */}
                         <div className="border rounded-xl bg-white shadow-md px-6 py-4 w-full max-w-md mx-auto">
                             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                John Smith
-                                <button className="text-purple-600 text-sm underline">✎</button>
+                                {signature}
+                                <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
                             </div>
 
                             {/* Page Layout */}
                             <div className="w-full border rounded-lg overflow-hidden">
-                        
-                                <div className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm">
+
+                                <div
+                                    className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
+                                    onClick={() => setShowUploader(true)}
+                                >
                                     <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
                                     <div className="relative z-10 text-center">
-                                        <div className="text-lg mb-1">⊕</div>
-                                        ADD A PHOTO
+                                        {uploadedImageUrl ? (
+                                            <Image src={uploadedImageUrl} alt="Uploaded" className="w-full h-full object-cover" width={500} height={300} />
+                                        ) : (
+                                            <>
+                                                <div className="text-lg mb-1">⊕</div>
+                                                ADD A PHOTO
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 
-                        
+
                                 <div className="bg-gray-50 border-t px-4 py-6 text-center text-gray-700 font-medium text-sm relative">
                                     <div className="absolute inset-0 opacity-10 bg-[url('/lined-texture.svg')] bg-repeat" />
                                     <div className="relative z-10">
-                                        <div className="text-lg mb-1">⊕</div>
-                                        ADD TEXT
+                                        {message ? (
+                                            <p className="whitespace-pre-line text-sm">{message}</p>
+                                        ) : (
+                                            <>
+                                                <div className="text-lg mb-1">⊕</div>
+                                                ADD TEXT
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -130,6 +182,41 @@ export default function ContributionPage() {
                     <ChatSupportButton title='Chat with Support' />
                 </div>
             </div>
+            {isModalOpen && (
+                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-xl p-6 shadow-xl w-full max-w-md">
+                        <h2 className="text-lg font-semibold mb-4">Edit Text</h2>
+
+                        <label className="block mb-2 text-sm font-medium">Signature</label>
+                        <input
+                            className="w-full mb-4 p-2 border rounded"
+                            value={signature}
+                            onChange={(e) => setSignature(e.target.value)}
+                        />
+
+                        <label className="block mb-2 text-sm font-medium">Message</label>
+                        <textarea
+                            className="w-full p-2 border rounded mb-4"
+                            rows={5}
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                        />
+
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button onClick={() => setIsModalOpen(false)}>Save</Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+            <DashboardModal
+                uppy={uppy}
+                open={showUploader}
+                onRequestClose={() => setShowUploader(false)}
+                proudlyDisplayPoweredByUppy={false}
+            />
         </div>
     );
 }
