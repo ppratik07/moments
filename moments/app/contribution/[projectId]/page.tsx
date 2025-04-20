@@ -1,3 +1,4 @@
+// ContributionPage.tsx
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -13,7 +14,7 @@ import { DashboardModal } from '@uppy/react';
 import '@uppy/core/dist/style.css';
 import '@uppy/dashboard/dist/style.css';
 import LayoutPickerModal from '@/components/LayoutPickerModel';
-
+import { layoutCategories } from '@/components/getSelectedLayoutComponent'; 
 
 export default function ContributionPage() {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,7 +23,8 @@ export default function ContributionPage() {
     const [showUploader, setShowUploader] = useState(false);
     const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
     const [showLayoutModal, setShowLayoutModal] = useState(false);
-    const [selectedLayout, setSelectedLayout] = useState<number | null>(null);
+    const [selectedLayout, setSelectedLayout] = useState<number | null>(0); // Default to first layout
+    const [editingMessage, setEditingMessage] = useState(false);
 
     const { projectId } = useParams();
 
@@ -31,6 +33,7 @@ export default function ContributionPage() {
         eventDescription: string;
         imageKey?: string;
     }
+
     const uppy = useMemo(() => {
         return new Uppy({
             restrictions: { maxNumberOfFiles: 1 },
@@ -45,6 +48,7 @@ export default function ContributionPage() {
             },
         });
     }, []);
+
     useEffect(() => {
         uppy.on('complete', (result) => {
             const url = result.successful?.[0]?.uploadURL ?? null;
@@ -62,6 +66,27 @@ export default function ContributionPage() {
         if (raw) setProjectData(JSON.parse(raw));
     }, [projectId]);
 
+    const getSelectedLayoutComponent = () => {
+        if (selectedLayout === null) return layoutCategories[0].layouts[0]; // Default layout
+
+        const categoryIndex = Math.floor(selectedLayout / 10);
+        const layoutIndex = selectedLayout % 10;
+
+        // Ensure valid indices
+        if (categoryIndex >= 0 && categoryIndex < layoutCategories.length) {
+            const category = layoutCategories[categoryIndex];
+            if (layoutIndex >= 0 && layoutIndex < category.layouts.length) {
+                return category.layouts[layoutIndex];
+            }
+        }
+
+        // Fallback to default
+        return layoutCategories[0].layouts[0];
+    };
+
+    // Get the currently selected layout component
+    const SelectedLayoutComponent = getSelectedLayoutComponent();
+
     if (!projectData) return <p className="p-10">Loading project...</p>;
 
     return (
@@ -74,9 +99,7 @@ export default function ContributionPage() {
                             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                                 {projectData.projectName}
                             </h1>
-                            <p className="text-gray-700 text-lg mb-4">
-                                {projectData.eventDescription}
-                            </p>
+                            <p className="text-gray-700 text-lg mb-4">{projectData.eventDescription}</p>
                             <div className="mt-6 space-x-4">
                                 <button className="bg-white border text-purple-600 rounded-xs px-4 py-2 hover:shadow">
                                     How it Works
@@ -99,109 +122,44 @@ export default function ContributionPage() {
                         </div>
                     </section>
 
-                    <div className="mb-4 flex justify-center items-center h-12">
-                        <div className="flex items-center text-sm text-gray-500 space-x-2">
-                            <span className="text-purple-600 font-semibold">Contribute</span>
-                            <span>›</span>
-                            <span>Your Information</span>
-                            <span>›</span>
-                            <span>Done</span>
-                        </div>
-                    </div>
-
                     <section className="mb-16 mt-6">
                         <h2 className="text-4xl font-bold mb-7">Contribute</h2>
                         <ol className="text-gray-700 list-decimal list-inside mb-6">
                             <li>
-                                Click <strong>Add Text</strong> in the layout below to add a memory you have of John. It could be a funny memory, or something that was meaningful to you, or
-                                <p className="ml-6 mb-4">something fun or adventurous you did together! If a memory does not come to mind, you could also just add a personal message to John of anything you would like to say.</p>
+                                Click <strong>Add Text</strong> in the layout below to add a memory you have of John.
                             </li>
                             <li>
-                                Click <strong>Add a Photo</strong> to add a photo of you and John, or of a memory, or another photo that you like.
+                                Click <strong>Add a Photo</strong> to add a photo of you and John.
                             </li>
                         </ol>
 
-                        <div id='contributesection' className="border rounded-xl bg-white shadow-md px-6 py-4 w-full max-w-md mx-auto">
-                            <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                {signature}
-                                <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
-                            </div>
-
-                            <div className="w-full border rounded-lg overflow-hidden">
-                                <div
-                                    className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
-                                    onClick={() => setShowUploader(true)}
-                                >
-                                    <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
-                                    <div className="relative z-10 text-center">
-                                        {uploadedImageUrl ? (
-                                            <Image src={uploadedImageUrl} alt="Uploaded" className="w-full h-full object-cover" width={500} height={300} />
-                                        ) : (
-                                            <>
-                                                <div className="text-lg mb-1">⊕</div>
-                                                ADD A PHOTO
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="bg-gray-50 border-t px-4 py-6 text-center text-gray-700 font-medium text-sm relative">
-                                    <div className="absolute inset-0 opacity-10 bg-[url('/lined-texture.svg')] bg-repeat" />
-                                    <div className="relative z-10">
-                                        {message ? (
-                                            <p className="whitespace-pre-line text-sm">{message}</p>
-                                        ) : (
-                                            <>
-                                                <div className="text-lg mb-1">⊕</div>
-                                                ADD TEXT
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div id="contributesection" className="border rounded-xl bg-white shadow-md px-6 py-4 w-full max-w-md mx-auto">
+                            {/* Render the selected layout component */}
+                            <SelectedLayoutComponent
+                                signature={signature}
+                                setIsModalOpen={setIsModalOpen}
+                                message={message}
+                                editingMessage={editingMessage}
+                                setEditingMessage={setEditingMessage}
+                                setMessage={setMessage}
+                                uploadedImageUrl={uploadedImageUrl}
+                                setShowUploader={setShowUploader}
+                            />
                             <div className="mt-4 flex justify-between text-sm text-purple-600 underline">
-                                <button onClick={() => setShowLayoutModal(true)} className="text-purple-600 underline text-sm">
+                                <button onClick={() => setShowLayoutModal(true)} className="text-purple-600 text-sm">
                                     View other layouts
                                 </button>
                                 <button>Add another page</button>
                             </div>
                         </div>
                         <div className="mt-6 text-right">
-                            <Button className="bg-primary hover:bg-purple-700">
-                                Next
-                            </Button>
+                            <Button className="bg-primary hover:bg-purple-700">Next</Button>
                         </div>
                     </section>
-                    <ChatSupportButton title='Chat with Support' />
+                    <ChatSupportButton title="Chat with Support" />
                 </div>
             </div>
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-xl p-6 shadow-xl w-full max-w-md">
-                        <h2 className="text-lg font-semibold mb-4">Edit Text</h2>
-                        <label className="block mb-2 text-sm font-medium">Signature</label>
-                        <input
-                            className="w-full mb-4 p-2 border rounded"
-                            value={signature}
-                            onChange={(e) => setSignature(e.target.value)}
-                        />
-                        <label className="block mb-2 text-sm font-medium">Message</label>
-                        <textarea
-                            className="w-full p-2 border rounded mb-4"
-                            rows={5}
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                        />
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                                Cancel
-                            </Button>
-                            <Button onClick={() => setIsModalOpen(false)}>Save</Button>
-                        </div>
-                    </div>
-                </div>
-            )}
+
             <DashboardModal
                 uppy={uppy}
                 open={showUploader}
