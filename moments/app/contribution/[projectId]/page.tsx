@@ -24,6 +24,12 @@ export default function ContributionPage() {
     const [selectedLayout, setSelectedLayout] = useState<number | null>(0); // Default to first layout
     const [editingMessage, setEditingMessage] = useState(false);
 
+    // Track which photo slot is currently being edited
+    const [currentPhotoSlot, setCurrentPhotoSlot] = useState<number | null>(null);
+    // Store multiple image URLs instead of just one
+    const [uploadedImageUrls, setUploadedImageUrls] = useState<(string | null)[]>([null, null]);
+    const [activeSlot, setActiveSlot] = useState<number>(0);
+
     const { projectId } = useParams();
 
     interface ProjectData {
@@ -32,8 +38,8 @@ export default function ContributionPage() {
         imageKey?: string;
     }
 
-    const uppy = useMemo(() => {
-        return new Uppy({
+    const [uppy, setUppy] = useState(() =>
+        new Uppy({
             restrictions: { maxNumberOfFiles: 1 },
             autoProceed: false,
         }).use(Transloadit, {
@@ -44,18 +50,52 @@ export default function ContributionPage() {
                     template_id: '5750d3cb5a3d41d188aebdbaf77f3f43',
                 },
             },
-        });
-    }, []);
+        })
+    );
 
     useEffect(() => {
         uppy.on('complete', (result) => {
             const url = result.successful?.[0]?.uploadURL ?? null;
-            if (url) setUploadedImageUrl(url);
+            console.log('Uppy complete, url:', url, 'uppy files:', uppy.getFiles());
+            if (url) {
+                setUploadedImageUrls((prev) => {
+                    const newUrls = [...prev];
+                    newUrls[activeSlot] = url;
+                    return newUrls;
+                });
+            }
             setShowUploader(false);
+            // Create a new uppy instance
+            setUppy(
+                new Uppy({
+                    restrictions: { maxNumberOfFiles: 1 },
+                    autoProceed: false,
+                }).use(Transloadit, {
+                    key: 'SMO6nFCGrkeFYxVIXAgxaTOrYlNe70wU',
+                    assemblyOptions: {
+                        params: {
+                            auth: { key: 'SMO6nFCGrkeFYxVIXAgxaTOrYlNe70wU' },
+                            template_id: '5750d3cb5a3d41d188aebdbaf77f3f43',
+                        },
+                    },
+                })
+            );
         });
-
+    
+        uppy.on('error', (error) => {
+            console.error('Uppy error:', error);
+        });
+    
         return () => uppy.destroy();
-    }, [uppy]);
+    }, [uppy, activeSlot]);
+
+    useEffect(() => {
+        console.log('activeSlot updated to:', activeSlot);
+    }, [activeSlot]);
+
+    useEffect(() => {
+        console.log('showUploader updated to:', showUploader);
+    }, [showUploader]);
 
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
@@ -63,6 +103,7 @@ export default function ContributionPage() {
         const raw = localStorage.getItem(`project-${projectId}`);
         if (raw) setProjectData(JSON.parse(raw));
     }, [projectId]);
+
 
     // Message Editor Component
     const MessageEditor = () => (
@@ -74,13 +115,13 @@ export default function ContributionPage() {
                 className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-300"
             />
             <div className="flex justify-end mt-2 space-x-2">
-                <button 
+                <button
                     className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
                     onClick={() => setEditingMessage(false)}
                 >
                     Cancel
                 </button>
-                <button 
+                <button
                     className="px-3 py-1 text-sm text-white bg-purple-600 rounded-md hover:bg-purple-700"
                     onClick={() => setEditingMessage(false)}
                 >
@@ -105,7 +146,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -134,7 +175,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="bg-gray-50 border-l-4 border-purple-400 pl-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -162,14 +203,25 @@ export default function ContributionPage() {
                     <div className="grid grid-cols-2 gap-2">
                         {[...Array(2)].map((_, i) => (
                             <div
+                                id={i.toString()}
                                 key={i}
                                 className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
-                                onClick={() => setShowUploader(true)}
+                                onClick={() => {
+                                    console.log('Clicked photo slot:', i, 'active slot:', activeSlot, 'showUploader:', showUploader);
+                                    setActiveSlot(i);
+                                    setShowUploader(true);
+                                }}
                             >
                                 <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
                                 <div className="relative z-10 text-center">
-                                    {uploadedImageUrl ? (
-                                        <Image src={uploadedImageUrl} alt="Uploaded" className="w-full h-full object-cover" width={500} height={300} />
+                                    {uploadedImageUrls[i] ? (
+                                        <Image
+                                            src={uploadedImageUrls[i]!}
+                                            alt="Uploaded"
+                                            className="w-full h-full object-cover"
+                                            width={500}
+                                            height={300}
+                                        />
                                     ) : (
                                         <>
                                             <div className="text-lg mb-1">⊕</div>
@@ -188,12 +240,15 @@ export default function ContributionPage() {
                             <div
                                 key={i}
                                 className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
-                                onClick={() => setShowUploader(true)}
+                                onClick={() => {
+                                    setActiveSlot(i + 2); // Use different indices for this layout
+                                    setShowUploader(true);
+                                }}
                             >
                                 <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
                                 <div className="relative z-10 text-center">
-                                    {uploadedImageUrl ? (
-                                        <Image src={uploadedImageUrl} alt="Uploaded" className="w-full h-full object-cover" width={500} height={300} />
+                                    {uploadedImageUrls[i + 2] ? (
+                                        <Image src={uploadedImageUrls[i + 2] ?? ''} alt="Uploaded" className="w-full h-full object-cover" width={500} height={300} />
                                     ) : (
                                         <>
                                             <div className="text-lg mb-1">⊕</div>
@@ -332,7 +387,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="mb-4 bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -393,7 +448,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -443,7 +498,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -472,7 +527,7 @@ export default function ContributionPage() {
                         {editingMessage ? (
                             <MessageEditor />
                         ) : (
-                            <div 
+                            <div
                                 className="mb-4 bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                 onClick={() => setEditingMessage(true)}
                             >
@@ -523,7 +578,7 @@ export default function ContributionPage() {
                             {editingMessage ? (
                                 <MessageEditor />
                             ) : (
-                                <div 
+                                <div
                                     className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
                                     onClick={() => setEditingMessage(true)}
                                 >
@@ -563,14 +618,14 @@ export default function ContributionPage() {
         },
     ];
 
-   
+
 
     const getSelectedLayoutComponent = () => {
         if (selectedLayout === null) return layoutCategories[0].layouts[0]; // Default layout
-        
+
         const categoryIndex = Math.floor(selectedLayout / 10);
         const layoutIndex = selectedLayout % 10;
-        
+
         // Ensure valid indices
         if (categoryIndex >= 0 && categoryIndex < layoutCategories.length) {
             const category = layoutCategories[categoryIndex];
@@ -578,7 +633,7 @@ export default function ContributionPage() {
                 return category.layouts[layoutIndex];
             }
         }
-        
+
         // Fallback to default
         return layoutCategories[0].layouts[0];
     };
@@ -657,7 +712,10 @@ export default function ContributionPage() {
             <DashboardModal
                 uppy={uppy}
                 open={showUploader}
-                onRequestClose={() => setShowUploader(false)}
+                onRequestClose={() => {
+                    console.log('Closing uploader, showUploader:', showUploader);
+                    setShowUploader(false);
+                }}
                 proudlyDisplayPoweredByUppy={false}
             />
             <LayoutPickerModal
