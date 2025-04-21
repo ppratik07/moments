@@ -11,45 +11,40 @@ import LayoutPickerModal from '@/components/LayoutPickerModel';
 import { HTTP_BACKEND } from '@/utils/config';
 import axios from 'axios';
 
-// Separate MessageEditor component
-interface MessageEditorProps {
-  message: string;
-  setMessage: (value: string) => void;
-  setEditingMessage: (value: boolean) => void;
-}
+// Signature Edit Modal Component
+const SignatureEditModal: React.FC<{ isOpen: boolean; onClose: () => void; signature: string; setSignature: (value: string) => void }> = ({ isOpen, onClose, signature, setSignature }) => {
+  const [tempSignature, setTempSignature] = useState(signature);
 
-const MessageEditor: React.FC<MessageEditorProps> = ({ message, setMessage, setEditingMessage }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Focus the textarea when the component mounts
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
+  if (!isOpen) return null;
 
   return (
-    <div className="w-full">
-      <textarea
-        ref={textareaRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Add your message here..."
-        className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-300"
-      />
-      <div className="flex justify-end mt-2 space-x-2">
-        <button
-          className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-          onClick={() => setEditingMessage(false)}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-3 py-1 text-sm text-white bg-purple-600 rounded-md hover:bg-purple-700"
-          onClick={() => setEditingMessage(false)}
-        >
-          Save
-        </button>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Edit Signature</h2>
+        <input
+          type="text"
+          value={tempSignature}
+          onChange={(e) => setTempSignature(e.target.value)}
+          className="w-full p-2 border border-gray-300 rounded-md mb-4"
+          placeholder="Enter your name"
+        />
+        <div className="flex justify-end space-x-4">
+          <button
+            className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 text-white bg-purple-600 rounded-md hover:bg-purple-700"
+            onClick={() => {
+              setSignature(tempSignature);
+              onClose();
+            }}
+          >
+            Save
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -57,6 +52,7 @@ const MessageEditor: React.FC<MessageEditorProps> = ({ message, setMessage, setE
 
 export default function ContributionPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signature, setSignature] = useState('Your Name Here');
   const [message, setMessage] = useState('');
   const [uploadedImageUrls, setUploadedImageUrls] = useState<(string | null)[]>([null, null, null, null]);
@@ -82,19 +78,16 @@ export default function ContributionPage() {
     if (raw) setProjectData(JSON.parse(raw));
   }, [projectId]);
 
-  // Utility function to extract the key from the public URL
   const extractKeyFromUrl = (url: string): string => {
     const prefix = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/';
     return url.replace(prefix, '');
   };
 
-  // Handle file upload using presigned URL to R2
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       setError('File size must be less than 5MB');
       return;
@@ -126,7 +119,7 @@ export default function ContributionPage() {
         throw new Error(`Failed to upload image to R2: ${uploadResponse.statusText}`);
       }
 
-      const imageUrl = `https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/${key}`;
+      const imageUrl = `https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/moments/${key}`;
 
       setUploadedImageUrls((prev) => {
         const newUrls = [...prev];
@@ -138,11 +131,10 @@ export default function ContributionPage() {
       setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
-      event.target.value = ''; // Reset input
+      event.target.value = '';
     }
   };
 
-  // Handle image removal
   const handleRemoveImage = async (index: number) => {
     try {
       const imageUrl = uploadedImageUrls[index];
@@ -170,7 +162,6 @@ export default function ContributionPage() {
     }
   };
 
-  // Define layout categories and their associated rendering functions
   const layoutCategories = [
     {
       title: 'Message Only',
@@ -179,7 +170,7 @@ export default function ContributionPage() {
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -213,7 +204,7 @@ export default function ContributionPage() {
           <>
             <div className="text-lg italic font-medium text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -247,70 +238,68 @@ export default function ContributionPage() {
     {
       title: 'Photos Only',
       layouts: [
-        // Two photos side by side
         () => (
-            <div className="grid grid-cols-2 gap-4">
-              {[...Array(2)].map((_, i) => (
-                <div
-                  id={i.toString()}
-                  key={i}
-                  className="bg-gray-100 relative h-72 flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
-                >
-                  <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
-                  <div className="relative z-10 text-center">
-                    {uploadedImageUrls[i] ? (
-                      <div className="relative w-full h-full">
-                        <Image
-                          src={uploadedImageUrls[i]!}
-                          alt="Uploaded"
-                          className="w-full h-full object-cover"
-                          width={500}
-                          height={300}
-                        />
-                        <button
-                          className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1"
-                          onClick={() => handleRemoveImage(i)}
-                          title="Remove image"
+          <div className="grid grid-cols-2 gap-4">
+            {[...Array(2)].map((_, i) => (
+              <div
+                id={i.toString()}
+                key={i}
+                className="bg-gray-100 relative h-72 flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
+              >
+                <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
+                <div className="relative z-10 text-center">
+                  {uploadedImageUrls[i] ? (
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={uploadedImageUrls[i]!}
+                        alt="Uploaded"
+                        className="w-full h-full object-cover"
+                        width={500}
+                        height={300}
+                      />
+                      <button
+                        className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1"
+                        onClick={() => handleRemoveImage(i)}
+                        title="Remove image"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-3 w-3"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        onClick={() => setActiveSlot(i)}
+                      />
+                      <div className={uploading ? 'opacity-50' : ''}>
+                        <div className="text-lg mb-1">⊕</div>
+                        {uploading && activeSlot === i ? 'Uploading...' : 'ADD A PHOTO'}
                       </div>
-                    ) : (
-                      <label className="cursor-pointer">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleFileUpload}
-                          disabled={uploading}
-                          onClick={() => setActiveSlot(i)}
-                        />
-                        <div className={uploading ? 'opacity-50' : ''}>
-                          <div className="text-lg mb-1">⊕</div>
-                          {uploading && activeSlot === i ? 'Uploading...' : 'ADD A PHOTO'}
-                        </div>
-                      </label>
-                    )}
-                  </div>
+                    </label>
+                  )}
                 </div>
-              ))}
-              {error && <div className="text-red-500 text-sm mt-2 col-span-2">{error}</div>}
-            </div>
-          ),
-        // One photo on top of another
+              </div>
+            ))}
+            {error && <div className="text-red-500 text-sm mt-2 col-span-2">{error}</div>}
+          </div>
+        ),
         () => (
           <div className="grid grid-rows-2 gap-2">
             {[...Array(2)].map((_, i) => (
@@ -372,7 +361,6 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </div>
         ),
-        // Three photo layout (2 top, 1 bottom)
         () => (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -489,7 +477,6 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </div>
         ),
-        // Three photo layout (1 top, 2 bottom)
         () => (
           <div className="space-y-2">
             <div
@@ -606,7 +593,6 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </div>
         ),
-        // Four photo layout (2x2 grid)
         () => (
           <div className="grid grid-rows-2 gap-2">
             {[...Array(2)].map((_, row) => (
@@ -680,12 +666,11 @@ export default function ContributionPage() {
     {
       title: 'Message with Photos',
       layouts: [
-        // Message on top, photo below
         () => (
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -769,7 +754,6 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </>
         ),
-        // Photo on top, message below
         () => (
           <>
             <div
@@ -827,7 +811,7 @@ export default function ContributionPage() {
             </div>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -858,7 +842,6 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </>
         ),
-        // Two photos on top, message below
         () => (
           <>
             <div className="grid grid-cols-2 gap-2 mb-4">
@@ -921,7 +904,7 @@ export default function ContributionPage() {
             </div>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -952,12 +935,11 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </>
         ),
-        // Message on top, two photos below
         () => (
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                 ✎
               </button>
             </div>
@@ -1046,13 +1028,12 @@ export default function ContributionPage() {
             {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
           </>
         ),
-        // Message with photo to the side
         () => (
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 {signature}
-                <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                <button className="text-purple-600 text-sm underline" onClick={() => setIsSignatureModalOpen(true)}>
                   ✎
                 </button>
               </div>
@@ -1237,6 +1218,55 @@ export default function ContributionPage() {
         }}
         selectedLayout={selectedLayout}
       />
+      <SignatureEditModal
+        isOpen={isSignatureModalOpen}
+        onClose={() => setIsSignatureModalOpen(false)}
+        signature={signature}
+        setSignature={setSignature}
+      />
     </div>
   );
 }
+
+// MessageEditor Component (unchanged)
+interface MessageEditorProps {
+  message: string;
+  setMessage: (value: string) => void;
+  setEditingMessage: (value: boolean) => void;
+}
+
+const MessageEditor: React.FC<MessageEditorProps> = ({ message, setMessage, setEditingMessage }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <div className="w-full">
+      <textarea
+        ref={textareaRef}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Add your message here..."
+        className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-300"
+      />
+      <div className="flex justify-end mt-2 space-x-2">
+        <button
+          className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+          onClick={() => setEditingMessage(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className="px-3 py-1 text-sm text-white bg-purple-600 rounded-md hover:bg-purple-700"
+          onClick={() => setEditingMessage(false)}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
