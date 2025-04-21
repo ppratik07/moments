@@ -22,7 +22,11 @@ const client_1 = require("@prisma/client");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type'],
+}));
 app.use(express_1.default.json());
 const prisma = new client_1.PrismaClient();
 // S3/R2 Client Configuration
@@ -59,6 +63,27 @@ app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, 
 process.on("unhandledRejection", (reason, promise) => {
     console.error("Unhandled Rejection:", reason);
 });
+app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { key } = req.query;
+    console.log("Key:", key);
+    if (!key || typeof key !== "string") {
+        res.status(400).json({ error: "Missing or invalid key parameter" });
+    }
+    try {
+        // Step 1: Delete the object from R2
+        const deleteCommand = new client_s3_1.DeleteObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME,
+            Key: key
+        });
+        yield s3.send(deleteCommand);
+        // Respond with success
+        res.status(200).json({ message: "Image deleted successfully" });
+    }
+    catch (error) {
+        console.error("Error deleting image from R2:", error);
+        res.status(500).json({ error: "Failed to delete image" });
+    }
+}));
 //store the user info
 app.post("/api/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     {

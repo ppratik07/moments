@@ -1,6 +1,6 @@
 import express from "express";
 import cors from "cors";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
@@ -10,7 +10,11 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type'],
+}));
 app.use(express.json());
 
 const prisma = new PrismaClient();
@@ -55,6 +59,29 @@ process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection:", reason);
 });
 
+app.delete("/api/delete-image", async (req, res) => {
+  const { key } = req.query;
+  console.log("Key:", key);
+  if (!key || typeof key !== "string") {
+     res.status(400).json({ error: "Missing or invalid key parameter" });
+  }
+
+  try {
+    // Step 1: Delete the object from R2
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME!,
+      Key: key as string  
+    });
+
+    await s3.send(deleteCommand);
+
+    // Respond with success
+     res.status(200).json({ message: "Image deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting image from R2:", error);
+     res.status(500).json({ error: "Failed to delete image" });
+  }
+});
 //store the user info
 app.post("/api/users", async (req, res) => {
   {
