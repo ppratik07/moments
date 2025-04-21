@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { getImageUrl } from '@/helpers/getImageUrl';
 import { Header } from '@/components/landing/Header';
@@ -10,6 +10,50 @@ import ChatSupportButton from '@/components/ChatSupportButton';
 import LayoutPickerModal from '@/components/LayoutPickerModel';
 import { HTTP_BACKEND } from '@/utils/config';
 import axios from 'axios';
+
+// Separate MessageEditor component
+interface MessageEditorProps {
+  message: string;
+  setMessage: (value: string) => void;
+  setEditingMessage: (value: boolean) => void;
+}
+
+const MessageEditor: React.FC<MessageEditorProps> = ({ message, setMessage, setEditingMessage }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Focus the textarea when the component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
+  return (
+    <div className="w-full">
+      <textarea
+        ref={textareaRef}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Add your message here..."
+        className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-300"
+      />
+      <div className="flex justify-end mt-2 space-x-2">
+        <button
+          className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+          onClick={() => setEditingMessage(false)}
+        >
+          Cancel
+        </button>
+        <button
+          className="px-3 py-1 text-sm text-white bg-purple-600 rounded-md hover:bg-purple-700"
+          onClick={() => setEditingMessage(false)}
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default function ContributionPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -105,17 +149,16 @@ export default function ContributionPage() {
       if (!imageUrl) {
         throw new Error('No image to delete');
       }
-      console.log('imageUrl', imageUrl);
-  
+
       const key = extractKeyFromUrl(imageUrl);
-      console.log('key', key);
-  
       const response = await axios.delete(`${HTTP_BACKEND}/api/delete-image`, {
-        params: { key }
+        params: { key },
       });
-  
-      console.log(response);
-  
+
+      if (response.status !== 200) {
+        throw new Error(`Failed to delete image: ${response.statusText}`);
+      }
+
       setUploadedImageUrls((prev) => {
         const newUrls = [...prev];
         newUrls[index] = null;
@@ -123,35 +166,9 @@ export default function ContributionPage() {
       });
     } catch (error: any) {
       console.error('Error removing image:', error);
-      setError('Failed to remove image. Please try again.');
+      setError(error.response?.data?.error || 'Failed to remove image. Please try again.');
     }
   };
-
-  // Message Editor Component
-  const MessageEditor = () => (
-    <div className="w-full">
-      <textarea
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder="Add your message here..."
-        className="w-full p-3 border border-gray-300 rounded-md min-h-[120px] focus:outline-none focus:ring-2 focus:ring-purple-300"
-      />
-      <div className="flex justify-end mt-2 space-x-2">
-        <button
-          className="px-3 py-1 text-sm text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-          onClick={() => setEditingMessage(false)}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-3 py-1 text-sm text-white bg-purple-600 rounded-md hover:bg-purple-700"
-          onClick={() => setEditingMessage(false)}
-        >
-          Save
-        </button>
-      </div>
-    </div>
-  );
 
   // Define layout categories and their associated rendering functions
   const layoutCategories = [
@@ -162,10 +179,16 @@ export default function ContributionPage() {
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -190,10 +213,16 @@ export default function ContributionPage() {
           <>
             <div className="text-lg italic font-medium text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="bg-gray-50 border-l-4 border-purple-400 pl-4 py-3 cursor-pointer hover:bg-gray-100 transition-colors"
@@ -220,67 +249,67 @@ export default function ContributionPage() {
       layouts: [
         // Two photos side by side
         () => (
-          <div className="grid grid-cols-2 gap-2">
-            {[...Array(2)].map((_, i) => (
-              <div
-                id={i.toString()}
-                key={i}
-                className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
-              >
-                <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
-                <div className="relative z-10 text-center">
-                  {uploadedImageUrls[i] ? (
-                    <div className="relative w-full h-full">
-                      <Image
-                        src={uploadedImageUrls[i]!}
-                        alt="Uploaded"
-                        className="w-full h-full object-cover"
-                        width={500}
-                        height={300}
-                      />
-                      <button
-                        className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1"
-                        onClick={() => handleRemoveImage(i)}
-                        title="Remove image"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-3 w-3"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+            <div className="grid grid-cols-2 gap-4">
+              {[...Array(2)].map((_, i) => (
+                <div
+                  id={i.toString()}
+                  key={i}
+                  className="bg-gray-100 relative h-72 flex items-center justify-center text-gray-700 font-medium text-sm cursor-pointer"
+                >
+                  <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
+                  <div className="relative z-10 text-center">
+                    {uploadedImageUrls[i] ? (
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={uploadedImageUrls[i]!}
+                          alt="Uploaded"
+                          className="w-full h-full object-cover"
+                          width={500}
+                          height={300}
+                        />
+                        <button
+                          className="absolute top-1 right-1 bg-gray-800 text-white rounded-full p-1"
+                          onClick={() => handleRemoveImage(i)}
+                          title="Remove image"
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                        onClick={() => setActiveSlot(i)}
-                      />
-                      <div className={uploading ? 'opacity-50' : ''}>
-                        <div className="text-lg mb-1">⊕</div>
-                        {uploading && activeSlot === i ? 'Uploading...' : 'ADD A PHOTO'}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-3 w-3"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    </label>
-                  )}
+                    ) : (
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                          onClick={() => setActiveSlot(i)}
+                        />
+                        <div className={uploading ? 'opacity-50' : ''}>
+                          <div className="text-lg mb-1">⊕</div>
+                          {uploading && activeSlot === i ? 'Uploading...' : 'ADD A PHOTO'}
+                        </div>
+                      </label>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {error && <div className="text-red-500 text-sm mt-2 col-span-2">{error}</div>}
-          </div>
-        ),
+              ))}
+              {error && <div className="text-red-500 text-sm mt-2 col-span-2">{error}</div>}
+            </div>
+          ),
         // One photo on top of another
         () => (
           <div className="grid grid-rows-2 gap-2">
@@ -656,10 +685,16 @@ export default function ContributionPage() {
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="mb-4 bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -792,10 +827,16 @@ export default function ContributionPage() {
             </div>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -880,10 +921,16 @@ export default function ContributionPage() {
             </div>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -910,10 +957,16 @@ export default function ContributionPage() {
           <>
             <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               {signature}
-              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+              <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                ✎
+              </button>
             </div>
             {editingMessage ? (
-              <MessageEditor />
+              <MessageEditor
+                message={message}
+                setMessage={setMessage}
+                setEditingMessage={setEditingMessage}
+              />
             ) : (
               <div
                 className="mb-4 bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -999,10 +1052,16 @@ export default function ContributionPage() {
             <div>
               <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 {signature}
-                <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>✎</button>
+                <button className="text-purple-600 text-sm underline" onClick={() => setIsModalOpen(true)}>
+                  ✎
+                </button>
               </div>
               {editingMessage ? (
-                <MessageEditor />
+                <MessageEditor
+                  message={message}
+                  setMessage={setMessage}
+                  setEditingMessage={setEditingMessage}
+                />
               ) : (
                 <div
                   className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
@@ -1112,9 +1171,7 @@ export default function ContributionPage() {
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
                 {projectData.projectName}
               </h1>
-              <p className="text-gray-700 text-lg mb-4">
-                {projectData.eventDescription}
-              </p>
+              <p className="text-gray-700 text-lg mb-4">{projectData.eventDescription}</p>
               <div className="mt-6 space-x-4">
                 <button className="bg-white border text-purple-600 rounded-xs px-4 py-2 hover:shadow">
                   How it Works
@@ -1148,19 +1205,23 @@ export default function ContributionPage() {
               </li>
             </ol>
 
-            <div id="contributesection" className="border rounded-xl bg-white shadow-md px-6 py-4 w-full max-w-md mx-auto">
+            <div
+              id="contributesection"
+              className="border rounded-xl bg-white shadow-md px-6 py-4 w-full max-w-md mx-auto"
+            >
               {SelectedLayoutComponent()}
               <div className="mt-4 flex justify-between text-sm text-purple-600 underline">
-                <button onClick={() => setShowLayoutModal(true)} className="text-purple-600 underline text-sm">
+                <button
+                  onClick={() => setShowLayoutModal(true)}
+                  className="text-purple-600 underline text-sm"
+                >
                   View other layouts
                 </button>
                 <button>Add another page</button>
               </div>
             </div>
             <div className="mt-6 text-right">
-              <Button className="bg-primary hover:bg-purple-700">
-                Next
-              </Button>
+              <Button className="bg-primary hover:bg-purple-700">Next</Button>
             </div>
           </section>
           <ChatSupportButton title="Chat with Support" />
