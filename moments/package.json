@@ -22,6 +22,7 @@
     "@uppy/react": "^4.2.3",
     "@uppy/transloadit": "^4.2.2",
     "animejs": "^4.0.1",
+    "aws-sdk": "^2.1692.0",
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
