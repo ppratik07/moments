@@ -11,6 +11,8 @@
   "dependencies": {
     "@clerk/nextjs": "^6.15.0",
     "@headlessui/react": "^2.2.2",
+    "@radix-ui/react-checkbox": "^1.2.2",
+    "@radix-ui/react-dialog": "^1.1.10",
     "@radix-ui/react-label": "^2.1.3",
     "@radix-ui/react-select": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.0",

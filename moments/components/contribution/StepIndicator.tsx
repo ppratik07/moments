@@ -5,7 +5,7 @@ export const StepIndicator = ({ currentStep = 1 }) => {
       <div className="flex items-center justify-center space-x-2 text-sm text-gray-400 font-medium mb-10 mt-10">
         {steps.map((step, index) => {
           const isActive = index + 1 === currentStep;
-          const isCompleted = index + 1 < currentStep;
+          //const isCompleted = index + 1 < currentStep;
   
           return (
             <div key={step} className="flex items-center space-x-2">
