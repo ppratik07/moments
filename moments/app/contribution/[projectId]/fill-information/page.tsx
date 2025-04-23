@@ -8,8 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ChatSupportButton from "@/components/ChatSupportButton";
 import { Stepper } from "@/components/Stepper";
+import { useRouter } from "next/navigation";
 
 export default function YourInformationPage() {
+    const router = useRouter();
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -34,7 +36,7 @@ export default function YourInformationPage() {
         <div className="min-h-screen flex flex-col items-center bg-white">
             <div className="bg-gradient-to-r from-[#C879FF] to-[#A44EFF] h-2 rounded-t-md mb-6"></div>
 
-            <Stepper/>
+            <Stepper />
             <hr className="w-full border-t border-black mb-6" />
             <h1 className="text-3xl font-bold mb-2">Your Information</h1>
             <p className="mb-6 text-sm text-muted-foreground pt-10">
@@ -97,7 +99,12 @@ export default function YourInformationPage() {
                 </div>
             </form>
 
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <Dialog open={showDialog} onOpenChange={(open) => {
+                setShowDialog(open);
+                if (!open) {
+                    router.push('/thank-you');
+                }
+            }}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>Online Book Exclusion</DialogTitle>
