@@ -12,7 +12,7 @@ export default function DonePage() {
   const [showConfetti, setShowConfetti] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
 
-  const projectName = useProjectStore((state) => state.projectName);
+  const projectName = useProjectStore.getState().projectName;
   const imagePhoto = useProjectStore.getState().imageKey;
 
   useEffect(() => {
