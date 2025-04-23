@@ -29,9 +29,9 @@ export default function ImageUploader({
 
   return (
     <label
-      htmlFor="photo"
-      className="w-full h-64 border border-dashed border-gray-300 flex items-center justify-center text-gray-500 cursor-pointer rounded-lg mb-6 hover:border-blue-500 transition relative"
-    >
+  htmlFor="photo"
+  className="w-full h-[400px] border border-dashed border-gray-300 flex items-center justify-center text-gray-500 cursor-pointer rounded-lg mb-6 hover:border-blue-500 transition relative"
+>
       {preview ? (
         <Image src={preview} alt="Preview" fill className="object-cover rounded-lg" />
       ) : (
