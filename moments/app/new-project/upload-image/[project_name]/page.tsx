@@ -15,7 +15,7 @@ export default function NewEventPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const params = useParams();
-  const { setImageKey,projectId } = useProjectStore();
+  const { setImageKey, projectId } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
 
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function NewEventPage() {
       );
     }
   }, [projectId, projectName, projectImageKey, projectDescription]);
-  
+
   useEffect(() => {
     // Initialize state on the client
     setProjectName(decodedProjectName);
@@ -127,8 +127,12 @@ export default function NewEventPage() {
           <p className="text-md text-gray-600 mb-6">
             Add a memory, well wish, or photo. Want to add more photos? Simply click below.
           </p>
-          <div className="bg-gray-100 h-64 rounded-lg flex items-center justify-center">
-            <p className="text-gray-500 italic">Upload photo or memory form here</p>
+          <div className="bg-black rounded-lg overflow-hidden shadow-md">
+            <video
+              src="https://your-s3-bucket.s3.amazonaws.com/path-to-your-video.mp4"
+              controls
+              className="w-full h-80 object-cover"
+            />
           </div>
         </div>
       </main>
