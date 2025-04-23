@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ChatSupportButton from "@/components/ChatSupportButton";
+import { Stepper } from "@/components/Stepper";
 
 export default function YourInformationPage() {
     const [form, setForm] = useState({
@@ -33,20 +34,7 @@ export default function YourInformationPage() {
         <div className="min-h-screen flex flex-col items-center bg-white">
             <div className="bg-gradient-to-r from-[#C879FF] to-[#A44EFF] h-2 rounded-t-md mb-6"></div>
 
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
-                <span className="flex items-center space-x-1">
-                    <div className="w-4 h-4 rounded-full bg-[#7C3AED]" />
-                    <span className="font-semibold text-black">Contribute</span>
-                </span>
-                <span>{">"}</span>
-                <span className="flex items-center space-x-1">
-                    <div className="w-4 h-4 border border-[#7C3AED] rounded-full" />
-                    <span className="text-black font-semibold">Your Information</span>
-                </span>
-                <span>{">"}</span>
-                <div className="w-4 h-4 border border-[#7C3AED] rounded-full" />
-                <span className="text-black">Done</span>
-            </div>
+            <Stepper/>
             <hr className="w-full border-t border-black mb-6" />
             <h1 className="text-3xl font-bold mb-2">Your Information</h1>
             <p className="mb-6 text-sm text-muted-foreground pt-10">
