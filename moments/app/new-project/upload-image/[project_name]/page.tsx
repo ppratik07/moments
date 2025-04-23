@@ -7,6 +7,7 @@ import { useProjectStore } from '@/store/useProjectStore';
 import { Header } from '@/components/landing/Header';
 import { getImageUrl } from '@/helpers/getImageUrl';
 import { useImageUpload } from '@/hooks/useImageUpload';
+import Footer from '@/pages/Footer';
 
 export default function NewEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -125,7 +126,7 @@ export default function NewEventPage() {
         <div className="mt-12">
           <h2 className="text-3xl font-bold mb-4">Contribute</h2>
           <p className="text-md text-gray-600 mb-6">
-            Add a memory, well wish, or photo. Want to add more photos? Simply click below.
+            Add a memory, well wish, or photo. Want to add more photos? Simply click below and check how to share it to your friends, family and collegues.
           </p>
           <div className="bg-black rounded-lg overflow-hidden shadow-md">
             <video
@@ -136,7 +137,7 @@ export default function NewEventPage() {
           </div>
         </div>
       </main>
-
+      <Footer />
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
