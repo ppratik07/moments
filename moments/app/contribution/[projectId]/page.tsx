@@ -11,7 +11,7 @@ import Footer from "@/pages/Footer";
 import { HTTP_BACKEND } from "@/utils/config";
 import axios from "axios";
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function ContributionPage() {
@@ -25,10 +25,13 @@ export default function ContributionPage() {
     const [editingMessage, setEditingMessage] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const { projectId } = useParams();
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
-
+    const handleNextClick = () => {
+        router.push(`/contribution/${projectId}/fill-information`);
+    };
     useEffect(() => {
         const raw = localStorage.getItem(`project-${projectId}`);
         if (raw) setProjectData(JSON.parse(raw));
@@ -268,7 +271,7 @@ export default function ContributionPage() {
                             ))}
                         </div>
                     </section>
-                    <TipsBox />
+                    <TipsBox onNextClick={handleNextClick} />
                 </div>
 
             </div>
