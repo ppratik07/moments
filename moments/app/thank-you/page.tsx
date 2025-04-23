@@ -3,6 +3,7 @@
 import { getImageUrl } from "@/helpers/getImageUrl";
 import { useProjectStore } from "@/store/useProjectStore";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
@@ -27,7 +28,7 @@ export default function DonePage() {
     <div className="min-h-screen bg-white">
       {showConfetti && <Confetti width={width} height={height} />}
       <div className="border-b bg-gradient-to-r from-pink-500 to-purple-500 p-4 text-white text-lg font-semibold">
-        MemoryLane
+        <Link href='/'>MemoryLane </Link>
       </div>
 
       <div className="flex justify-center">
@@ -62,19 +63,23 @@ export default function DonePage() {
               We have memory books for every occasion! Start one of your own today.
             </p>
             <div className="mt-4 flex gap-2">
-              <button className="px-4 py-2 bg-white border border-purple-500 text-purple-600 rounded-md hover:bg-purple-50">
-                Learn More
-              </button>
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
-                Get Started
-              </button>
+              <Link href='/'>
+                <button className="px-4 py-2 bg-white border border-purple-500 text-purple-600 rounded-md hover:bg-purple-50">
+                  Learn More
+                </button>
+              </Link>
+              <Link href='/new-project'>
+                <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
+                  Get Started
+                </button>
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Right: Image */}
         <div className="flex justify-center items-center">
-          <div className="w-full max-h-[400px] overflow-hidden rounded-lg shadow-md">
+          <div className="w-full max-h-[500px] overflow-hidden  shadow-md">
             <Image
               src={
                 getImageUrl(imagePhoto) || ''
