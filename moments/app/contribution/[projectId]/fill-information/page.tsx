@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import ChatSupportButton from "@/components/ChatSupportButton";
 import { Stepper } from "@/components/Stepper";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function YourInformationPage() {
     const router = useRouter();
@@ -27,9 +29,42 @@ export default function YourInformationPage() {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const validate = () => {
+        if (!form.firstName.trim()) {
+            toast.error("First name is required.");
+            return false;
+        }
+        if (!form.lastName.trim()) {
+            toast.error("Last name is required.");
+            return false;
+        }
+        if (!form.email.trim() || !/\S+@\S+\.\S+/.test(form.email)) {
+            toast.error("A valid email is required.");
+            return false;
+        }
+        if (!form.relationship) {
+            toast.error("Please select your relationship.");
+            return false;
+        }
+        return true;
+    };
+    
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setShowDialog(true);
+    
+        if (!validate()) return;
+    
+        try {
+            const response = await axios.post("/api/fill-your-info", form);
+            if (response.status !== 200) {
+                toast.error("Failed to submit information.");
+                return;
+            }
+            toast.success("Information submitted successfully!");
+            setShowDialog(true); // Only show if everything is valid and sent
+        } catch {
+            toast.error("Something went wrong while submitting.");
+        }
     };
 
     return (
