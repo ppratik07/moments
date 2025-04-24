@@ -2,12 +2,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { Header } from '@/components/landing/Header';
 import { getImageUrl } from '@/helpers/getImageUrl';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import Footer from '@/pages/Footer';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { toast } from 'sonner';
 
 export default function NewEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -18,7 +20,16 @@ export default function NewEventPage() {
   const params = useParams();
   const { setImageKey, projectId } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
+  const { isSignedIn } = useCurrentUser(); //checking if user is signed in
+  const router = useRouter();
+  const handleDashboardClick = () => {
+    if (isSignedIn) {
+      router.push('/dashboard');
+    } else {
+      toast.error('Please sign in first');
+    }
 
+  };
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setShareLink(`${window.location.origin}/contribution/${projectId}`);
@@ -91,7 +102,7 @@ export default function NewEventPage() {
         </div>
 
         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
-          <Button className="bg-primary text-white px-4 py-2 rounded">Dashboard</Button>
+          <Button className="bg-primary text-white px-4 py-2 rounded" onClick={handleDashboardClick}>Dashboard</Button>
           <Button className="bg-primary text-white px-4 py-2 rounded" onClick={() => setShowEditModal(true)}>
             Edit this Page
           </Button>
