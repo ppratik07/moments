@@ -61,7 +61,7 @@ export default function YourInformationPage() {
                 return;
             }
             toast.success("Information submitted successfully!");
-            setShowDialog(true); // Only show if everything is valid and sent
+            setShowDialog(true); 
         } catch {
             toast.error("Something went wrong while submitting.");
         }
