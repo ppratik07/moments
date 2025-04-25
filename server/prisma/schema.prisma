@@ -13,15 +13,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id         String @id @default(uuid())
+model UserInformation {
+  id         String   @id @default(uuid())
   first_name String
   last_name  String
-  email      String @unique
+  email      String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 }
 
 model EventType {
   id          String @id @default(uuid())
   name        String @unique
   description String @db.Text
+}
+
+model LoginUser {
+  id               String   @id @default(cuid())
+  projectName      String
+  bookName         String
+  dueDate          DateTime
+  eventType        String
+  eventDescription String
+  createdAt        DateTime @default(now())
+}
+
+
+model FillYourDetails {
+  id                       String   @id @default(uuid())
+  first_name               String
+  last_name                String
+  email                    String   @unique
+  relationship             String
+  ExcludeFromOnlineVersion Boolean  @default(false)
+  ExcludeFromPromotion     Boolean  @default(false)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
 }
