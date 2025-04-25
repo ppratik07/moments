@@ -23,9 +23,9 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)({
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type'],
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
 }));
 app.use(express_1.default.json());
 const prisma = new client_1.PrismaClient();
@@ -73,7 +73,7 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
         // Step 1: Delete the object from R2
         const deleteCommand = new client_s3_1.DeleteObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME,
-            Key: key
+            Key: key,
         });
         yield s3.send(deleteCommand);
         // Respond with success
@@ -84,14 +84,34 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
         res.status(500).json({ error: "Failed to delete image" });
     }
 }));
-//store the user info
+//Stroring the login inforation
 app.post("/api/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { clerkId, email, name } = req.body;
+    try {
+        const existingUser = yield prisma.loginUser.findUnique({
+            where: { clerkId },
+        });
+        if (!existingUser) {
+            const newUser = yield prisma.loginUser.create({
+                data: { clerkId, email, name },
+            });
+            res.status(201).json(newUser);
+        }
+        res.status(200).json(existingUser);
+    }
+    catch (err) {
+        console.error("Error syncing user:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+}));
+//store the user info
+app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     {
         const { firstName, lastName, email } = req.body;
         if (!firstName || !lastName || !email) {
             res.status(400).json({ message: "All fields are required" });
         }
-        const user = yield prisma.user.create({
+        const user = yield prisma.userInformation.create({
             data: {
                 first_name: firstName,
                 last_name: lastName,
@@ -124,6 +144,33 @@ app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function*
     catch (err) {
         console.error(err);
         res.status(500).json({ error: "Internal server error" });
+    }
+}));
+//Fill your information page 
+app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { firstName, lastName, email, relationship, excludeOnline, notifyMe } = req.body;
+    if (!firstName || !lastName || !email || !relationship) {
+        res.status(400).json({ message: "All fields are required" });
+    }
+    try {
+        const user = yield prisma.fillYourDetails.create({
+            data: {
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                relationship,
+                ExcludeFromOnlineVersion: excludeOnline,
+                ExcludeFromPromotion: notifyMe,
+            },
+        });
+        res.status(200).json({
+            message: "User information saved successfully",
+            user,
+        });
+    }
+    catch (error) {
+        console.error("Error saving user information:", error);
+        res.status(500).json({ message: "Internal server error" });
     }
 }));
 app.listen(PORT, () => {

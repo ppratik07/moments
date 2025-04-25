@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
@@ -10,11 +14,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
-}));
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 
 const prisma = new PrismaClient();
@@ -63,33 +69,55 @@ app.delete("/api/delete-image", async (req, res) => {
   const { key } = req.query;
   console.log("Key:", key);
   if (!key || typeof key !== "string") {
-     res.status(400).json({ error: "Missing or invalid key parameter" });
+    res.status(400).json({ error: "Missing or invalid key parameter" });
   }
 
   try {
     // Step 1: Delete the object from R2
     const deleteCommand = new DeleteObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
-      Key: key as string  
+      Key: key as string,
     });
 
     await s3.send(deleteCommand);
 
     // Respond with success
-     res.status(200).json({ message: "Image deleted successfully" });
+    res.status(200).json({ message: "Image deleted successfully" });
   } catch (error) {
     console.error("Error deleting image from R2:", error);
-     res.status(500).json({ error: "Failed to delete image" });
+    res.status(500).json({ error: "Failed to delete image" });
   }
 });
-//store the user info
+//Stroring the login inforation
 app.post("/api/users", async (req, res) => {
+  const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
+  try {
+    const project = await prisma.loginUser.create({
+      data: {
+        projectName,
+        bookName,
+        dueDate: new Date(dueDate),
+        eventType,
+        eventDescription
+      }
+    });
+
+    res.status(201).json(project);
+  } catch (error) {
+    console.error("Failed to create project:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+//store the user info
+app.post("/api/user-information", async (req, res) => {
   {
     const { firstName, lastName, email } = req.body;
     if (!firstName || !lastName || !email) {
       res.status(400).json({ message: "All fields are required" });
     }
-    const user = await prisma.user.create({
+    const user = await prisma.userInformation.create({
       data: {
         first_name: firstName,
         last_name: lastName,
@@ -104,7 +132,6 @@ app.post("/api/users", async (req, res) => {
 });
 
 //Get the event type and description
-
 app.get("/event-type", async (req, res) => {
   const { name } = req.query;
   if (!name || typeof name !== "string") {
@@ -128,6 +155,37 @@ app.get("/event-type", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+//Fill your information page 
+app.post("/api/fill-your-info", async (req, res) => {
+  const { firstName, lastName, email, relationship, excludeOnline, notifyMe } =
+    req.body;
+
+  if (!firstName || !lastName || !email || !relationship) {
+     res.status(400).json({ message: "All fields are required" });
+  }
+
+  try {
+    const user = await prisma.fillYourDetails.create({
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        relationship,
+        ExcludeFromOnlineVersion: excludeOnline,
+        ExcludeFromPromotion: notifyMe,
+      },
+    });
+
+    res.status(200).json({
+      message: "User information saved successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error saving user information:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
