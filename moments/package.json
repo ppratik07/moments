@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.15.0",
+    "@clerk/nextjs": "^6.18.0",
     "@headlessui/react": "^2.2.2",
     "@radix-ui/react-checkbox": "^1.2.2",
     "@radix-ui/react-dialog": "^1.1.10",
