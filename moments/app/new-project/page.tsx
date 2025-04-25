@@ -19,6 +19,7 @@ import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
+import { useAuth } from '@clerk/nextjs';
 
 export default function StartProjectForm() {
     const [date, setDate] = useState<string | null>(null);
@@ -32,13 +33,15 @@ export default function StartProjectForm() {
     const [lastName, setLastName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [eventType, setEventType] = useState<string | null>(null);
+    const { getToken } = useAuth();
     // const [eventDescription, setEventDescription] = useState<string | null>(null); 
     const { setProjectName, setEventDescription } = useProjectStore();
+
     const initializeProjectId = () => {
         const id = uuidv4();
         useProjectStore.getState().setProjectId(id);
     };
-    
+
     useEffect(() => {
         initializeProjectId();
     }, []);
@@ -78,12 +81,31 @@ export default function StartProjectForm() {
             toast.error(`Please enter ${missingFields.join("")}`);
             return;
         }
+
+        const token = await getToken();
+        if (isSignedIn) {
+            const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
+                projectName: project,
+                bookName,
+                dueDate: date,
+                eventType,
+                eventDescription: eventType
+            }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    token: `Bearer ${token}`
+                },
+            });
+            const user = await response.data;
+            console.log(user);
+        }
+        
         if (!isSignedIn) {
             if (!firstName || !lastName || !email) {
                 toast.error("Please enter all your information");
                 return;
             }
-            const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
+            const response = await axios.post(`${HTTP_BACKEND}/api/user-information`, {
                 firstName,
                 lastName,
                 email
