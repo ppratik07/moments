@@ -2,6 +2,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@clerk/clerk-sdk-node": "^4.13.23",
     "@prisma/client": "^6.6.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",

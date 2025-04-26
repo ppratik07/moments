@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import { authMiddleware } from "./middleware/middleware";
 dotenv.config();
 
 const app = express();
@@ -17,9 +18,9 @@ const PORT = process.env.PORT || 8080;
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_URL, //allowing from frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization", "token"],
   })
 );
 app.use(express.json());
@@ -90,29 +91,34 @@ app.delete("/api/delete-image", async (req, res) => {
   }
 });
 //Stroring the login inforation
-app.post("/api/users", async (req: Request, res: Response): Promise<any> => {
-  const { projectName, bookName, dueDate, eventType, eventDescription } =
-    req.body;
-  try {
-    const userDeatails = await prisma.loginUser.create({
-      data: {
-        projectName,
-        bookName,
-        dueDate: new Date(dueDate),
-        eventType,
-        eventDescription,
-      },
-    });
+app.post(
+  "/api/users",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<any> => {
+    const { projectName, bookName, dueDate, eventType, eventDescription } =req.body;
+      console.log("Received req.userId in /api/users:", req.userId);
+    try {
+      const userDeatails = await prisma.loginUser.create({
+        data: {
+          projectName,
+          bookName,
+          dueDate: new Date(dueDate),
+          eventType,
+          eventDescription,
+          userId: req.userId || "", 
+        },
+      });
 
-    return res.status(201).json({
-      message: "Data saved successfully",
-      userDeatails: userDeatails.id,
-    });
-  } catch (error) {
-    console.error("Failed to create project:", error);
-    res.status(500).json({ error: "Server error" });
+      return res.status(201).json({
+        message: "Data saved successfully",
+        userDeatails: userDeatails.id,
+      });
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      res.status(500).json({ error: "Server error" });
+    }
   }
-});
+);
 
 //store the user info
 app.post(

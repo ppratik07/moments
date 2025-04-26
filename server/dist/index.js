@@ -19,13 +19,14 @@ const s3_request_presigner_1 = require("@aws-sdk/s3-request-presigner");
 const uuid_1 = require("uuid");
 const dotenv_1 = __importDefault(require("dotenv"));
 const client_1 = require("@prisma/client");
+const middleware_1 = require("./middleware/middleware");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3000",
+    origin: "http://localhost:3000", //allowing from frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type"],
+    allowedHeaders: ["Content-Type", "Authorization", "token"],
 }));
 app.use(express_1.default.json());
 const prisma = new client_1.PrismaClient();
@@ -85,23 +86,28 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
     }
 }));
 //Stroring the login inforation
-app.post("/api/users", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { clerkId, email, name } = req.body;
+app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
+    console.log("Received req.userId in /api/users:", req.userId);
     try {
-        const existingUser = yield prisma.loginUser.findUnique({
-            where: { clerkId },
+        const userDeatails = yield prisma.loginUser.create({
+            data: {
+                projectName,
+                bookName,
+                dueDate: new Date(dueDate),
+                eventType,
+                eventDescription,
+                userId: req.userId || "", // Accessing req.userId here
+            },
         });
-        if (!existingUser) {
-            const newUser = yield prisma.loginUser.create({
-                data: { clerkId, email, name },
-            });
-            res.status(201).json(newUser);
-        }
-        res.status(200).json(existingUser);
+        return res.status(201).json({
+            message: "Data saved successfully",
+            userDeatails: userDeatails.id,
+        });
     }
-    catch (err) {
-        console.error("Error syncing user:", err);
-        res.status(500).json({ error: "Internal Server Error" });
+    catch (error) {
+        console.error("Failed to create project:", error);
+        res.status(500).json({ error: "Server error" });
     }
 }));
 //store the user info
@@ -118,9 +124,8 @@ app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0
                 email,
             },
         });
-        res.status(200).send({
-            message: "User created successfully",
-            user,
+        return res.status(200).send({
+            message: "User information filled successfully",
         });
     }
 }));
@@ -128,17 +133,17 @@ app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0
 app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name } = req.query;
     if (!name || typeof name !== "string") {
-        res.status(400).json({ error: "Event type name is required" });
+        return res.status(400).json({ error: "Event type name is required" });
     }
     try {
         const eventType = yield prisma.eventType.findUnique({
             where: { name: name },
         });
         if (!eventType) {
-            res.status(404).json({ error: "Event type not found" });
+            return res.status(404).json({ error: "Event type not found" });
         }
         if (eventType) {
-            res.json({ description: eventType.description });
+            return res.json({ description: eventType.description });
         }
     }
     catch (err) {
@@ -146,11 +151,11 @@ app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function*
         res.status(500).json({ error: "Internal server error" });
     }
 }));
-//Fill your information page 
+//Fill your information page
 app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, relationship, excludeOnline, notifyMe } = req.body;
+    const { firstName, lastName, email, relationship, excludeOnline, notifyMe, } = req.body;
     if (!firstName || !lastName || !email || !relationship) {
-        res.status(400).json({ message: "All fields are required" });
+        return res.status(400).json({ message: "All fields are required" });
     }
     try {
         const user = yield prisma.fillYourDetails.create({
@@ -163,7 +168,7 @@ app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, 
                 ExcludeFromPromotion: notifyMe,
             },
         });
-        res.status(200).json({
+        return res.status(200).json({
             message: "User information saved successfully",
             user,
         });

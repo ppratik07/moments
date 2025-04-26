@@ -34,7 +34,6 @@ export default function StartProjectForm() {
     const [email, setEmail] = useState<string | null>(null);
     const [eventType, setEventType] = useState<string | null>(null);
     const { getToken } = useAuth();
-    // const [eventDescription, setEventDescription] = useState<string | null>(null); 
     const { setProjectName, setEventDescription } = useProjectStore();
 
     const initializeProjectId = () => {
@@ -92,14 +91,15 @@ export default function StartProjectForm() {
                 eventDescription: eventType
             }, {
                 headers: {
-                    'Content-Type': 'application/json',
+                    //'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
                     token: `Bearer ${token}`
                 },
             });
             const user = await response.data;
             console.log(user);
         }
-        
+
         if (!isSignedIn) {
             if (!firstName || !lastName || !email) {
                 toast.error("Please enter all your information");
