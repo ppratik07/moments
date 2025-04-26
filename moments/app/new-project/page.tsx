@@ -20,6 +20,7 @@ import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@clerk/nextjs';
+import { Progress } from '@/components/ui/progress';
 
 export default function StartProjectForm() {
     const [date, setDate] = useState<string | null>(null);
@@ -33,6 +34,8 @@ export default function StartProjectForm() {
     const [lastName, setLastName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [eventType, setEventType] = useState<string | null>(null);
+    const [progress, setProgress] = useState<number>(0);
+    const [isLoading, setIsLoading] = useState(false);
     const { getToken } = useAuth();
     const { setProjectName, setEventDescription } = useProjectStore();
 
@@ -70,6 +73,9 @@ export default function StartProjectForm() {
 
     const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
+        setIsLoading(true);
+        setProgress(10);
+
         const missingFields = [];
         if (!project) missingFields.push("project name,");
         if (!bookName) missingFields.push("Who is this book for?");
@@ -78,49 +84,70 @@ export default function StartProjectForm() {
 
         if (missingFields.length > 0) {
             toast.error(`Please enter ${missingFields.join("")}`);
+            setIsLoading(false);
+            setProgress(0);
             return;
         }
 
         const token = await getToken();
-        if (isSignedIn) {
-            const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
-                projectName: project,
-                bookName,
-                dueDate: date,
-                eventType,
-                eventDescription: eventType
-            }, {
-                headers: {
-                    //'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                    token: `Bearer ${token}`
-                },
-            });
-            const user = await response.data;
-            console.log(user);
-        }
-
-        if (!isSignedIn) {
-            if (!firstName || !lastName || !email) {
-                toast.error("Please enter all your information");
-                return;
+        try {
+            setProgress(30);
+            if (isSignedIn) {
+                await axios.post(`${HTTP_BACKEND}/api/users`, {
+                    projectName: project,
+                    bookName,
+                    dueDate: date,
+                    eventType,
+                    eventDescription: eventType
+                }, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        token: `Bearer ${token}`
+                    },
+                });
+            } else {
+                if (!firstName || !lastName || !email) {
+                    toast.error("Please enter all your information");
+                    setIsLoading(false);
+                    setProgress(0);
+                    return;
+                }
+                await axios.post(`${HTTP_BACKEND}/api/user-information`, {
+                    firstName,
+                    lastName,
+                    email
+                });
             }
-            const response = await axios.post(`${HTTP_BACKEND}/api/user-information`, {
-                firstName,
-                lastName,
-                email
-            })
-            const user = await response.data;
-            console.log(user);
+            setProgress(70);
+
+            // Save project to Zustand
+            setProjectName(project || '');
+
+            setProgress(90);
+
+            // Little timeout for nice effect (optional)
+            setTimeout(() => {
+                setProgress(100);
+                router.push(`/new-project/upload-image`);
+            }, 100);
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Something went wrong. Please try again.");
+            setIsLoading(false);
+            setProgress(0);
         }
-        // Store in Zustand
-        setProjectName(project || '');
-        router.push(`/new-project/upload-image`);
     };
+
 
     return (
         <div className="min-h-screen bg-white">
             <Header isSignedIn={isSignedIn ?? false} />
+            {isLoading && (
+                <div className="w-full mb-6 px-4">
+                    <Progress value={progress} className="h-2" />
+                </div>
+            )}
             <main className="max-w-4xl mx-auto px-4 py-10">
                 <div className="overflow-hidden mb-8">
                     <Image
