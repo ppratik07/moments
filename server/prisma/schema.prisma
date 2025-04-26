@@ -29,15 +29,15 @@ model EventType {
 }
 
 model LoginUser {
-  id               String   @id @default(cuid())
+  id               String   @id @default(uuid())
   projectName      String
   bookName         String
   dueDate          DateTime
   eventType        String
   eventDescription String
+  userId           String
   createdAt        DateTime @default(now())
 }
-
 
 model FillYourDetails {
   id                       String   @id @default(uuid())
