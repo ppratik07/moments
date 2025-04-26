@@ -111,7 +111,7 @@ app.post(
 
       return res.status(201).json({
         message: "Data saved successfully",
-        userDeatails: userDeatails.id,
+        userId: req.userId,
       });
     } catch (error) {
       console.error("Failed to create project:", error);

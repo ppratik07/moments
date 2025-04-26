@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import ChatSupportButton from "../ChatSupportButton";
 
 type TipsBoxProps = {
-    onNextClick: () => void;
+    onNextClick?: () => void; // Make onNextClick optional
 };
 
 export default function TipsBox({ onNextClick }: TipsBoxProps) {
@@ -23,12 +23,14 @@ export default function TipsBox({ onNextClick }: TipsBoxProps) {
                 </ol>
             </div>
 
-            <Button
-                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6"
-                onClick={onNextClick}
-            >
-                Next
-            </Button>
+            {onNextClick && (
+                <Button
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6"
+                    onClick={onNextClick}
+                >
+                    Next
+                </Button>
+            )}
         </div>
     );
 }

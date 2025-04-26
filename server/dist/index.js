@@ -24,7 +24,7 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)({
-    origin: "http://localhost:3000", //allowing from frontend
+    origin: process.env.FRONTEND_URL, //allowing from frontend
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
 }));
@@ -97,12 +97,12 @@ app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void
                 dueDate: new Date(dueDate),
                 eventType,
                 eventDescription,
-                userId: req.userId || "", // Accessing req.userId here
+                userId: req.userId || "",
             },
         });
         return res.status(201).json({
             message: "Data saved successfully",
-            userDeatails: userDeatails.id,
+            userId: req.userId,
         });
     }
     catch (error) {

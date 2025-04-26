@@ -31,7 +31,7 @@ interface PageNavigationProps {
         </div>
       ))}
       <div className="flex gap-2">
-        <button onClick={addPage} className="text-purple-600 underline text-sm">
+        <button onClick={addPage} className="text-purple-600 underline text-sm cursor-pointer">
           Add another page
         </button>
         {pages.length > 1 && (

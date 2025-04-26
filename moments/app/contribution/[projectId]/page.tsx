@@ -27,7 +27,7 @@ export default function ContributionPage() {
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
 
-    const { projectId } = useParams();
+    const { projectId } = useParams() as { projectId: string };
     const [projectData, setProjectData] = useState<ProjectData | null>(null);
     const handleNextClick = () => {
         router.push(`/contribution/${projectId}/fill-information`);
