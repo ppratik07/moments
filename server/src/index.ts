@@ -207,6 +207,54 @@ app.post(
     }
   }
 );
+// Get projects for the logged-in user
+app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response): Promise<any> => {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+
+      const projects = await prisma.loginUser.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          projectName: true,
+          bookName: true,
+          createdAt: true,
+          eventType: true,
+          eventDescription: true, //Need to fix this later
+        },
+      });
+
+      return res.status(200).json({ projects });
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+// Get project image by project ID
+// app.get("/api/get-image/:projectId", async (req: Request, res: Response) : Promise<any> => {
+//   const { projectId } = req.params;
+
+//   try {
+//     const project = await prisma.loginUser.findUnique({
+//       where: { id: projectId },
+//     });
+
+//     if (!project) {
+//       return res.status(404).json({ error: "Project not found" });
+//     }
+
+//     const imageUrl = `https://${process.env.R2_BUCKET_NAME}.r2.cloudflarestorage.com/${projectId}`;
+//     res.redirect(imageUrl);
+//   } catch (error) {
+//     console.error("Error fetching project image:", error);
+//     res.status(500).json({ error: "Failed to fetch project image" });
+//   }
+// });
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
