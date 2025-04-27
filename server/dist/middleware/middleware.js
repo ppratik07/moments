@@ -20,7 +20,9 @@ function authMiddleware(req, res, next) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
             const authHeader = req.headers["authorization"];
+            console.log("Received auth header:", authHeader);
             const token = authHeader === null || authHeader === void 0 ? void 0 : authHeader.split(" ")[1];
+            console.log('Re token', token);
             if (!token) {
                 res.status(401).json({ message: "No token provided" });
                 return;
