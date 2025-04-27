@@ -31,13 +31,25 @@ export default function NewEventPage() {
 
   };
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setShareLink(`${window.location.origin}/contribution/${projectId}`);
+    // Show the modal when the page loads
+    setShowModal(true);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && projectId) {
+      try {
+        const shareLink = `${window.location.origin}/contribution/${projectId}`;
+        setShareLink(shareLink);
+      } catch (error) {
+        console.error('Error setting share link:', error);
+      }
     }
   }, [projectId]);
+
   const {
     imageKey: storedImageKey,
   } = useProjectStore();
+
 
   const fallbackProjectName = useProjectStore.getState().projectName || params?.project_name || '';
   const fallbackProjectDescription = useProjectStore.getState().eventDescription || '';
@@ -128,16 +140,17 @@ export default function NewEventPage() {
               }
               alt="Celebration"
               width={600}
-              height={400}
-              className="shadow-md rounded-lg"
+              height={600}
+              className="shadow-md h-[350px]"
             />
           )}
         </div>
 
         <div className="mt-12">
-          <h2 className="text-3xl font-bold mb-4 text-center">Contribute</h2>
-          <p className="text-md text-gray-600 mb-6 text-center">
-            Add a memory, well wish, or photo. Want to add more photos? Simply click below and check how to share it to your friends, family, and colleagues.
+          <h2 className="text-4xl font-bold mb-4 text-left">Contribute</h2>
+          <p className="text-md text-gray-600 mb-6 text-left">
+            Add a memory, well wish, or photo. Want to add more photos? Simply click view layout on the contribution page and view the other layouts and update the photos and description.
+            Share it to your friends, family, and colleagues.
           </p>
 
           {/* A4 Layout Preview */}
@@ -165,13 +178,13 @@ export default function NewEventPage() {
                       alt="Celebration"
                       width={280}
                       height={200}
-                      className="object-contain rounded-md shadow-md"
+                      className="object-contain shadow-md"
                     />
                   </div>
                 )}
 
                 {/* Project Description */}
-                <div className="max-w-[80%] text-gray-700 text-base text-center mt-4">
+                <div className="max-w-[80%] text-gray-700 text-[13px] text-center mt-4">
                   <p className="break-words italic leading-relaxed">
                     {projectDescription}
                   </p>
@@ -186,13 +199,13 @@ export default function NewEventPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
-            <h3 className="text-lg font-semibold mb-2">🎉 Project Created!</h3>
+            <h3 className="text-lg font-bold mb-2">🎉 Project Created!</h3>
             <p className="text-sm mb-2">
               Your project has been created and this is the landing page for your project!
             </p>
-            <p className="text-sm mb-2 font-medium">✏️ Edit this Page</p>
+            <p className="text-sm mb-2 font-bold">✏️ Edit this Page</p>
             <p className="text-xs mb-2">Click “Edit this Page” at the top to customize it.</p>
-            <p className="text-sm font-medium">📨 Invite Friends!</p>
+            <p className="text-sm font-bold">📨 Invite Friends!</p>
             <p className="text-xs">Copy the sharing link above to invite your friends.</p>
             <div className="text-right mt-4">
               <Button size="sm" onClick={() => setShowModal(false)}>Got it</Button>
@@ -240,7 +253,7 @@ export default function NewEventPage() {
             <label className="block font-semibold mb-1">Project Name</label>
             <input
               type="text"
-              className="w-full p-2 border rounded mb-4"
+              className="w-full p-2 border rounded mb-4 font-bold"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
             />
