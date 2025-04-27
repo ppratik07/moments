@@ -10,6 +10,7 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import Footer from '@/pages/Footer';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from 'sonner';
+import VideoModal from '@/components/VideoModal';
 
 export default function NewEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -17,11 +18,14 @@ export default function NewEventPage() {
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const params = useParams();
   const { setImageKey, projectId } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
   const { isSignedIn } = useCurrentUser(); //checking if user is signed in
   const router = useRouter();
+  const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
+
   const handleDashboardClick = () => {
     if (isSignedIn) {
       router.push('/dashboard');
@@ -128,7 +132,7 @@ export default function NewEventPage() {
           <div>
             <h1 className="text-4xl font-bold mb-4">{projectName}</h1>
             <p className="text-lg text-gray-700 mb-4">{projectDescription}</p>
-            <Button variant="outline">How it Works</Button>
+            <Button variant="outline" onClick={() => setShowVideoModal(true)}>How it Works</Button>
           </div>
 
           {projectImageKey && (
@@ -196,6 +200,13 @@ export default function NewEventPage() {
         </div>
       </main>
       <Footer />
+
+      <VideoModal 
+        isOpen={showVideoModal} 
+        onClose={() => setShowVideoModal(false)} 
+        videoSrc={videoSrc} 
+      />
+
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
