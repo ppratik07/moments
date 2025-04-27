@@ -90,6 +90,7 @@ export default function StartProjectForm() {
         }
 
         const token = await getToken();
+        localStorage.setItem('token', token || '');
         try {
             setProgress(30);
             if (isSignedIn) {
