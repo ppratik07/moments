@@ -10,13 +10,6 @@ import { useImageUpload } from '@/hooks/useImageUpload';
 import Footer from '@/pages/Footer';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from 'sonner';
-import axios from 'axios';
-import { HTTP_BACKEND } from '@/utils/config';
-import { PageLayout } from '@/components/contribution/PageLayout';
-import { PageNavigation } from '@/components/contribution/PageNavigation';
-import { Page, ProjectData, SignatureEditModal } from '@/components/contribution/SignatureEditModal';
-import TipsBox from '@/components/contribution/TipsBox';
-import LayoutPickerModal from '@/components/LayoutPickerModel';
 
 export default function NewEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
@@ -27,43 +20,26 @@ export default function NewEventPage() {
   const params = useParams();
   const { setImageKey, projectId } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
-  const { isSignedIn } = useCurrentUser();
+  const { isSignedIn } = useCurrentUser(); //checking if user is signed in
   const router = useRouter();
-
-  // Contribution Page States
-  const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-  const [signature, setSignature] = useState('Your Name Here');
-  const [pages, setPages] = useState<Page[]>([
-    { layout: 0, images: [null, null, null, null], message: '' },
-  ]);
-  const [activePage, setActivePage] = useState(0);
-  const [showLayoutModal, setShowLayoutModal] = useState(false);
-  const [editingMessage, setEditingMessage] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [projectData, setProjectData] = useState<ProjectData | null>(null);
-
   const handleDashboardClick = () => {
     if (isSignedIn) {
       router.push('/dashboard');
     } else {
       toast.error('Please sign in first');
     }
-  };
 
+  };
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setShareLink(`${window.location.origin}/contribution/${projectId}`);
-      const raw = localStorage.getItem(`project-${projectId}`);
-      if (raw) setProjectData(JSON.parse(raw));
     }
   }, [projectId]);
-
   const {
     imageKey: storedImageKey,
   } = useProjectStore();
 
-  const fallbackProjectName = useProjectStore.getState().projectName || (params?.project_name ?? '');
+  const fallbackProjectName = useProjectStore.getState().projectName || params?.project_name || '';
   const fallbackProjectDescription = useProjectStore.getState().eventDescription || '';
   const decodedProjectName = typeof fallbackProjectName === 'string' ? fallbackProjectName.replace(/%20/g, " ") : '';
 
@@ -85,6 +61,7 @@ export default function NewEventPage() {
   }, [projectId, projectName, projectImageKey, projectDescription]);
 
   useEffect(() => {
+    // Initialize state on the client
     setProjectName(decodedProjectName);
     setProjectDescription(
       Array.isArray(fallbackProjectDescription) ? fallbackProjectDescription.join(' ') : fallbackProjectDescription
@@ -104,163 +81,13 @@ export default function NewEventPage() {
       setPreview(previewUrl);
       setProjectImageKeyState(key);
       setImageKey(key);
+
     },
   });
 
-  // Contribution Page Logic
-  const extractKeyFromUrl = (url: string): string => {
-    const prefix = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/';
-    return url.replace(prefix, '');
-  };
-
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    pageIndex: number,
-    slotIndex: number
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      setError('File size must be less than 5MB');
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
-      return;
-    }
-
-    setUploading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `${HTTP_BACKEND}/api/get-presign-url?fileType=${encodeURIComponent(file.type)}`
-      );
-      if (!response.ok) {
-        throw new Error(`Failed to fetch presigned URL: ${response.statusText}`);
-      }
-      const { uploadUrl, key } = await response.json();
-
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-          'Content-Type': file.type,
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload image to R2: ${uploadResponse.statusText}`);
-      }
-
-      const imageUrl = `https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/${key}`;
-
-      setPages((prev) => {
-        const newPages = [...prev];
-        newPages[pageIndex] = {
-          ...newPages[pageIndex],
-          images: [...newPages[pageIndex].images],
-        };
-        newPages[pageIndex].images[slotIndex] = imageUrl;
-        return newPages;
-      });
-    } catch (error) {
-      console.error('Upload error:', error);
-      setError('Failed to upload image. Please try again.');
-    } finally {
-      setUploading(false);
-      event.target.value = '';
-    }
-  };
-
-  const handleRemoveImage = async (pageIndex: number, slotIndex: number) => {
-    try {
-      const imageUrl = pages[pageIndex].images[slotIndex];
-      if (!imageUrl) {
-        throw new Error('No image to delete');
-      }
-
-      const key = extractKeyFromUrl(imageUrl);
-      const response = await axios.delete(`${HTTP_BACKEND}/api/delete-image`, {
-        params: { key },
-      });
-
-      if (response.status !== 200) {
-        throw new Error(`Failed to delete image: ${response.statusText}`);
-      }
-
-      setPages((prev) => {
-        const newPages = [...prev];
-        newPages[pageIndex] = {
-          ...newPages[pageIndex],
-          images: [...newPages[pageIndex].images],
-        };
-        newPages[pageIndex].images[slotIndex] = null;
-        return newPages;
-      });
-    } catch (error) {
-      console.error('Error removing image:', error);
-      if (axios.isAxiosError(error) && error.response?.data?.error) {
-        setError(error.response.data.error);
-      } else {
-        setError('Failed to remove image. Please try again.');
-      }
-    }
-  };
-
-  const handleDeletePage = (pageIndex: number) => {
-    if (pages.length > 1) {
-      setPages((prev) => {
-        const newPages = prev.filter((_, index) => index !== pageIndex);
-        const newActivePage = Math.min(activePage, newPages.length - 1);
-        setActivePage(newActivePage);
-        return newPages;
-      });
-    }
-  };
-
-  const addPage = () => {
-    setPages((prev) => {
-      const newPages = [
-        ...prev,
-        { layout: 0, images: [null, null, null, null], message: '' },
-      ];
-      setActivePage(newPages.length - 1);
-      return newPages;
-    });
-  };
-
-  const getImageSlotCount = (layoutId: number): number => {
-    const categoryIndex = Math.floor(layoutId / 10);
-    const layoutIndex = layoutId % 10;
-    const layoutCategories = [
-      { title: 'Message Only', layouts: [() => 0, () => 0] },
-      {
-        title: 'Photos Only',
-        layouts: [() => 2, () => 2, () => 3, () => 3, () => 4],
-      },
-      {
-        title: 'Message with Photos',
-        layouts: [() => 1, () => 1, () => 2, () => 2, () => 1],
-      },
-    ];
-
-    if (categoryIndex >= 0 && categoryIndex < layoutCategories.length) {
-      const category = layoutCategories[categoryIndex];
-      if (layoutIndex >= 0 && layoutIndex < category.layouts.length) {
-        return category.layouts[layoutIndex]();
-      }
-    }
-    return 4;
-  };
-
-  if (!projectData) return <p className="p-10">Loading project...</p>;
-
   return (
+    // Top Navigation
     <div className="min-h-screen bg-white">
-      {/* Top Navigation */}
       <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-6">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xl font-bold">N</div>
@@ -289,7 +116,7 @@ export default function NewEventPage() {
           <div>
             <h1 className="text-4xl font-bold mb-4">{projectName}</h1>
             <p className="text-lg text-gray-700 mb-4">{projectDescription}</p>
-            <Button variant="outline" className='cursor-pointer'>How it Works</Button>
+            <Button variant="outline">How it Works</Button>
           </div>
 
           {projectImageKey && (
@@ -307,54 +134,55 @@ export default function NewEventPage() {
           )}
         </div>
 
-        <section className="mt-12">
-          
-          <div className="mb-16 mt-6">
-            <h2 className="text-3xl font-bold mb-7">Contribute</h2>
-            <ol className="text-gray-700 list-decimal list-inside mb-6">
-              <li>
-                Click <strong>Add Text</strong> in the layout below to add a memory.
-              </li>
-              <li>
-                Click <strong>Add a Photo</strong> to add a photo.
-              </li>
-            </ol>
+        <div className="mt-12">
+          <h2 className="text-3xl font-bold mb-4 text-center">Contribute</h2>
+          <p className="text-md text-gray-600 mb-6 text-center">
+            Add a memory, well wish, or photo. Want to add more photos? Simply click below and check how to share it to your friends, family, and colleagues.
+          </p>
 
-            <PageNavigation
-              pages={pages}
-              activePage={activePage}
-              setActivePage={setActivePage}
-              addPage={addPage}
-              handleDeletePage={handleDeletePage}
-            />
+          {/* A4 Layout Preview */}
+          <div className="flex justify-center">
+            <div className="relative bg-white shadow-2xl border-4 border-gray-300 w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out hover:rotate-3d hover:scale-105 hover:shadow-2xl">
 
-            <div className="space-y-6">
-              {pages.map((page, index) => (
-                <PageLayout
-                  key={index}
-                  page={page}
-                  pageIndex={index}
-                  activePage={activePage}
-                  uploading={uploading}
-                  error={error}
-                  setActivePage={setActivePage}
-                  setShowLayoutModal={setShowLayoutModal}
-                  handleFileUpload={handleFileUpload}
-                  handleRemoveImage={handleRemoveImage}
-                  signature={signature}
-                  editingMessage={editingMessage}
-                  setEditingMessage={setEditingMessage}
-                  setIsSignatureModalOpen={setIsSignatureModalOpen}
-                  setPages={setPages}
-                />
-              ))}
+              {/* Inner Decorative Border */}
+              <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
+
+              {/* Content */}
+              <div className="relative flex flex-col items-center w-full">
+
+                {/* Project Name */}
+                <h1 className="text-3xl font-bold mb-6 break-words text-center mt-3">{projectName}</h1>
+
+                {/* Project Image */}
+                {projectImageKey && (
+                  <div className="mb-6">
+                    <Image
+                      src={
+                        typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
+                          ? projectImageKey
+                          : getImageUrl(projectImageKey) || ''
+                      }
+                      alt="Celebration"
+                      width={280}
+                      height={200}
+                      className="object-contain rounded-md shadow-md"
+                    />
+                  </div>
+                )}
+
+                {/* Project Description */}
+                <div className="max-w-[80%] text-gray-700 text-base text-center mt-4">
+                  <p className="break-words italic leading-relaxed">
+                    {projectDescription}
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
-          <TipsBox />
-        </section>
+        </div>
       </main>
       <Footer />
-      
       {showModal && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
@@ -421,7 +249,7 @@ export default function NewEventPage() {
             <textarea
               rows={6}
               className="w-full p-2 border rounded mb-4"
-              value={projectDescription}
+              value={fallbackProjectDescription}
               onChange={(e) => setProjectDescription(e.target.value)}
             />
 
@@ -452,35 +280,7 @@ export default function NewEventPage() {
           </div>
         </div>
       )}
-
-      <LayoutPickerModal
-        open={showLayoutModal}
-        onClose={() => setShowLayoutModal(false)}
-        onSelect={(layoutId: number) => {
-          setPages((prev) => {
-            const newPages = [...prev];
-            const currentImages = [...newPages[activePage].images];
-            const newSlotCount = getImageSlotCount(layoutId);
-            newPages[activePage] = {
-              layout: layoutId,
-              images: [
-                ...currentImages.slice(0, Math.min(currentImages.length, newSlotCount)),
-                ...Array(Math.max(0, newSlotCount - currentImages.length)).fill(null),
-              ],
-              message: newPages[activePage].message,
-            };
-            return newPages;
-          });
-          setShowLayoutModal(false);
-        }}
-        selectedLayout={pages[activePage].layout}
-      />
-      <SignatureEditModal
-        isOpen={isSignatureModalOpen}
-        onClose={() => setIsSignatureModalOpen(false)}
-        signature={signature}
-        setSignature={setSignature}
-      />
     </div>
   );
 }
+
