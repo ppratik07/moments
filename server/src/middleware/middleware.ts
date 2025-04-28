@@ -40,7 +40,13 @@ export async function authMiddleware(
     console.log("Decoded token:", decoded);
 
     const userId = (decoded as any).sub;
+    const expiration = (decoded as any).exp;
     console.log("User ID from token:", userId);
+
+    if(expiration){
+      const expirationDate = new Date(expiration * 1000);
+      console.log("Token expiration date:", expirationDate);
+    }
 
     if (!userId) {
       console.error("No user ID in token payload");

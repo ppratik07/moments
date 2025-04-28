@@ -41,7 +41,12 @@ function authMiddleware(req, res, next) {
             });
             console.log("Decoded token:", decoded);
             const userId = decoded.sub;
+            const expiration = decoded.exp;
             console.log("User ID from token:", userId);
+            if (expiration) {
+                const expirationDate = new Date(expiration * 1000);
+                console.log("Token expiration date:", expirationDate);
+            }
             if (!userId) {
                 console.error("No user ID in token payload");
                 res.status(403).json({ message: "Invalid token payload" });
