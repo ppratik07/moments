@@ -18,7 +18,7 @@ import { useProjectStore } from '@/store/useProjectStore';
 import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
-import { v4 as uuidv4 } from 'uuid';
+//import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '@clerk/nextjs';
 import { Progress } from '@/components/ui/progress';
 
@@ -39,14 +39,14 @@ export default function StartProjectForm() {
     const { getToken } = useAuth();
     const { setProjectName, setEventDescription } = useProjectStore();
 
-    const initializeProjectId = () => {
-        const id = uuidv4();
-        useProjectStore.getState().setProjectId(id);
-    };
+    // const initializeProjectId = () => {
+    //     const id = uuidv4();
+    //     useProjectStore.getState().setProjectId(id);
+    // };
 
-    useEffect(() => {
-        initializeProjectId();
-    }, []);
+    // useEffect(() => {
+    //     initializeProjectId();
+    // }, []);
 
     useEffect(() => {
         if (showHeadsUp) {
@@ -94,7 +94,7 @@ export default function StartProjectForm() {
         try {
             setProgress(30);
             if (isSignedIn) {
-                await axios.post(`${HTTP_BACKEND}/api/users`, {
+                const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
                     projectName: project,
                     bookName,
                     dueDate: date,
@@ -106,6 +106,9 @@ export default function StartProjectForm() {
                         token: `Bearer ${token}`
                     },
                 });
+                const id = response.data.projectId;
+                useProjectStore.getState().setProjectId(id);
+
             } else {
                 if (!firstName || !lastName || !email) {
                     toast.error("Please enter all your information");
@@ -126,7 +129,6 @@ export default function StartProjectForm() {
 
             setProgress(90);
 
-            // Little timeout for nice effect (optional)
             setTimeout(() => {
                 setProgress(100);
                 router.push(`/new-project/upload-image`);

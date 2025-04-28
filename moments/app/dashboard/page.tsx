@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { HTTP_BACKEND } from '@/utils/config';
 import { Header } from '@/components/landing/Header';
+import { useAuth, useClerk } from '@clerk/nextjs';
 
 export default function DashboardPage() {
     interface Project {
@@ -20,21 +21,32 @@ export default function DashboardPage() {
     const { isSignedIn } = useCurrentUser();
     const [loading, setLoading] = useState(true);
     const router = useRouter();
-
+    const { getToken } = useAuth();
+    const { signOut } = useClerk();
     useEffect(() => {
         if (!isSignedIn) {
             router.push('/'); // Redirect to login if not signed in
             return;
         }
-        console.log('Token :', localStorage.getItem('token')); // Check if token is present
         const fetchProjects = async () => {
             try {
+                const token = await getToken();
+                if (!token) {
+                    console.log('No token found, redirecting...');
+                    await signOut({ redirectUrl: '/' });
+                    return;
+                }
                 const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        Authorization: `Bearer ${token}`,
                     },
                 });
 
+                if (response.status === 401 || response.status === 403) {
+                    console.log('Unauthorized or token expired. Signing out...');
+                    await signOut({ redirectUrl: '/' });
+                    return;
+                }
                 if (!response.ok) {
                     throw new Error('Failed to fetch projects');
                 }
@@ -43,13 +55,14 @@ export default function DashboardPage() {
                 setProjects(data.projects);
             } catch (error) {
                 console.error('Error fetching projects:', error);
+                await signOut({ redirectUrl: '/' });
             } finally {
                 setLoading(false);
             }
         };
 
         fetchProjects();
-    }, [isSignedIn, router]);
+    }, [isSignedIn, router, getToken]);
 
     return (
         <div>
@@ -60,14 +73,11 @@ export default function DashboardPage() {
                     <div className="flex justify-center items-center h-64">
                         <RotatingLines
                             visible={true}
-                            height="96"
-                            width="96"
-                            color="#000000"
+                            strokeColor="gray"
                             strokeWidth="5"
                             animationDuration="0.75"
+                            width="96"
                             ariaLabel="rotating-lines-loading"
-                            wrapperStyle={{}}
-                            wrapperClass=""
                         />
                     </div>
                 ) : (
