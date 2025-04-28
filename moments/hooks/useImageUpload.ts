@@ -30,13 +30,14 @@ export function useImageUpload({ onSuccess, uploadEndpoint = `${HTTP_BACKEND}/ap
       });
 
       const { uploadUrl, key } = res.data;
-
-      await axios.put(uploadUrl, file, {
+      console.log('Upload URL:', uploadUrl);
+      console.log('Key:', key);
+      const response = await axios.put(uploadUrl, file, {
         headers: {
           'Content-Type': file.type,
         },
       });
-
+      console.log('Response:', response);
       onSuccess(key, file);
       toast.success('Image uploaded successfully!');
     } catch (err) {
