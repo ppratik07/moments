@@ -37,6 +37,8 @@ model LoginUser {
   eventDescription String
   userId           String
   createdAt        DateTime @default(now())
+  imageKey         String? 
+  uploadUrl        String?
 }
 
 model FillYourDetails {
