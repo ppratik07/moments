@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 8080;
 app.use(
   cors({
     origin: process.env.FRONTEND_URL, //allowing from frontend
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
   })
 );
@@ -73,7 +73,6 @@ app.delete("/api/delete-image", async (req, res) => {
   if (!key || typeof key !== "string") {
     res.status(400).json({ error: "Missing or invalid key parameter" });
   }
-
   try {
     // Step 1: Delete the object from R2
     const deleteCommand = new DeleteObjectCommand({
@@ -83,7 +82,6 @@ app.delete("/api/delete-image", async (req, res) => {
 
     await s3.send(deleteCommand);
 
-    // Respond with success
     res.status(200).json({ message: "Image deleted successfully" });
   } catch (error) {
     console.error("Error deleting image from R2:", error);
@@ -91,27 +89,25 @@ app.delete("/api/delete-image", async (req, res) => {
   }
 });
 //Stroring the login inforation
-app.post(
-  "/api/users",
-  authMiddleware,
-  async (req: Request, res: Response): Promise<any> => {
-    const { projectName, bookName, dueDate, eventType, eventDescription } =req.body;
-      console.log("Received req.userId in /api/users:", req.userId);
+app.post("/api/users",authMiddleware,async (req: Request, res: Response): Promise<any> => {
+    const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
+    console.log("Received req.userId in /api/users:", req.userId);
     try {
-      const userDeatails = await prisma.loginUser.create({
+      const userDetails = await prisma.loginUser.create({
         data: {
           projectName,
           bookName,
           dueDate: new Date(dueDate),
           eventType,
           eventDescription,
-          userId: req.userId || "", 
+          userId: req.userId || "",
         },
       });
 
       return res.status(201).json({
         message: "Data saved successfully",
         userId: req.userId,
+        projectId: userDetails.id,
       });
     } catch (error) {
       console.error("Failed to create project:", error);
@@ -119,13 +115,63 @@ app.post(
     }
   }
 );
+// Get projects for the logged-in user
+app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response): Promise<any> => {
+    try {
+      const userId = req.userId;
+      if (!userId) {
+        return res.status(400).json({ error: "User ID is required" });
+      }
+      const projects = await prisma.loginUser.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          projectName: true,
+          bookName: true,
+          createdAt: true,
+          eventType: true,
+          eventDescription: true, //Need to fix this later
+          imageKey: true,
+          uploadUrl: true,
+        },
+      });
+      return res.status(200).json({ projects });
+    } catch (error) {
+      console.error("Error fetching user projects:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+app.patch('/api/users/:projectId/upload-image', async (req: Request, res: Response) : Promise<any> => {  //Need to send token for future
+  const { projectId } = req.params;
+  const { imageKey, uploadUrl } = req.body;
+  console.log(projectId, imageKey, uploadUrl);
+  if (!imageKey || !uploadUrl) {
+    return res.status(400).json({ error: 'Missing imageKey or uploadUrl' });
+  }
+
+  try {
+    const updatedProject = await prisma.loginUser.update({
+      where: { id: projectId },
+      data: {
+        imageKey,
+        uploadUrl,
+      },
+    });
+    console.log("Updated project:", updatedProject);
+    res.json({ message: 'Image updated successfully', project: updatedProject });
+  } catch (error) {
+    console.error('Failed to update image info:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 
 //store the user info
-app.post(
-  "/api/user-information",
-  async (req: Request, res: Response): Promise<any> => {
-    {
-      const { firstName, lastName, email } = req.body;
+app.post("/api/user-information",async (req: Request, res: Response): Promise<any> => {
+{
+    const { firstName, lastName, email } = req.body;
       if (!firstName || !lastName || !email) {
         res.status(400).json({ message: "All fields are required" });
       }
@@ -207,34 +253,7 @@ app.post(
     }
   }
 );
-// Get projects for the logged-in user
-app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response): Promise<any> => {
-    try {
-      const userId = req.userId;
 
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
-      }
-
-      const projects = await prisma.loginUser.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          projectName: true,
-          bookName: true,
-          createdAt: true,
-          eventType: true,
-          eventDescription: true, //Need to fix this later
-        },
-      });
-
-      return res.status(200).json({ projects });
-    } catch (error) {
-      console.error("Error fetching user projects:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  }
-);
 // Get project image by project ID
 // app.get("/api/get-image/:projectId", async (req: Request, res: Response) : Promise<any> => {
 //   const { projectId } = req.params;

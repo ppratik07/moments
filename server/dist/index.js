@@ -25,7 +25,7 @@ const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL, //allowing from frontend
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
 }));
 app.use(express_1.default.json());
@@ -77,7 +77,6 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
             Key: key,
         });
         yield s3.send(deleteCommand);
-        // Respond with success
         res.status(200).json({ message: "Image deleted successfully" });
     }
     catch (error) {
@@ -90,7 +89,7 @@ app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void
     const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
     console.log("Received req.userId in /api/users:", req.userId);
     try {
-        const userDeatails = yield prisma.loginUser.create({
+        const userDetails = yield prisma.loginUser.create({
             data: {
                 projectName,
                 bookName,
@@ -103,11 +102,62 @@ app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void
         return res.status(201).json({
             message: "Data saved successfully",
             userId: req.userId,
+            projectId: userDetails.id,
         });
     }
     catch (error) {
         console.error("Failed to create project:", error);
         res.status(500).json({ error: "Server error" });
+    }
+}));
+// Get projects for the logged-in user
+app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const userId = req.userId;
+        if (!userId) {
+            return res.status(400).json({ error: "User ID is required" });
+        }
+        const projects = yield prisma.loginUser.findMany({
+            where: { userId },
+            select: {
+                id: true,
+                projectName: true,
+                bookName: true,
+                createdAt: true,
+                eventType: true,
+                eventDescription: true, //Need to fix this later
+                imageKey: true,
+                uploadUrl: true,
+            },
+        });
+        return res.status(200).json({ projects });
+    }
+    catch (error) {
+        console.error("Error fetching user projects:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}));
+app.patch('/api/users/:projectId/upload-image', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    const { imageKey, uploadUrl } = req.body;
+    console.log(projectId, imageKey, uploadUrl);
+    if (!imageKey || !uploadUrl) {
+        return res.status(400).json({ error: 'Missing imageKey or uploadUrl' });
+    }
+    try {
+        const updatedProject = yield prisma.loginUser.update({
+            where: { id: projectId },
+            data: {
+                imageKey,
+                uploadUrl,
+            },
+        });
+        console.log("Updated project:", updatedProject);
+        res.json({ message: 'Image updated successfully', project: updatedProject });
+    }
+    catch (error) {
+        console.error('Failed to update image info:', error);
+        res.status(500).json({ error: 'Server error' });
     }
 }));
 //store the user info
@@ -176,31 +226,6 @@ app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, 
     catch (error) {
         console.error("Error saving user information:", error);
         res.status(500).json({ message: "Internal server error" });
-    }
-}));
-// Get projects for the logged-in user
-app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const userId = req.userId;
-        if (!userId) {
-            return res.status(400).json({ error: "User ID is required" });
-        }
-        const projects = yield prisma.loginUser.findMany({
-            where: { userId },
-            select: {
-                id: true,
-                projectName: true,
-                bookName: true,
-                createdAt: true,
-                eventType: true,
-                eventDescription: true, //Need to fix this later
-            },
-        });
-        return res.status(200).json({ projects });
-    }
-    catch (error) {
-        console.error("Error fetching user projects:", error);
-        res.status(500).json({ error: "Internal server error" });
     }
 }));
 // Get project image by project ID
