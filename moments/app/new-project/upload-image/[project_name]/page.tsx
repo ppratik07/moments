@@ -97,8 +97,8 @@ export default function NewEventPage() {
       setPreview(previewUrl);
       setProjectImageKeyState(key);
       setImageKey(key);
-
     },
+    projectId: projectId || '', // Ensure projectId is provided
   });
 
   return (
