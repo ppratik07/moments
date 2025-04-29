@@ -3,6 +3,7 @@
 import { PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import { useImageUpload } from '@/hooks/useImageUpload'; 
+import { useProjectStore } from '@/store/useProjectStore';
 
 interface ImageUploaderProps {
   onUploadSuccess: (key: string) => void;
@@ -20,6 +21,7 @@ export default function ImageUploader({
   const { handleImageChange, uploading, preview, setPreview } = useImageUpload({
     onSuccess: (key: string) => onUploadSuccess(key),
     uploadEndpoint,
+    projectId : useProjectStore.getState().projectId || ' ',
   });
 
   // Set initial preview if provided

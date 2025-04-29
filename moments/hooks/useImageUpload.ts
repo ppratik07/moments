@@ -1,16 +1,21 @@
 // hooks/useImageUpload.ts
 
-import { useState } from 'react';
-import axios from 'axios';
-import { toast } from 'sonner';
-import { HTTP_BACKEND } from '@/utils/config';
+import { useState } from "react";
+import axios from "axios";
+import { toast } from "sonner";
+import { HTTP_BACKEND } from "@/utils/config";
 
 interface UseImageUploadOptions {
   onSuccess: (key: string, file: File) => void;
   uploadEndpoint?: string;
+  projectId: string;
 }
 
-export function useImageUpload({ onSuccess, uploadEndpoint = `${HTTP_BACKEND}/api/get-presign-url` }: UseImageUploadOptions) {
+export function useImageUpload({
+  onSuccess,
+  projectId,
+  uploadEndpoint = `${HTTP_BACKEND}/api/get-presign-url`,
+}: UseImageUploadOptions) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -30,19 +35,26 @@ export function useImageUpload({ onSuccess, uploadEndpoint = `${HTTP_BACKEND}/ap
       });
 
       const { uploadUrl, key } = res.data;
-      console.log('Upload URL:', uploadUrl);
-      console.log('Key:', key);
+      console.log("Upload URL:", uploadUrl);
+      console.log("Key:", key);
       const response = await axios.put(uploadUrl, file, {
         headers: {
-          'Content-Type': file.type,
+          "Content-Type": file.type,
         },
       });
-      console.log('Response:', response);
+      console.log("Response:", response);
+
+      const uploadResponse = await axios.patch(`${HTTP_BACKEND}/api/users/${projectId}/upload-image`, {
+        imageKey: key,
+        uploadUrl: uploadUrl,
+      });
+      console.log("Upload response:", uploadResponse);
       onSuccess(key, file);
-      toast.success('Image uploaded successfully!');
+
+      toast.success("Image uploaded successfully!");
     } catch (err) {
-      console.error('Upload failed:', err);
-      toast.error('Upload failed. Please try again.');
+      console.error("Upload failed:", err);
+      toast.error("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }

@@ -15,6 +15,7 @@ export default function DashboardPage() {
         id: string;
         projectName: string;
         createdAt: string;
+        imageKey?: string;
     }
 
     const [projects, setProjects] = useState<Project[]>([]);
@@ -52,6 +53,7 @@ export default function DashboardPage() {
                 }
 
                 const data = await response.json();
+                console.log('Fetched projects:', data.projects);
                 setProjects(data.projects);
             } catch (error) {
                 console.error('Error fetching projects:', error);
@@ -62,8 +64,9 @@ export default function DashboardPage() {
         };
 
         fetchProjects();
-    }, [isSignedIn, router, getToken]);
+    }, [isSignedIn, router, getToken, signOut]);
 
+    const baseImageUrl = process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
     return (
         <div>
             <Header isSignedIn />
@@ -84,32 +87,38 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {projects.map((project) => (
                             <div
-                                key={project.id}
-                                className="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col items-center"
-                            >
-                                <div className="w-full h-48 relative">
-                                    <Image
-                                        src={`/api/get-image/${project.id}`}
-                                        alt={project.projectName}
-                                        fill
-                                        className="object-cover rounded-t-lg"
-                                    />
-                                </div>
-                                <div className="p-4 text-center flex-grow">
-                                    <h2 className="text-xl font-semibold text-gray-900 mb-2">{project.projectName}</h2>
-                                    <p className="text-sm text-gray-600">
-                                        Created on: {format(new Date(project.createdAt), 'MMMM dd, yyyy')}
-                                    </p>
-                                </div>
-                                <div className="p-4">
-                                    <Button
-                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-md transition-colors duration-200"
-                                        onClick={() => router.push(`/project/${project.id}`)}
-                                    >
-                                        View Project
-                                    </Button>
-                                </div>
+                            key={project.id}
+                            className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
+                          >
+                            {/* Background image */}
+                            <div className="absolute inset-0">
+                              <Image
+                                src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
+                                alt={project.projectName}
+                                fill
+                                className="object-cover"
+                              />
                             </div>
+                          
+                            {/* Dark overlay */}
+                            <div className="absolute inset-0 bg-black/40" />
+                          
+                            {/* Overlay content */}
+                            <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
+                              <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
+                              <p className="text-sm mb-3">
+                                Created on: {format(new Date(project.createdAt), 'MMMM dd, yyyy')}
+                              </p>
+                              <Button
+                                className="bg-blue-600 hover:bg-blue-700 text-white w-full"
+                                onClick={() => router.push(`/project/${project.id}`)}
+                              >
+                                View Project
+                              </Button>
+                            </div>
+                          </div>
+                          
+
                         ))}
                     </div>
                 )}
