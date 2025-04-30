@@ -39,6 +39,54 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
 });
+//Get the event type and description
+app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { name } = req.query;
+    if (!name || typeof name !== "string") {
+        return res.status(400).json({ error: "Event type name is required" });
+    }
+    try {
+        const eventType = yield prisma.eventType.findUnique({
+            where: { name: name },
+        });
+        if (!eventType) {
+            return res.status(404).json({ error: "Event type not found" });
+        }
+        if (eventType) {
+            return res.json({ description: eventType.description });
+        }
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}));
+//Stroring the login inforation
+app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
+    console.log("Received req.userId in /api/users:", req.userId);
+    try {
+        const userDetails = yield prisma.loginUser.create({
+            data: {
+                projectName,
+                bookName,
+                dueDate: new Date(dueDate),
+                eventType,
+                eventDescription,
+                userId: req.userId || "",
+            },
+        });
+        return res.status(201).json({
+            message: "Data saved successfully",
+            userId: req.userId,
+            projectId: userDetails.id,
+        });
+    }
+    catch (error) {
+        console.error("Failed to create project:", error);
+        res.status(500).json({ error: "Server error" });
+    }
+}));
 //getting the image url and storing it in r2 storage
 app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const fileType = req.query.fileType;
@@ -82,32 +130,6 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
     catch (error) {
         console.error("Error deleting image from R2:", error);
         res.status(500).json({ error: "Failed to delete image" });
-    }
-}));
-//Stroring the login inforation
-app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
-    console.log("Received req.userId in /api/users:", req.userId);
-    try {
-        const userDetails = yield prisma.loginUser.create({
-            data: {
-                projectName,
-                bookName,
-                dueDate: new Date(dueDate),
-                eventType,
-                eventDescription,
-                userId: req.userId || "",
-            },
-        });
-        return res.status(201).json({
-            message: "Data saved successfully",
-            userId: req.userId,
-            projectId: userDetails.id,
-        });
-    }
-    catch (error) {
-        console.error("Failed to create project:", error);
-        res.status(500).json({ error: "Server error" });
     }
 }));
 // Get projects for the logged-in user
@@ -179,28 +201,6 @@ app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0
         });
     }
 }));
-//Get the event type and description
-app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name } = req.query;
-    if (!name || typeof name !== "string") {
-        return res.status(400).json({ error: "Event type name is required" });
-    }
-    try {
-        const eventType = yield prisma.eventType.findUnique({
-            where: { name: name },
-        });
-        if (!eventType) {
-            return res.status(404).json({ error: "Event type not found" });
-        }
-        if (eventType) {
-            return res.json({ description: eventType.description });
-        }
-    }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Internal server error" });
-    }
-}));
 //Fill your information page
 app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { firstName, lastName, email, relationship, excludeOnline, notifyMe, } = req.body;
@@ -228,23 +228,59 @@ app.post("/api/fill-your-info", (req, res) => __awaiter(void 0, void 0, void 0, 
         res.status(500).json({ message: "Internal server error" });
     }
 }));
-// Get project image by project ID
-// app.get("/api/get-image/:projectId", async (req: Request, res: Response) : Promise<any> => {
-//   const { projectId } = req.params;
-//   try {
-//     const project = await prisma.loginUser.findUnique({
-//       where: { id: projectId },
-//     });
-//     if (!project) {
-//       return res.status(404).json({ error: "Project not found" });
-//     }
-//     const imageUrl = `https://${process.env.R2_BUCKET_NAME}.r2.cloudflarestorage.com/${projectId}`;
-//     res.redirect(imageUrl);
-//   } catch (error) {
-//     console.error("Error fetching project image:", error);
-//     res.status(500).json({ error: "Failed to fetch project image" });
-//   }
-// });
+app.post('/api/save-contribution', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { projectId, signature, pages } = req.body;
+        // Validate input
+        if (!projectId || !signature || !pages) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        // Validate pages data
+        for (const page of pages) {
+            if (page.layoutId < 0) {
+                return res.status(400).json({ error: 'Invalid layoutId' });
+            }
+            if (!Array.isArray(page.images) || page.images.some((img) => img !== null && typeof img !== 'string')) {
+                return res.status(400).json({ error: 'Invalid images array' });
+            }
+        }
+        // Create contribution and nested pages/components
+        const contribution = yield prisma.contribution.create({
+            data: {
+                projectId,
+                signature,
+                pages: {
+                    create: pages.map((page) => ({
+                        guid: page.guid,
+                        layoutId: page.layoutId,
+                        images: page.images, // Already filtered to contain only strings
+                        message: page.message,
+                        components: {
+                            create: page.components.map((component) => ({
+                                type: component.type,
+                                position: component.position || null,
+                                size: component.size,
+                                styles: component.styles || null,
+                                editor: component.editor || null,
+                                value: component.value,
+                                imageUrl: component.image_url,
+                                original: component.original || null,
+                            })),
+                        },
+                    })),
+                },
+            },
+        });
+        res.status(200).json({ message: 'Contribution saved successfully', contributionId: contribution.id });
+    }
+    catch (error) {
+        console.error('Error saving contribution:', error);
+        res.status(500).json({ error: 'Failed to save contribution' });
+    }
+    finally {
+        yield prisma.$disconnect();
+    }
+}));
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });
