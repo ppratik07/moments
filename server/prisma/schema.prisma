@@ -29,16 +29,17 @@ model EventType {
 }
 
 model LoginUser {
-  id               String   @id @default(uuid())
+  id               String         @id @default(uuid())
   projectName      String
   bookName         String
   dueDate          DateTime
   eventType        String
   eventDescription String
   userId           String
-  createdAt        DateTime @default(now())
-  imageKey         String? 
+  createdAt        DateTime       @default(now())
+  imageKey         String?
   uploadUrl        String?
+  contributions    Contribution[]
 }
 
 model FillYourDetails {
@@ -51,4 +52,46 @@ model FillYourDetails {
   ExcludeFromPromotion     Boolean  @default(false)
   created_at               DateTime @default(now())
   updated_at               DateTime @updatedAt
+}
+
+// Contribution model
+model Contribution {
+  id        String    @id @default(uuid())
+  projectId String
+  project   LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  signature String
+  pages     Page[] // One-to-many relationship with Page
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Page model
+model Page {
+  id             String       @id @default(uuid())
+  contributionId String
+  contribution   Contribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  guid           String       @unique // Unique identifier for the page
+  layoutId       Int // ID of the layout
+  images         String[] // Array of image URLs (or null)
+  message        String // Text content (e.g., from paragraph component)
+  components     Component[] // One-to-many relationship with Component
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+// Component model
+model Component {
+  id        String   @id @default(uuid())
+  pageId    String
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  type      String // 'heading', 'signature', 'paragraph', 'caption', 'photo'
+  position  Json? // JSON field for position details
+  size      Json // JSON field for size details
+  styles    Json? // JSON field for styles details
+  editor    Json? // JSON field for editor details
+  value     String? // Text content for text-based components
+  imageUrl  String?  @map("image_url") // Image URL for photo components
+  original  Json? // JSON field for original image details
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
