@@ -29,7 +29,7 @@ export default function Sidebar({ imageKey }: { imageKey: string }) {
           <a
             key={idx}
             href="#"
-            className="flex items-center gap-3 text-gray-700 hover:text-black"
+            className="flex items-center gap-3 text-gray-700 hover:text-blue-700"
           >
             {item.icon}
             <span>{item.label}</span>
