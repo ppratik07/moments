@@ -215,47 +215,6 @@ app.post("/api/user-information",async (req: Request, res: Response): Promise<an
   }
 );
 
-
-//Fill your information page
-app.post(
-  "/api/fill-your-info",
-  async (req: Request, res: Response): Promise<any> => {
-    const {
-      firstName,
-      lastName,
-      email,
-      relationship,
-      excludeOnline,
-      notifyMe,
-    } = req.body;
-
-    if (!firstName || !lastName || !email || !relationship) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    try {
-      const user = await prisma.fillYourDetails.create({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          relationship,
-          ExcludeFromOnlineVersion: excludeOnline,
-          ExcludeFromPromotion: notifyMe,
-        },
-      });
-
-      return res.status(200).json({
-        message: "User information saved successfully",
-        user,
-      });
-    } catch (error) {
-      console.error("Error saving user information:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  }
-);
-
 app.post('/api/save-contribution', async (req, res) : Promise<any> => {
   try {
     const { projectId, signature, pages } = req.body;
@@ -309,6 +268,44 @@ app.post('/api/save-contribution', async (req, res) : Promise<any> => {
     await prisma.$disconnect();
   }
 });
+
+//Fill your information page
+app.post("/api/submit-information",async (req: Request, res: Response): Promise<any> => {
+    const {
+      firstName,
+      lastName,
+      email,
+      relationship,
+      excludeOnline,
+      notifyMe,
+    } = req.body;
+
+    if (!firstName || !lastName || !email || !relationship) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    try {
+      const user = await prisma.fillYourDetails.create({
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          relationship,
+          ExcludeFromOnlineVersion: excludeOnline,
+          ExcludeFromPromotion: notifyMe,
+        },
+      });
+
+      return res.status(200).json({
+        message: "User information saved successfully",
+        user,
+      });
+    } catch (error) {
+      console.error("Error saving user information:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);

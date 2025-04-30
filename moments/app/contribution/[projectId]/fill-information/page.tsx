@@ -11,6 +11,7 @@ import { Stepper } from "@/components/Stepper";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
+import { HTTP_BACKEND } from "@/utils/config";
 
 export default function YourInformationPage() {
     const router = useRouter();
@@ -55,7 +56,7 @@ export default function YourInformationPage() {
         if (!validate()) return;
     
         try {
-            const response = await axios.post("/api/submit-information", form);
+            const response = await axios.post(`${HTTP_BACKEND}/api/submit-information`, form);
             if (response.status !== 200) {
                 toast.error("Failed to submit information.");
                 return;
