@@ -4,12 +4,34 @@ import Sidebar from "@/components/dashboard/SideBar";
 import { Header } from "@/components/landing/Header";
 import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/store/useProjectStore";
+import { HTTP_BACKEND } from "@/utils/config";
 import { useParams } from "next/navigation"
+import { useEffect } from "react";
+import axios from "axios";
+import { toast } from "sonner";
 
 export default function ProjectIdDashboard() {
     const params: Record<string, string | string[]> | null = useParams();
     const projectId = params ? params.id : undefined;
     const { imageKey, projectName } = useProjectStore();
+
+    useEffect(() => {
+        const fetchProjects = async () => {
+            try {
+                const response = await axios.get(`${HTTP_BACKEND}/api/user-projects`, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                })
+                const data = response.data;
+                console.log(data);
+            } catch (error) {
+                console.error("Error fetching event type description:", error);
+                toast.error("Error fetching event description.");
+            }
+        }
+        fetchProjects();
+    }, [])
     return (
         <div>
             <input type="hidden" value={projectId} />
