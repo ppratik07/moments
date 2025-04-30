@@ -27,11 +27,12 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!isSignedIn) {
             router.push('/'); // Redirect to login if not signed in
+            localStorage.removeItem('token')
             return;
         }
         const fetchProjects = async () => {
             try {
-                const token = await getToken();
+                const token = localStorage.getItem('token');
                 if (!token) {
                     console.log('No token found, redirecting...');
                     await signOut({ redirectUrl: '/' });
@@ -45,6 +46,7 @@ export default function DashboardPage() {
 
                 if (response.status === 401 || response.status === 403) {
                     console.log('Unauthorized or token expired. Signing out...');
+                    localStorage.removeItem('token');
                     await signOut({ redirectUrl: '/' });
                     return;
                 }
@@ -57,6 +59,7 @@ export default function DashboardPage() {
                 setProjects(data.projects);
             } catch (error) {
                 console.error('Error fetching projects:', error);
+                localStorage.removeItem('token');
                 await signOut({ redirectUrl: '/' });
             } finally {
                 setLoading(false);
@@ -85,41 +88,61 @@ export default function DashboardPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {projects.map((project) => (
-                            <div
-                            key={project.id}
-                            className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
-                          >
-                            {/* Background image */}
-                            <div className="absolute inset-0">
-                              <Image
-                                src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
-                                alt={project.projectName}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          
-                            {/* Dark overlay */}
-                            <div className="absolute inset-0 bg-black/40" />
-                          
-                            {/* Overlay content */}
-                            <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
-                              <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
-                              <p className="text-sm mb-3">
-                                Created on: {format(new Date(project.createdAt), 'MMMM dd, yyyy')}
-                              </p>
-                              <Button
-                                className="bg-blue-600 hover:bg-blue-700 text-white w-full"
-                                onClick={() => router.push(`/project/${project.id}`)}
-                              >
-                                View Project
-                              </Button>
-                            </div>
-                          </div>
-                          
+                        {projects.map((project) => {
+                            const createdDate = new Date(project.createdAt);
+                            const isClosed = new Date().getTime() - createdDate.getTime() > 365 * 24 * 60 * 60 * 1000;
+                            const tagLabel = isClosed ? 'Closed' : 'New';
 
-                        ))}
+                            return (
+                                <div
+                                    key={project.id}
+                                    className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
+                                >
+                                    {/* Background image */}
+                                    <div className="absolute inset-0">
+                                        <Image
+                                            src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
+                                            alt={project.projectName}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+
+                                    {/* Dark overlay */}
+                                    <div className="absolute inset-0 bg-black/40" />
+
+                                    {/* Tag badge */}
+                                    <div className="absolute top-3 right-3 z-20">
+                                        <span
+                                            className={`text-xs font-semibold px-2 py-1 rounded ${isClosed ? 'bg-red-600' : 'bg-green-500'
+                                                } text-white`}
+                                        >
+                                            {tagLabel}
+                                        </span>
+                                    </div>
+
+                                    {/* Overlay content */}
+                                    <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
+                                        <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
+                                        <p className="text-sm mb-3">
+                                            Created on: {format(createdDate, 'MMMM dd, yyyy')}
+                                        </p>
+                                        <Button
+                                            className={`w-full ${isClosed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                                                } text-white`}
+                                            onClick={() => {
+                                                if (!isClosed) {
+                                                    router.push(`/project/${project.id}`);
+                                                }
+                                            }}
+                                            disabled={isClosed}
+                                        >
+                                            View Project
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

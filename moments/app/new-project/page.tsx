@@ -121,6 +121,7 @@ export default function StartProjectForm() {
                     lastName,
                     email
                 });
+                localStorage.removeItem('token');
             }
             setProgress(70);
 
@@ -139,6 +140,7 @@ export default function StartProjectForm() {
             toast.error("Something went wrong. Please try again.");
             setIsLoading(false);
             setProgress(0);
+            localStorage.removeItem('token');
         }
     };
 
