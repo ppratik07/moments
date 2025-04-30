@@ -90,15 +90,15 @@ interface LayoutEditorProps {
 // };
 
 // Page Saver Module
-const savePage = async (page: Page): Promise<void> => {
-  const response = await fetch('/api/saveLayout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(page)
-  });
-  if (!response.ok) throw new Error('Failed to save layout');
-  await response.json();
-};
+// const savePage = async (page: Page): Promise<void> => {
+//   const response = await fetch('/api/saveLayout', {
+//     method: 'POST',
+//     headers: { 'Content-Type': 'application/json' },
+//     body: JSON.stringify(page)
+//   });
+//   if (!response.ok) throw new Error('Failed to save layout');
+//   await response.json();
+// };
 
 const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   pages,
@@ -285,16 +285,15 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
     );
   };
 
-  const handleSave = async () => {
-    try {
-      await savePage(pages[currentPageIndex]);
-      alert('Layout saved!');
-    } catch {
-      alert('Failed to save layout.');
-    }
-  };
-  console.log(handleSave);
-
+  // const handleSave = async () => {
+  //   try {
+  //     await savePage(pages[currentPageIndex]);
+  //     alert('Layout saved!');
+  //   } catch {
+  //     alert('Failed to save layout.');
+  //   }
+  // };
+ 
   const handleDeletePage = (index: number) => {
     if (pages.length <= 1) return;
     const updatedPages = pages.filter((_, i) => i !== index);
