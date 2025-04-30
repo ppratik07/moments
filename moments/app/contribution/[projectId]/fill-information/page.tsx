@@ -55,14 +55,15 @@ export default function YourInformationPage() {
         if (!validate()) return;
     
         try {
-            const response = await axios.post("/api/fill-your-info", form);
+            const response = await axios.post("/api/submit-information", form);
             if (response.status !== 200) {
                 toast.error("Failed to submit information.");
                 return;
             }
             toast.success("Information submitted successfully!");
             setShowDialog(true); 
-        } catch {
+        } catch(e) {
+            console.log(e);
             toast.error("Something went wrong while submitting.");
         }
     };
