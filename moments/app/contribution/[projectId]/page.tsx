@@ -93,8 +93,45 @@ export default function ContributionPage() {
   const { projectId } = useParams() as { projectId: string };
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
-  const handleNextClick = () => {
-    router.push(`/contribution/${projectId}/fill-information`);
+  const handleNextClick = async () => {
+    setUploading(true);
+    setError(null);
+  
+    try {
+      const contributionData = {
+        projectId,
+        signature,
+        pages: pages.map((page) => ({
+          guid: page.guid || `page-${Math.random().toString(36).substr(2, 9)}`,
+          layoutId: page.layout >= 0 ? page.layout : 0, // Ensure layoutId is non-negative, default to 0 if invalid
+          images: page.images.filter((image): image is string => image !== null), // Filter out null values
+          message: page.components?.find((comp) => comp.type === 'paragraph')?.value || '',
+          components: (page.components ?? []).map((component) => ({
+            type: component.type,
+            position: component.position || null,
+            size: component.size,
+            styles: component.styles || null,
+            editor: component.editor || null,
+            value: component.value,
+            image_url: component.image_url,
+            original: component.original || null,
+          })),
+        })),
+      };
+  
+      const response = await axios.post(`${HTTP_BACKEND}/api/save-contribution`, contributionData);
+  
+      if (response.status !== 200) {
+        throw new Error('Failed to save contribution');
+      }
+  
+      router.push(`/contribution/${projectId}/fill-information`);
+    } catch (error) {
+      console.error('Error saving contribution:', error);
+      setError('Failed to save your contribution. Please try again.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   useEffect(() => {
@@ -239,7 +276,7 @@ export default function ContributionPage() {
   const getImageSlotCount = (layoutId: number): number => {
     const categoryIndex = Math.floor(layoutId / 10);
     const layoutIndex = layoutId % 10;
-    
+
     if (categoryIndex >= 0 && categoryIndex < layoutCategories.length) {
       const category = layoutCategories[categoryIndex];
       if (layoutIndex >= 0 && layoutIndex < category.layouts.length) {
@@ -255,7 +292,7 @@ export default function ContributionPage() {
     const categoryIndex = Math.floor(layoutId / 10);
     const layoutIndex = layoutId % 10;
     console.log(layoutIndex);
-    const layoutPosition = categoryIndex; // Simplified mapping since we have one layout per category
+    const layoutPosition = categoryIndex >= 0 && categoryIndex < availableLayouts.length ? categoryIndex : 0;
     return availableLayouts[layoutPosition] || availableLayouts[0];
   };
   //@ts-expect-error : Not sure of the types
@@ -301,7 +338,7 @@ export default function ContributionPage() {
           </section>
 
           <StepIndicator currentStep={1} />
-          
+
           <section className="mb-16 mt-6">
             <h2 className="text-4xl font-bold mb-7">Contribute</h2>
             <ol className="text-gray-700 list-decimal list-inside mb-6">
@@ -323,9 +360,9 @@ export default function ContributionPage() {
             />
 
             <div className="space-y-6">
-              
+
               <LayoutEditorPage
-              //@ts-expect-error : Not sure of the types
+                //@ts-expect-error : Not sure of the types
                 pages={mappedPages}
                 //@ts-expect-error : Not sure of the types
                 setPages={(newPages: Page[]) => {
