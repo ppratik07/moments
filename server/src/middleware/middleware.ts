@@ -13,7 +13,7 @@ export async function authMiddleware(
     const authHeader = req.headers["authorization"];
     console.log("Received auth header:", authHeader);
     const token = authHeader?.split(" ")[1];
-    console.log('Re token',token);
+    console.log("Re token", token);
 
     if (!token) {
       res.status(401).json({ message: "No token provided" });
@@ -43,7 +43,7 @@ export async function authMiddleware(
     const expiration = (decoded as any).exp;
     console.log("User ID from token:", userId);
 
-    if(expiration){
+    if (expiration) {
       const expirationDate = new Date(expiration * 1000);
       console.log("Token expiration date:", expirationDate);
     }
