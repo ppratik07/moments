@@ -159,12 +159,13 @@ app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __await
         res.status(500).json({ error: "Internal server error" });
     }
 }));
-app.patch('/api/users/:projectId/upload-image', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //Need to send token for future
     const { projectId } = req.params;
     const { imageKey, uploadUrl } = req.body;
     console.log(projectId, imageKey, uploadUrl);
     if (!imageKey || !uploadUrl) {
-        return res.status(400).json({ error: 'Missing imageKey or uploadUrl' });
+        return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
     }
     try {
         const updatedProject = yield prisma.loginUser.update({
@@ -175,11 +176,14 @@ app.patch('/api/users/:projectId/upload-image', (req, res) => __awaiter(void 0, 
             },
         });
         console.log("Updated project:", updatedProject);
-        res.json({ message: 'Image updated successfully', project: updatedProject });
+        res.json({
+            message: "Image updated successfully",
+            project: updatedProject,
+        });
     }
     catch (error) {
-        console.error('Failed to update image info:', error);
-        res.status(500).json({ error: 'Server error' });
+        console.error("Failed to update image info:", error);
+        res.status(500).json({ error: "Server error" });
     }
 }));
 //store the user info
@@ -201,20 +205,21 @@ app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0
         });
     }
 }));
-app.post('/api/save-contribution', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { projectId, signature, pages } = req.body;
         // Validate input
         if (!projectId || !signature || !pages) {
-            return res.status(400).json({ error: 'Missing required fields' });
+            return res.status(400).json({ error: "Missing required fields" });
         }
         // Validate pages data
         for (const page of pages) {
             if (page.layoutId < 0) {
-                return res.status(400).json({ error: 'Invalid layoutId' });
+                return res.status(400).json({ error: "Invalid layoutId" });
             }
-            if (!Array.isArray(page.images) || page.images.some((img) => img !== null && typeof img !== 'string')) {
-                return res.status(400).json({ error: 'Invalid images array' });
+            if (!Array.isArray(page.images) ||
+                page.images.some((img) => img !== null && typeof img !== "string")) {
+                return res.status(400).json({ error: "Invalid images array" });
             }
         }
         // Create contribution and nested pages/components
@@ -244,11 +249,14 @@ app.post('/api/save-contribution', (req, res) => __awaiter(void 0, void 0, void 
                 },
             },
         });
-        res.status(200).json({ message: 'Contribution saved successfully', contributionId: contribution.id });
+        res.status(200).json({
+            message: "Contribution saved successfully",
+            contributionId: contribution.id,
+        });
     }
     catch (error) {
-        console.error('Error saving contribution:', error);
-        res.status(500).json({ error: 'Failed to save contribution' });
+        console.error("Error saving contribution:", error);
+        res.status(500).json({ error: "Failed to save contribution" });
     }
     finally {
         yield prisma.$disconnect();
@@ -279,6 +287,19 @@ app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void
     catch (error) {
         console.error("Error saving user information:", error);
         res.status(500).json({ message: "Internal server error" });
+    }
+}));
+app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    try {
+        const count = yield prisma.contribution.count({
+            where: { projectId },
+        });
+        res.json({ projectId, count });
+    }
+    catch (error) {
+        console.error("Error getting contribution count:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 }));
 app.listen(PORT, () => {

@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 8080;
 app.use(
   cors({
     origin: process.env.FRONTEND_URL, //allowing from frontend
-    methods: ["GET", "POST", "PUT", "DELETE","PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
   })
 );
@@ -62,31 +62,35 @@ app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
   }
 });
 //Stroring the login inforation
-app.post("/api/users",authMiddleware,async (req: Request, res: Response): Promise<any> => {
-  const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
-  console.log("Received req.userId in /api/users:", req.userId);
-  try {
-    const userDetails = await prisma.loginUser.create({
-      data: {
-        projectName,
-        bookName,
-        dueDate: new Date(dueDate),
-        eventType,
-        eventDescription,
-        userId: req.userId || "",
-      },
-    });
+app.post(
+  "/api/users",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<any> => {
+    const { projectName, bookName, dueDate, eventType, eventDescription } =
+      req.body;
+    console.log("Received req.userId in /api/users:", req.userId);
+    try {
+      const userDetails = await prisma.loginUser.create({
+        data: {
+          projectName,
+          bookName,
+          dueDate: new Date(dueDate),
+          eventType,
+          eventDescription,
+          userId: req.userId || "",
+        },
+      });
 
-    return res.status(201).json({
-      message: "Data saved successfully",
-      userId: req.userId,
-      projectId: userDetails.id,
-    });
-  } catch (error) {
-    console.error("Failed to create project:", error);
-    res.status(500).json({ error: "Server error" });
+      return res.status(201).json({
+        message: "Data saved successfully",
+        userId: req.userId,
+        projectId: userDetails.id,
+      });
+    } catch (error) {
+      console.error("Failed to create project:", error);
+      res.status(500).json({ error: "Server error" });
+    }
   }
-}
 );
 
 //getting the image url and storing it in r2 storage
@@ -142,7 +146,10 @@ app.delete("/api/delete-image", async (req, res) => {
 });
 
 // Get projects for the logged-in user
-app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response): Promise<any> => {
+app.get(
+  "/api/user-projects",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<any> => {
     try {
       const userId = req.userId;
       if (!userId) {
@@ -169,35 +176,43 @@ app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response):
   }
 );
 
-app.patch('/api/users/:projectId/upload-image', async (req: Request, res: Response) : Promise<any> => {  //Need to send token for future
-  const { projectId } = req.params;
-  const { imageKey, uploadUrl } = req.body;
-  console.log(projectId, imageKey, uploadUrl);
-  if (!imageKey || !uploadUrl) {
-    return res.status(400).json({ error: 'Missing imageKey or uploadUrl' });
-  }
+app.patch(
+  "/api/users/:projectId/upload-image",
+  async (req: Request, res: Response): Promise<any> => {
+    //Need to send token for future
+    const { projectId } = req.params;
+    const { imageKey, uploadUrl } = req.body;
+    console.log(projectId, imageKey, uploadUrl);
+    if (!imageKey || !uploadUrl) {
+      return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
+    }
 
-  try {
-    const updatedProject = await prisma.loginUser.update({
-      where: { id: projectId },
-      data: {
-        imageKey,
-        uploadUrl,
-      },
-    });
-    console.log("Updated project:", updatedProject);
-    res.json({ message: 'Image updated successfully', project: updatedProject });
-  } catch (error) {
-    console.error('Failed to update image info:', error);
-    res.status(500).json({ error: 'Server error' });
+    try {
+      const updatedProject = await prisma.loginUser.update({
+        where: { id: projectId },
+        data: {
+          imageKey,
+          uploadUrl,
+        },
+      });
+      console.log("Updated project:", updatedProject);
+      res.json({
+        message: "Image updated successfully",
+        project: updatedProject,
+      });
+    } catch (error) {
+      console.error("Failed to update image info:", error);
+      res.status(500).json({ error: "Server error" });
+    }
   }
-});
-
+);
 
 //store the user info
-app.post("/api/user-information",async (req: Request, res: Response): Promise<any> => {
-{
-    const { firstName, lastName, email } = req.body;
+app.post(
+  "/api/user-information",
+  async (req: Request, res: Response): Promise<any> => {
+    {
+      const { firstName, lastName, email } = req.body;
       if (!firstName || !lastName || !email) {
         res.status(400).json({ message: "All fields are required" });
       }
@@ -215,21 +230,26 @@ app.post("/api/user-information",async (req: Request, res: Response): Promise<an
   }
 );
 
-app.post('/api/save-contribution', async (req, res) : Promise<any> => {
+app.post("/api/save-contribution", async (req, res): Promise<any> => {
   try {
     const { projectId, signature, pages } = req.body;
 
     // Validate input
     if (!projectId || !signature || !pages) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ error: "Missing required fields" });
     }
-// Validate pages data
+    // Validate pages data
     for (const page of pages) {
       if (page.layoutId < 0) {
-        return res.status(400).json({ error: 'Invalid layoutId' });
+        return res.status(400).json({ error: "Invalid layoutId" });
       }
-      if (!Array.isArray(page.images) || page.images.some((img: unknown) => img !== null && typeof img !== 'string')) {
-        return res.status(400).json({ error: 'Invalid images array' });
+      if (
+        !Array.isArray(page.images) ||
+        page.images.some(
+          (img: unknown) => img !== null && typeof img !== "string"
+        )
+      ) {
+        return res.status(400).json({ error: "Invalid images array" });
       }
     }
     // Create contribution and nested pages/components
@@ -238,39 +258,61 @@ app.post('/api/save-contribution', async (req, res) : Promise<any> => {
         projectId,
         signature,
         pages: {
-          create: pages.map((page: { guid: string; layoutId: string; images: string[]; message: string; components: { type: string; position?: any; size: any; styles?: any; editor?: any; value: string; image_url: string; original?: any; }[] }) => ({
-            guid: page.guid,
-            layoutId: page.layoutId,
-            images: page.images, // Already filtered to contain only strings
-            message: page.message,
-            components: {
-              create: page.components.map((component) => ({
-                type: component.type,
-                position: component.position || null,
-                size: component.size,
-                styles: component.styles || null,
-                editor: component.editor || null,
-                value: component.value,
-                imageUrl: component.image_url,
-                original: component.original || null,
-              })),
-            },
-          })),
+          create: pages.map(
+            (page: {
+              guid: string;
+              layoutId: string;
+              images: string[];
+              message: string;
+              components: {
+                type: string;
+                position?: any;
+                size: any;
+                styles?: any;
+                editor?: any;
+                value: string;
+                image_url: string;
+                original?: any;
+              }[];
+            }) => ({
+              guid: page.guid,
+              layoutId: page.layoutId,
+              images: page.images, // Already filtered to contain only strings
+              message: page.message,
+              components: {
+                create: page.components.map((component) => ({
+                  type: component.type,
+                  position: component.position || null,
+                  size: component.size,
+                  styles: component.styles || null,
+                  editor: component.editor || null,
+                  value: component.value,
+                  imageUrl: component.image_url,
+                  original: component.original || null,
+                })),
+              },
+            })
+          ),
         },
       },
     });
 
-    res.status(200).json({ message: 'Contribution saved successfully', contributionId: contribution.id });
+    res.status(200).json({
+      message: "Contribution saved successfully",
+      contributionId: contribution.id,
+    });
   } catch (error) {
-    console.error('Error saving contribution:', error);
-    res.status(500).json({ error: 'Failed to save contribution' });
+    console.error("Error saving contribution:", error);
+    res.status(500).json({ error: "Failed to save contribution" });
   } finally {
     await prisma.$disconnect();
   }
 });
 
 //Fill your information page
-app.post("/api/submit-information",async (req: Request, res: Response): Promise<any> => {
+app.post(
+  "/api/submit-information",
+  async (req: Request, res: Response): Promise<any> => {
     const {
       firstName,
       lastName,
@@ -306,6 +348,20 @@ app.post("/api/submit-information",async (req: Request, res: Response): Promise<
     }
   }
 );
+
+app.get("/contributions/count/:projectId", async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const count = await prisma.contribution.count({
+      where: { projectId },
+    });
+    res.json({ projectId, count });
+  } catch (error) {
+    console.error("Error getting contribution count:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
