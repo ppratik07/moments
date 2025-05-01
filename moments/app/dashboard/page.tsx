@@ -32,7 +32,7 @@ export default function DashboardPage() {
         }
         const fetchProjects = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = await getToken();
                 if (!token) {
                     console.log('No token found, redirecting...');
                     await signOut({ redirectUrl: '/' });
