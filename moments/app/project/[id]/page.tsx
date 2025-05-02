@@ -5,44 +5,57 @@ import { Header } from "@/components/landing/Header";
 import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/store/useProjectStore";
 import { HTTP_BACKEND } from "@/utils/config";
-import { useParams } from "next/navigation"
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
+import { useAuth } from "@clerk/nextjs";
 
 export default function ProjectIdDashboard() {
     const params: Record<string, string | string[]> | null = useParams();
     const projectId = params ? params.id : undefined;
     const { imageKey, projectName } = useProjectStore();
     const [contributionCount, setContributionCount] = useState<number | null>(null);
+    const { getToken } = useAuth();
 
     useEffect(() => {
         const fetchProjects = async () => {
             try {
+                const token = await getToken();
+                if (!token) throw new Error("No token available");
+
                 const response = await axios.get(`${HTTP_BACKEND}/api/user-projects`, {
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                        Authorization: `Bearer ${token}`,
                     },
-                })
+                });
                 const data = response.data;
                 console.log(data);
             } catch (error) {
                 console.error("Error fetching event type description:", error);
                 toast.error("Error fetching event description.");
             }
-        }
+        };
+
         fetchProjects();
-    }, [])
+    }, [getToken]);
+
     useEffect(() => {
         const fetchContributionCount = async () => {
             if (!projectId) return;
 
             try {
-                const response = await axios.get(`${HTTP_BACKEND}/contributions/count/${projectId}`, {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
+                const token = await getToken();
+                if (!token) throw new Error("No token available");
+
+                const response = await axios.get(
+                    `${HTTP_BACKEND}/contributions/count/${projectId}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    }
+                );
                 setContributionCount(response.data.count);
             } catch (error) {
                 console.error("Error fetching contribution count:", error);
@@ -51,14 +64,14 @@ export default function ProjectIdDashboard() {
         };
 
         fetchContributionCount();
-    }, [projectId]);
+    }, [projectId, getToken]);
+
     return (
         <div>
             <input type="hidden" value={projectId} />
             <Header isSignedIn={true} />
             <div className="flex min-h-screen bg-gray-50">
                 <Sidebar imageKey={imageKey} />
-
                 <main className="flex-1 p-8">
                     <div className="flex justify-between items-start">
                         <h1 className="text-3xl font-bold">{projectName}</h1>
@@ -82,10 +95,11 @@ export default function ProjectIdDashboard() {
                         />
                     </div>
 
-
                     <div className="mt-20">
                         <h2 className="text-xl font-semibold">Share with Your Friends</h2>
-                        <p className="text-sm text-gray-600 mb-2">Share this link with everyone you would like to contribute to your project.</p>
+                        <p className="text-sm text-gray-600 mb-2">
+                            Share this link with everyone you would like to contribute to your project.
+                        </p>
                         <div className="flex gap-2">
                             <input
                                 type="text"
@@ -96,6 +110,7 @@ export default function ProjectIdDashboard() {
                             <Button className="px-10">Copy</Button>
                         </div>
                     </div>
+
                     <div className="mt-15">
                         <div className="flex justify-between items-center">
                             <h2 className="text-xl font-semibold">Edit Sharing Page</h2>
@@ -105,10 +120,8 @@ export default function ProjectIdDashboard() {
                             You can edit the page your friends will see when they click the link you share with them.
                         </p>
                     </div>
-
                 </main>
             </div>
         </div>
-
     );
 }
