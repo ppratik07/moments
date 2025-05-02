@@ -289,6 +289,7 @@ app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void
         res.status(500).json({ message: "Internal server error" });
     }
 }));
+//Get the contribution count
 app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
     try {
@@ -300,6 +301,47 @@ app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 
     catch (error) {
         console.error("Error getting contribution count:", error);
         res.status(500).json({ error: "Internal server error" });
+    }
+}));
+app.get("/api/deadline/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    const { projectId } = req.params;
+    if (!projectId || typeof projectId !== "string") {
+        return res.status(400).json({ message: "Invalid projectId" });
+    }
+    try {
+        // // Verify user authentication
+        // const token = await getToken({ req });
+        // if (!token) {
+        //   return res.status(401).json({ message: "Unauthorized" });
+        // }
+        // Fetch the deadline for the project
+        const deadline = yield prisma.contributionDeadlines.findFirst({
+            where: {
+                projectId,
+                deadline_enabled: true,
+            },
+            select: {
+                actual_deadline: true,
+                calculate_date: true,
+                deadline_enabled: true,
+            },
+        });
+        if (!deadline) {
+            return res
+                .status(404)
+                .json({ message: "No active deadline found for this project" });
+        }
+        // Return the deadline (prefer actual_deadline if available, otherwise calculate_date)
+        const deadlineDate = (_a = deadline.actual_deadline) !== null && _a !== void 0 ? _a : deadline.calculate_date;
+        return res.status(200).json({
+            deadline: deadlineDate ? deadlineDate.toISOString() : null,
+            deadline_enabled: deadline.deadline_enabled,
+        });
+    }
+    catch (error) {
+        console.error("Error fetching deadline:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 }));
 app.listen(PORT, () => {
