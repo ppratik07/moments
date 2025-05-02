@@ -29,17 +29,18 @@ model EventType {
 }
 
 model LoginUser {
-  id               String         @id @default(uuid())
+  id               String                  @id @default(uuid())
   projectName      String
   bookName         String
   dueDate          DateTime
   eventType        String
   eventDescription String
   userId           String
-  createdAt        DateTime       @default(now())
+  createdAt        DateTime                @default(now())
   imageKey         String?
   uploadUrl        String?
   contributions    Contribution[]
+  deadlines        ContributionDeadlines[]
 }
 
 model FillYourDetails {
@@ -94,4 +95,15 @@ model Component {
   original  Json? // JSON field for original image details
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ContributionDeadlines {
+  id               Int       @id @default(autoincrement())
+  projectId        String
+  project          LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  calculate_date   DateTime?
+  actual_deadline  DateTime?
+  deadline_enabled Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 }
