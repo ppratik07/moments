@@ -98,7 +98,7 @@ model Component {
 }
 
 model ContributionDeadlines {
-  id               Int       @id @default(autoincrement())
+  id               String       @id @default(uuid())
   projectId        String
   project          LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
   calculate_date   DateTime?
