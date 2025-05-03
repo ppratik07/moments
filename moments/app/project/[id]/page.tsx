@@ -5,7 +5,7 @@ import { Header } from "@/components/landing/Header";
 import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/store/useProjectStore";
 import { HTTP_BACKEND } from "@/utils/config";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
@@ -16,6 +16,11 @@ export default function ProjectIdDashboard() {
     const projectId = params ? params.id : undefined;
     const { imageKey, projectName } = useProjectStore();
     const [contributionCount, setContributionCount] = useState<number | null>(null);
+    const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
+    const [daysLeft, setDaysLeft] = useState<number | null>(null);
+    const [isDeadlineApproaching, setIsDeadlineApproaching] = useState(false);
+    const [lastContributionDate, setLastContributionDate] = useState<Date | null>(null);
+    const router = useRouter();
     const { getToken } = useAuth();
 
     useEffect(() => {
@@ -66,6 +71,76 @@ export default function ProjectIdDashboard() {
         fetchContributionCount();
     }, [projectId, getToken]);
 
+    useEffect(() => {
+        const fetchDeadline = async () => {
+          if (!projectId) return;
+      
+          try {
+            const token = await getToken();
+            if (!token) throw new Error('No token available');
+      
+            const response = await axios.get(
+              `${HTTP_BACKEND}/api/deadline/${projectId}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+      
+            const { deadline, deadline_enabled } = response.data;
+            if (deadline_enabled && deadline) {
+              const parsedDeadline = new Date(deadline);
+              setDeadlineDate(parsedDeadline);
+      
+              // Calculate days left
+              const now = new Date();
+              const diffTime = parsedDeadline.getTime() - now.getTime();
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              setDaysLeft(diffDays < 0 ? 0 : diffDays);
+      
+              // Check if deadline is within 3 days
+              setIsDeadlineApproaching(diffDays > 0 && diffDays <= 3);
+            }
+          } catch (error) {
+            console.error('Error fetching deadline:', error);
+            toast.error('Failed to load deadline.');
+          }
+        };
+      
+        fetchDeadline();
+      }, [projectId, getToken]);
+
+      useEffect(() => {
+        const fetchLastContribution = async () => {
+            if (!projectId) return;
+
+            try {
+                const token = await getToken();
+                if (!token) throw new Error("No token available");
+
+                const response = await axios.get(
+                    `${HTTP_BACKEND}/api/lastcontribution/${projectId}`,
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+
+                const { lastContributionDate } = response.data;
+                if (lastContributionDate) {
+                    setLastContributionDate(new Date(lastContributionDate));
+                }
+            } catch (error) {
+                console.error("Error fetching last contribution:", error);
+            }
+        };
+
+        fetchLastContribution();
+    }, [projectId, getToken]);
+
+    // Handle navigation to settings page
+    const handleChangeDeadline = () => {
+        router.push(`/dashboard/${projectId}/settings`);
+    };
+
     return (
         <div>
             <input type="hidden" value={projectId} />
@@ -81,17 +156,26 @@ export default function ProjectIdDashboard() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5 mt-8">
-                        <DashboardCard
+                    <DashboardCard
                             title="Contributions"
                             value={contributionCount !== null ? String(contributionCount) : "—"}
-                            description="View your completed contributions."
+                            description={
+                                isDeadlineApproaching && lastContributionDate
+                                    ? `Last contribution on ${lastContributionDate.toLocaleDateString()}`
+                                    : "View your completed contributions."
+                            }
                             buttonText="View Contributions"
                         />
                         <DashboardCard
                             title="Days Left to Contribute"
-                            value="08"
-                            description="Your current contribution deadline is June 23, 2025. Need more time? Click below to change the contribution deadline."
+                            value={daysLeft !== null ? String(daysLeft) : "—"}
+                            description={`Your current contribution deadline is ${
+                                deadlineDate ? deadlineDate.toLocaleDateString() : "not set"
+                            }. Need more time? Click below to change the contribution deadline.`}
                             buttonText="Change Deadline"
+                            onButtonClick={handleChangeDeadline}
+                            className={isDeadlineApproaching ? "border-red-500" : ""}
+                            titleClassName={isDeadlineApproaching ? "text-red-500" : ""}
                         />
                     </div>
 
