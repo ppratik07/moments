@@ -4,138 +4,24 @@ import Sidebar from "@/components/dashboard/SideBar";
 import { Header } from "@/components/landing/Header";
 import { Button } from "@/components/ui/button";
 import { useProjectStore } from "@/store/useProjectStore";
-import { HTTP_BACKEND } from "@/utils/config";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from "sonner";
-import { useAuth } from "@clerk/nextjs";
+import { useUserProjects } from "@/hooks/useUserProject";
+import { useContributionCount } from "@/hooks/useContributionCount";
+import { useDeadline } from "@/hooks/useDeadline";
+import { useLastContribution } from "@/hooks/useLastContribution";
 
 export default function ProjectIdDashboard() {
     const params: Record<string, string | string[]> | null = useParams();
     const projectId = params ? params.id : undefined;
     const { imageKey, projectName } = useProjectStore();
-    const [contributionCount, setContributionCount] = useState<number | null>(null);
-    const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
-    const [daysLeft, setDaysLeft] = useState<number | null>(null);
-    const [isDeadlineApproaching, setIsDeadlineApproaching] = useState(false);
-    const [lastContributionDate, setLastContributionDate] = useState<Date | null>(null);
+    useUserProjects(); // Call the hook without destructuring 'projects' since it's unused
+    const { contributionCount } = useContributionCount(
+        Array.isArray(projectId) ? projectId[0] : projectId
+    );
+    const { deadlineDate, daysLeft, isDeadlineApproaching } = useDeadline(Array.isArray(projectId) ? projectId[0] : projectId);
+    const { lastContributionDate } = useLastContribution(Array.isArray(projectId) ? projectId[0] : projectId);
     const isReviewingState = daysLeft === 0;
     const router = useRouter();
-    const { getToken } = useAuth();
-
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const token = await getToken();
-                if (!token) throw new Error("No token available");
-
-                const response = await axios.get(`${HTTP_BACKEND}/api/user-projects`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
-                const data = response.data;
-                console.log(data);
-            } catch (error) {
-                console.error("Error fetching event type description:", error);
-                toast.error("Error fetching event description.");
-            }
-        };
-
-        fetchProjects();
-    }, [getToken]);
-
-    useEffect(() => {
-        const fetchContributionCount = async () => {
-            if (!projectId) return;
-
-            try {
-                const token = await getToken();
-                if (!token) throw new Error("No token available");
-
-                const response = await axios.get(
-                    `${HTTP_BACKEND}/contributions/count/${projectId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                    }
-                );
-                setContributionCount(response.data.count);
-            } catch (error) {
-                console.error("Error fetching contribution count:", error);
-                toast.error("Failed to load contribution count.");
-            }
-        };
-
-        fetchContributionCount();
-    }, [projectId, getToken]);
-
-    useEffect(() => {
-        const fetchDeadline = async () => {
-            if (!projectId) return;
-
-            try {
-                const token = await getToken();
-                if (!token) throw new Error('No token available');
-
-                const response = await axios.get(
-                    `${HTTP_BACKEND}/api/deadline/${projectId}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                );
-
-                const { deadline, deadline_enabled } = response.data;
-                if (deadline_enabled && deadline) {
-                    const parsedDeadline = new Date(deadline);
-                    setDeadlineDate(parsedDeadline);
-
-                    // Calculate days left
-                    const now = new Date();
-                    const diffTime = parsedDeadline.getTime() - now.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    setDaysLeft(diffDays < 0 ? 0 : diffDays);
-
-                    // Check if deadline is within 3 days
-                    setIsDeadlineApproaching(diffDays > 0 && diffDays <= 3);
-                }
-            } catch (error) {
-                console.error('Error fetching deadline:', error);
-                toast.error('Failed to load deadline.');
-            }
-        };
-
-        fetchDeadline();
-    }, [projectId, getToken]);
-
-    useEffect(() => {
-        const fetchLastContribution = async () => {
-            if (!projectId) return;
-
-            try {
-                const token = await getToken();
-                if (!token) throw new Error("No token available");
-
-                const response = await axios.get(
-                    `${HTTP_BACKEND}/api/lastcontribution/${projectId}`,
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                    }
-                );
-
-                const { lastContributionDate } = response.data;
-                if (lastContributionDate) {
-                    setLastContributionDate(new Date(lastContributionDate));
-                }
-            } catch (error) {
-                console.error("Error fetching last contribution:", error);
-            }
-        };
-
-        fetchLastContribution();
-    }, [projectId, getToken]);
 
     // Handle navigation to settings page
     const handleChangeDeadline = () => {
@@ -282,8 +168,6 @@ export default function ProjectIdDashboard() {
                             </div>
                         </div>
                     )}
-
-
                 </main>
             </div>
         </div>
