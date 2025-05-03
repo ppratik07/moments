@@ -159,6 +159,35 @@ app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __await
         res.status(500).json({ error: "Internal server error" });
     }
 }));
+app.get('/api/user-projects/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+    }
+    try {
+        const project = yield prisma.loginUser.findUnique({
+            where: { id: projectId },
+            select: {
+                id: true,
+                projectName: true,
+                bookName: true,
+                createdAt: true,
+                eventType: true,
+                eventDescription: true,
+                imageKey: true,
+                uploadUrl: true,
+            },
+        });
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found' });
+        }
+        return res.status(200).json({ project });
+    }
+    catch (error) {
+        console.error('Error fetching user projects:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}));
 app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //Need to send token for future
     const { projectId } = req.params;
@@ -440,6 +469,60 @@ app.get('/api/orders/:projectId', (req, res) => __awaiter(void 0, void 0, void 0
     }
     catch (error) {
         console.error('Error fetching order:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}));
+app.get('/api/contributions/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+    }
+    try {
+        const contributions = yield prisma.contribution.findMany({
+            where: { projectId },
+            include: {
+                pages: {
+                    include: {
+                        components: {
+                            select: {
+                                type: true,
+                                value: true,
+                                imageUrl: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        // Summarize contributions
+        const summarizedContributions = contributions.map(contribution => {
+            let photo = null;
+            let message = null;
+            // Iterate through pages to find photos and messages
+            for (const page of contribution.pages) {
+                for (const component of page.components) {
+                    if (component.type === 'photo' && component.imageUrl && !photo) {
+                        photo = component.imageUrl; // Pick the first photo
+                    }
+                    if ((component.type === 'paragraph' || component.type === 'caption') && component.value && !message) {
+                        message = component.value; // Pick the first message
+                    }
+                }
+            }
+            return {
+                id: contribution.id,
+                contributorName: contribution.signature,
+                message: message ? (message.length > 100 ? message.slice(0, 100) + '...' : message) : null,
+                photo: photo,
+            };
+        });
+        return res.status(200).json({
+            contributions: summarizedContributions,
+            totalContributions: contributions.length,
+        });
+    }
+    catch (error) {
+        console.error('Error fetching contributions:', error);
         return res.status(500).json({ message: 'Internal Server Error' });
     }
 }));
