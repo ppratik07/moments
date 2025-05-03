@@ -409,6 +409,34 @@ app.get( "/api/deadline/:projectId",async (req: Request, res: Response): Promise
   }
 );
 
+app.get('/api/lastcontribution/:projectId', async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+
+  if (!projectId || typeof projectId !== "string") {
+    return res.status(400).json({ message: "Invalid projectId" });
+  }
+
+  try {
+    const lastContribution = await prisma.contribution.findFirst({
+      where: { projectId },
+      orderBy: { createdAt: 'desc' },
+      take: 1,
+    });
+
+    if (!lastContribution) {
+      return res.status(404).json({ message: "No contributions found" });
+    }
+
+    return res.status(200).json({
+      lastContributionDate: lastContribution.createdAt.toISOString(),
+    });
+    
+  } catch (error) {
+    console.error("Error fetching last contribution:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+})
+
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });
