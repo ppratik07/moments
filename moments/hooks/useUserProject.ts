@@ -6,7 +6,8 @@ import { useAuth } from '@clerk/nextjs';
 
 interface Project {
   id: string;
-  name: string;
+  projectName: string;
+  bookName: string
 }
 
 export const useUserProjects = () => {
