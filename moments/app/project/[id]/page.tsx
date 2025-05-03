@@ -51,10 +51,16 @@ export default function ProjectIdDashboard() {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
   };
 
-  const shareOnLinkedIn = () => {
+  const shareOnInstagram = () => {
+    // Instagram doesn't have a direct share URL; redirect to app or website
     const url = encodeURIComponent('https://momentsmemorybooks.com');
-    const title = encodeURIComponent('My Memory Book Project');
-    window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${url}&title=${title}`, '_blank');
+    window.open(`https://www.instagram.com/?url=${url}`, '_blank');
+  };
+
+  const shareOnTikTok = () => {
+    // TikTok doesn't have a direct share URL; redirect to app or website
+    const url = encodeURIComponent('https://momentsmemorybooks.com');
+    window.open(`https://www.tiktok.com/?url=${url}`, '_blank');
   };
 
   // Handle feedback submission
@@ -98,61 +104,136 @@ export default function ProjectIdDashboard() {
           </div>
 
           {isPrintingState ? (
-            <div className="bg-white border rounded-lg p-12 mt-10 space-y-12 max-w-6xl mx-auto">
-              <div>
-                <h2 className="text-2xl font-semibold text-gray-800">Your Book is Being Printed!</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Your order has been placed, and your memory book is in production. Below is a summary of your order.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Order Summary</h3>
-                {projectStatus?.orderSummary ? (
-                  <div className="text-sm text-gray-600">
-                    <p>Order ID: {projectStatus.orderSummary.orderId}</p>
-                    <p>Order Date: {new Date(projectStatus.orderSummary.orderDate).toLocaleDateString()}</p>
-                    <p>Total: ${projectStatus.orderSummary.total.toFixed(2)}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600">Loading order details...</p>
-                )}
-              </div>
-
-              <div className="space-y-4">
+            <div className="mt-10 max-w-6xl mx-auto">
+              {/* View Book Online Button */}
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-800">
+                    View Book Online
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    While your book is being printed and shipped you can view and share the online version of the book with anyone.
+                  </p>
+                </div>
                 <Button
-                  className="px-6 py-2 bg-purple-600 text-white rounded-md"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-md"
                   onClick={() => router.push(`/dashboard/${projectId}/book/online`)}
                 >
                   View Book Online
                 </Button>
+              </div>
+
+              {/* Order Summary and Social Sharing */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white border rounded-lg p-6">
+                {/* Order Summary */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
+                  <div className="space-y-2 text-gray-600">
+                    <p>
+                      <span className="font-medium">Date Ordered:</span>{' '}
+                      {projectStatus?.orderSummary
+                        ? new Date(projectStatus.orderSummary.orderDate).toLocaleDateString()
+                        : 'Loading...'}
+                    </p>
+                    <p>
+                      <span className="font-medium">Quantity:</span> {projectStatus?.orderSummary ? 1 : '—'}
+                    </p>
+                    <p>
+                      <span className="font-medium">Amount:</span>{' '}
+                      {projectStatus?.orderSummary
+                        ? `$${projectStatus.orderSummary.total.toFixed(2)}`
+                        : '—'}
+                    </p>
+                    <p>
+                      <span className="font-medium">Current Status:</span>{' '}
+                      {projectStatus?.status === 'printing' ? 'Printing' : '—'}
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-4">
+                    Tour book has been ordered and is currently being printed. Soon it will be shipped
+                  </p>
+                  <Button
+                    className="mt-4 px-6 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50"
+                    onClick={() => router.push(`/dashboard/${projectId}/orders/details`)}
+                  >
+                    View Order Details
+                  </Button>
+                </div>
+
+                {/* Social Sharing */}
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Delighted with your experience?
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">
+                    Your delight is our delight! If you loved your experience would you consider sharing your love online?
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button
+                      className="flex items-center justify-center px-4 py-2 bg-white border rounded-md text-gray-800 hover:bg-gray-100"
+                      onClick={shareOnFacebook}
+                    >
+                      <svg className="w-6 h-6 mr-2" fill="#3b5998" viewBox="0 0 24 24">
+                        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+                      </svg>
+                      Facebook
+                    </Button>
+                    <Button
+                      className="flex items-center justify-center px-4 py-2 bg-white border rounded-md text-gray-800 hover:bg-gray-100"
+                      onClick={shareOnTwitter}
+                    >
+                      <svg className="w-6 h-6 mr-2" fill="#000000" viewBox="0 0 24 24">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                      X
+                    </Button>
+                    <Button
+                      className="flex items-center justify-center px-4 py-2 bg-white border rounded-md text-gray-800 hover:bg-gray-100"
+                      onClick={shareOnTikTok}
+                    >
+                      <svg className="w-6 h-6 mr-2" fill="#000000" viewBox="0 0 24 24">
+                        <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.53-1.54-.83-.45-2.16-.66-4.35-.64-6.53-.59-.02-1.18-.03-1.77-.03-3.31 0-6.62.01-9.93.02-.2 2.36-.36 4.73-.49 7.09-.07 1.29-.12 2.58-.12 3.87 0 1.48.55 2.95 1.62 4.02 1.07 1.07 2.54 1.62 4.02 1.62 1.29 0 2.58-.05 3.87-.12 2.36-.13 4.73-.29 7.09-.49v4.03c-2.36.2-4.73.36-7.09.49-1.29.07-2.58.12-3.87.12-3.31 0-6.62-.01-9.93-.02-.2-2.36-.36-4.73-.49-7.09-.07-1.29-.12-2.58-.12-3.87 0-3.31.01-6.62.02-9.93C5.84.01 7.14 0 8.44.02c1.29.01 2.58.02 3.87.03.02 2.18-.19 4.37-.64 6.53z" />
+                      </svg>
+                      TikTok
+                    </Button>
+                    <Button
+                      className="flex items-center justify-center px-4 py-2 bg-white border rounded-md text-gray-800 hover:bg-gray-100"
+                      onClick={shareOnInstagram}
+                    >
+                      <svg className="w-6 h-6 mr-2" fill="none" viewBox="0 0 24 24">
+                        <linearGradient id="instagram-gradient" x1="0" y1="0" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#feda75" />
+                          <stop offset="25%" stopColor="#fa7e1e" />
+                          <stop offset="50%" stopColor="#d62976" />
+                          <stop offset="75%" stopColor="#962fbf" />
+                          <stop offset="100%" stopColor="#4f5bd5" />
+                        </linearGradient>
+                        <rect width="20" height="20" x="2" y="2" rx="5" ry="5" stroke="url(#instagram-gradient)" strokeWidth="2" fill="none" />
+                        <circle cx="12" cy="12" r="4" stroke="url(#instagram-gradient)" strokeWidth="2" fill="none" />
+                        <circle cx="18" cy="6" r="1" fill="url(#instagram-gradient)" />
+                      </svg>
+                      Instagram
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Help Us Improve */}
+              <div className="flex justify-between items-center mt-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Help Us Improve!
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    If you have some feedback for us on how we could do better, would you let us know here?
+                  </p>
+                </div>
                 <Button
-                  className="px-6 py-2 bg-purple-600 text-white rounded-md ml-4"
-                  onClick={() => router.push(`/dashboard/${projectId}/orders/details`)}
-                >
-                  View Order Details
-                </Button>
-                <Button
-                  className="px-6 py-2 bg-purple-600 text-white rounded-md ml-4"
+                  className="px-6 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50"
                   onClick={() => setIsFeedbackModalOpen(true)}
                 >
                   Let Us Know
                 </Button>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Share Your Experience</h3>
-                <div className="flex gap-4">
-                  <Button className="px-4 py-2 bg-blue-500 text-white rounded-md" onClick={shareOnTwitter}>
-                    Share on Twitter
-                  </Button>
-                  <Button className="px-4 py-2 bg-blue-800 text-white rounded-md" onClick={shareOnFacebook}>
-                    Share on Facebook
-                  </Button>
-                  <Button className="px-4 py-2 bg-blue-600 text-white rounded-md" onClick={shareOnLinkedIn}>
-                    Share on LinkedIn
-                  </Button>
-                </div>
               </div>
             </div>
           ) : !isReviewingState ? (
