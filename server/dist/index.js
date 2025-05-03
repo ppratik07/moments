@@ -305,6 +305,7 @@ app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 
 }));
 app.get("/api/deadline/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
+    //Authenticate authorization
     const { projectId } = req.params;
     if (!projectId || typeof projectId !== "string") {
         return res.status(400).json({ message: "Invalid projectId" });
@@ -344,7 +345,7 @@ app.get("/api/deadline/:projectId", (req, res) => __awaiter(void 0, void 0, void
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }));
-app.get('/api/lastcontribution/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get("/api/lastcontribution/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
     if (!projectId || typeof projectId !== "string") {
         return res.status(400).json({ message: "Invalid projectId" });
@@ -352,7 +353,7 @@ app.get('/api/lastcontribution/:projectId', (req, res) => __awaiter(void 0, void
     try {
         const lastContribution = yield prisma.contribution.findFirst({
             where: { projectId },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: 1,
         });
         if (!lastContribution) {
@@ -367,6 +368,82 @@ app.get('/api/lastcontribution/:projectId', (req, res) => __awaiter(void 0, void
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }));
+app.post("/api/feedback", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId, content } = req.body;
+    if (!projectId ||
+        !content ||
+        typeof projectId !== "string" ||
+        typeof content !== "string") {
+        return res.status(400).json({ message: "Invalid projectId or content" });
+    }
+    const userId = req.userId;
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+        const feedback = yield prisma.feedback.create({
+            data: {
+                userId,
+                projectId,
+                content,
+            },
+        });
+        return res
+            .status(201)
+            .json({ message: "Feedback submitted successfully", feedback });
+    }
+    catch (error) {
+        console.error("Error saving feedback:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}));
+app.get("/api/project-status/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    if (!projectId || typeof projectId !== "string") {
+        return res.status(400).json({ message: "Invalid projectId" });
+    }
+    try {
+        // Check if an order exists to determine printing status
+        const order = yield prisma.order.findFirst({
+            where: { projectId },
+        });
+        const status = order ? "printing" : "gathering"; // Simplify for demo; adjust based on your logic
+        return res.status(200).json({ status });
+    }
+    catch (error) {
+        console.error("Error fetching project status:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}));
+app.get('/api/orders/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+    }
+    try {
+        const order = yield prisma.order.findFirst({
+            where: { projectId },
+            select: {
+                id: true,
+                createdAt: true,
+                total: true,
+            },
+        });
+        if (!order) {
+            return res.status(404).json({ message: 'No order found for this project' });
+        }
+        return res.status(200).json({
+            orderId: order.id,
+            orderDate: order.createdAt.toISOString(),
+            total: order.total,
+        });
+    }
+    catch (error) {
+        console.error('Error fetching order:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+    }
+}));
+//Listening to the server
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });

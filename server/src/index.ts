@@ -362,7 +362,10 @@ app.get("/contributions/count/:projectId", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-app.get( "/api/deadline/:projectId",async (req: Request, res: Response): Promise<any> => {  //Authenticate authorization
+app.get(
+  "/api/deadline/:projectId",
+  async (req: Request, res: Response): Promise<any> => {
+    //Authenticate authorization
     const { projectId } = req.params;
 
     if (!projectId || typeof projectId !== "string") {
@@ -409,58 +412,127 @@ app.get( "/api/deadline/:projectId",async (req: Request, res: Response): Promise
   }
 );
 
-app.get('/api/lastcontribution/:projectId', async (req: Request, res: Response): Promise<any> => {
-  const { projectId } = req.params;
+app.get(
+  "/api/lastcontribution/:projectId",
+  async (req: Request, res: Response): Promise<any> => {
+    const { projectId } = req.params;
 
-  if (!projectId || typeof projectId !== "string") {
-    return res.status(400).json({ message: "Invalid projectId" });
-  }
-
-  try {
-    const lastContribution = await prisma.contribution.findFirst({
-      where: { projectId },
-      orderBy: { createdAt: 'desc' },
-      take: 1,
-    });
-
-    if (!lastContribution) {
-      return res.status(404).json({ message: "No contributions found" });
+    if (!projectId || typeof projectId !== "string") {
+      return res.status(400).json({ message: "Invalid projectId" });
     }
 
-    return res.status(200).json({
-      lastContributionDate: lastContribution.createdAt.toISOString(),
-    });
+    try {
+      const lastContribution = await prisma.contribution.findFirst({
+        where: { projectId },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      });
+
+      if (!lastContribution) {
+        return res.status(404).json({ message: "No contributions found" });
+      }
+
+      return res.status(200).json({
+        lastContributionDate: lastContribution.createdAt.toISOString(),
+      });
+    } catch (error) {
+      console.error("Error fetching last contribution:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+);
+app.post(
+  "/api/feedback",
+  authMiddleware,
+  async (req: Request, res: Response): Promise<any> => {
+    const { projectId, content }: { projectId: string; content: string } =
+      req.body;
+
+    if (
+      !projectId ||
+      !content ||
+      typeof projectId !== "string" ||
+      typeof content !== "string"
+    ) {
+      return res.status(400).json({ message: "Invalid projectId or content" });
+    }
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    try {
+      const feedback = await prisma.feedback.create({
+        data: {
+          userId,
+          projectId,
+          content,
+        },
+      });
+      return res
+        .status(201)
+        .json({ message: "Feedback submitted successfully", feedback });
+    } catch (error) {
+      console.error("Error saving feedback:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+);
+
+app.get("/api/project-status/:projectId",async (req: Request, res: Response): Promise<any> => {
+    const { projectId } = req.params;
+
+    if (!projectId || typeof projectId !== "string") {
+      return res.status(400).json({ message: "Invalid projectId" });
+    }
+
+    try {
+      // Check if an order exists to determine printing status
+      const order = await prisma.order.findFirst({
+        where: { projectId },
+      });
+
+      const status = order ? "printing" : "gathering"; // Simplify for demo; adjust based on your logic
+
+      return res.status(200).json({ status });
+    } catch (error) {
+      console.error("Error fetching project status:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  }
+);
+
+app.get('/api/orders/:projectId', async (req: Request, res: Response): Promise<any> => {
+      const {projectId} = req.params;
+      if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+      }
+      try {    
+        const order = await prisma.order.findFirst({
+          where: { projectId },
+          select: {
+            id: true,
+            createdAt: true,
+            total: true,
+          },
+        });
     
-  } catch (error) {
-    console.error("Error fetching last contribution:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-})
-app.post('/api/feedback',authMiddleware,async(req: Request,res : Response) : Promise<any> =>{
-  const { projectId, content }: { projectId: string; content: string } = req.body;
-
-  if (!projectId || !content || typeof projectId !== 'string' || typeof content !== 'string') {
-    return res.status(400).json({ message: 'Invalid projectId or content' });
-  }
-  const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ message: 'Unauthorized' });
-  }
-  try {
-    const feedback = await prisma.feedback.create({
-      data: {
-        userId,
-        projectId,
-        content,
-      },
-    });
-    return res.status(201).json({message : 'Feedback submitted successfully',feedback});
-  } catch (error) {
-    console.error('Error saving feedback:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
-  }
+        if (!order) {
+          return res.status(404).json({ message: 'No order found for this project' });
+        }
+    
+        return res.status(200).json({
+          orderId: order.id,
+          orderDate: order.createdAt.toISOString(),
+          total: order.total,
+        });
+      } catch (error) {
+        console.error('Error fetching order:', error);
+        return res.status(500).json({ message: 'Internal Server Error' });
+      }     
 })
 
+
+//Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });
