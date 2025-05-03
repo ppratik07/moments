@@ -436,6 +436,30 @@ app.get('/api/lastcontribution/:projectId', async (req: Request, res: Response):
     return res.status(500).json({ message: "Internal Server Error" });
   }
 })
+app.post('/api/feedback',authMiddleware,async(req: Request,res : Response) : Promise<any> =>{
+  const { projectId, content }: { projectId: string; content: string } = req.body;
+
+  if (!projectId || !content || typeof projectId !== 'string' || typeof content !== 'string') {
+    return res.status(400).json({ message: 'Invalid projectId or content' });
+  }
+  const userId = req.userId;
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  try {
+    const feedback = await prisma.feedback.create({
+      data: {
+        userId,
+        projectId,
+        content,
+      },
+    });
+    return res.status(201).json({message : 'Feedback submitted successfully',feedback});
+  } catch (error) {
+    console.error('Error saving feedback:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+})
 
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
