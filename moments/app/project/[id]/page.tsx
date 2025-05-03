@@ -8,19 +8,18 @@ import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
-import { useUserProjects } from "@/hooks/useUserProject";
 import { useContributionCount } from "@/hooks/useContributionCount";
 import { useDeadline } from "@/hooks/useDeadline";
 import { useLastContribution } from "@/hooks/useLastContribution";
 import { useProjectStatus } from "@/hooks/useProjectStatus";
 import { HTTP_BACKEND } from "@/utils/config";
 import { useAuth } from "@clerk/nextjs";
+import { shareOnFacebook, shareOnInstagram, shareOnTikTok, shareOnTwitter } from "@/services/social";
 
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
   const projectId = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const { imageKey, projectName } = useProjectStore();
-  useUserProjects();
   const { contributionCount } = useContributionCount(projectId);
   const { deadlineDate, daysLeft, isDeadlineApproaching } = useDeadline(projectId);
   const { lastContributionDate } = useLastContribution(projectId);
@@ -37,30 +36,6 @@ export default function ProjectIdDashboard() {
   // Handle navigation to settings page
   const handleChangeDeadline = () => {
     router.push(`/dashboard/${projectId}/settings`);
-  };
-
-  // Social sharing
-  const shareOnTwitter = () => {
-    const text = encodeURIComponent(`Check out my memory book project on Moments Memory Books!`);
-    const url = encodeURIComponent('https://momentsmemorybooks.com');
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-  };
-
-  const shareOnFacebook = () => {
-    const url = encodeURIComponent('https://momentsmemorybooks.com');
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-  };
-
-  const shareOnInstagram = () => {
-    // Instagram doesn't have a direct share URL; redirect to app or website
-    const url = encodeURIComponent('https://momentsmemorybooks.com');
-    window.open(`https://www.instagram.com/?url=${url}`, '_blank');
-  };
-
-  const shareOnTikTok = () => {
-    // TikTok doesn't have a direct share URL; redirect to app or website
-    const url = encodeURIComponent('https://momentsmemorybooks.com');
-    window.open(`https://www.tiktok.com/?url=${url}`, '_blank');
   };
 
   // Handle feedback submission
@@ -94,7 +69,7 @@ export default function ProjectIdDashboard() {
       <input type="hidden" value={projectId} />
       <Header isSignedIn={true} />
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar imageKey={imageKey} />
+        <Sidebar imageKey={imageKey} projectId={projectId} />
         <main className="w-full max-w-7xl mx-auto p-8">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold">{projectName}</h1>
@@ -253,9 +228,8 @@ export default function ProjectIdDashboard() {
                 <DashboardCard
                   title="Days Left to Contribute"
                   value={daysLeft !== null ? String(daysLeft) : "—"}
-                  description={`Your current contribution deadline is ${
-                    deadlineDate ? deadlineDate.toLocaleDateString() : "not set"
-                  }. Need more time? Click below to change the contribution deadline.`}
+                  description={`Your current contribution deadline is ${deadlineDate ? deadlineDate.toLocaleDateString() : "not set"
+                    }. Need more time? Click below to change the contribution deadline.`}
                   buttonText="Change Deadline"
                   onButtonClick={handleChangeDeadline}
                   className={isDeadlineApproaching ? "border-red-500" : ""}
