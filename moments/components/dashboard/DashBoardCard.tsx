@@ -3,6 +3,9 @@ interface DashboardProps {
   value: string;
   description: string;
   buttonText: string;
+  className?: string;
+  titleClassName? : string
+  onButtonClick?: () => void;
 }
 
 export default function DashboardCard({
@@ -10,17 +13,20 @@ export default function DashboardCard({
   value,
   description,
   buttonText,
+  className = "",
+  titleClassName = "",
+  onButtonClick,
 }: DashboardProps) {
   return (
-    <div className="bg-white w-72 h-72 p-6 rounded-lg shadow flex flex-col justify-between">
+    <div className={`bg-white w-72 h-72 p-6 rounded-lg shadow flex flex-col justify-between ${className}`}>
       <div>
-        <h3 className="text-lg font-semibold text-center">{title}</h3>
+        <h3 className={`text-lg font-semibold text-center ${titleClassName}`}>{title}</h3>
         <p className="text-4xl text-center font-bold text-purple-600 mt-2">{value}</p>
         &nbsp;
-        <hr/>
+        <hr />
         <p className="text-sm text-gray-600 text-center mt-2">{description}</p>
       </div>
-      <button className="px-4 py-2 border rounded text-blue-600 hover:bg-blue-50">
+      <button className="px-4 py-2 border rounded text-blue-600 hover:bg-blue-50" onClick={onButtonClick}>
         {buttonText}
       </button>
     </div>
