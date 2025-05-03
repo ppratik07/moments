@@ -96,61 +96,62 @@ export default function ProjectIdDashboard() {
                         </div>
 
                     ) : (
-                        <div className="bg-white border rounded-lg p-12 mt-10 space-y-12 max-w-6xl mx-auto">
-                            <div>
-                                <h2 className="text-2xl font-semibold text-gray-800">Time to Order Your Book!</h2>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    You are done gathering contributions and ready to order your book. This is what to do next.
-                                </p>
+                        <div>
+                            <div className="bg-white border rounded-lg p-12 mt-10 space-y-12 max-w-6xl mx-auto">
+                                <div>
+                                    <h2 className="text-2xl font-semibold text-gray-800">Time to Order Your Book!</h2>
+                                    <p className="text-sm text-gray-600 mt-1">
+                                        You are done gathering contributions and ready to order your book. This is what to do next.
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-center border-b pb-4">
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Step 1 - Review Contributions</h3>
+                                            <p className="text-sm text-gray-600">
+                                                You can exclude or edit contributions if needed.
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
+                                            onClick={() => router.push(`/dashboard/${projectId}/contributions`)}
+                                        >
+                                            Review Contributions
+                                        </button>
+                                    </div>
+
+                                    <div className="flex justify-between items-start border-b pb-4">
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Step 2 - Customize Book</h3>
+                                            <p className="text-sm text-gray-600">
+                                                Your book is ready to print. But you can customize a number of aspects of the book if you want.
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
+                                            onClick={() => router.push(`/dashboard/${projectId}/customize`)}
+                                        >
+                                            Customize Book
+                                        </button>
+                                    </div>
+
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold text-lg">Step 3 - Order Book</h3>
+                                            <p className="text-sm text-gray-600">
+                                                Preview a print ready version of your book and then place your order!
+                                            </p>
+                                        </div>
+                                        <button
+                                            className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
+                                            onClick={() => router.push(`/dashboard/${projectId}/preview`)}
+                                        >
+                                            Preview & Order
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center border-b pb-4">
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Step 1 - Review Contributions</h3>
-                                        <p className="text-sm text-gray-600">
-                                            You can exclude or edit contributions if needed.
-                                        </p>
-                                    </div>
-                                    <button
-                                        className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
-                                        onClick={() => router.push(`/dashboard/${projectId}/contributions`)}
-                                    >
-                                        Review Contributions
-                                    </button>
-                                </div>
-
-                                <div className="flex justify-between items-start border-b pb-4">
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Step 2 - Customize Book</h3>
-                                        <p className="text-sm text-gray-600">
-                                            Your book is ready to print. But you can customize a number of aspects of the book if you want.
-                                        </p>
-                                    </div>
-                                    <button
-                                        className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
-                                        onClick={() => router.push(`/dashboard/${projectId}/customize`)}
-                                    >
-                                        Customize Book
-                                    </button>
-                                </div>
-
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-semibold text-lg">Step 3 - Order Book</h3>
-                                        <p className="text-sm text-gray-600">
-                                            Preview a print ready version of your book and then place your order!
-                                        </p>
-                                    </div>
-                                    <button
-                                        className="px-4 py-1.5 border rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50 cursor-pointer"
-                                        onClick={() => router.push(`/dashboard/${projectId}/preview`)}
-                                    >
-                                        Preview & Order
-                                    </button>
-                                </div>
-                            </div>
-
                             <div className="pt-6 border-t mt-6">
                                 <h3 className="font-semibold text-lg">Need More Time?</h3>
                                 <p className="text-sm text-gray-600">
@@ -158,12 +159,12 @@ export default function ProjectIdDashboard() {
                                     Click to change the contribution deadline and allow more time.
                                 </p>
                                 <div className="mt-2">
-                                    <button
-                                        className="px-4 py-1.5 border cursor-pointer rounded-md text-sm font-medium text-purple-600 hover:bg-purple-50"
+                                    <Button
+                                        className="px-4 py-1.5 border cursor-pointer rounded-md text-sm "
                                         onClick={handleChangeDeadline}
                                     >
                                         Change Deadline
-                                    </button>
+                                    </Button>
                                 </div>
                             </div>
                         </div>
