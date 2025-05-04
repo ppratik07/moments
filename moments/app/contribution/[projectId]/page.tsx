@@ -27,7 +27,7 @@ interface ExtendedPage extends Page {
 
 export default function ContributionPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-  const [signature, setSignature] = useState('Your Name Here');
+  const [signature, setSignature] = useState('');
   const [pages, setPages] = useState<ExtendedPage[]>([
     { layout: 0, images: [null, null, null, null], message: '', components: availableLayouts[0].components },
   ]);
