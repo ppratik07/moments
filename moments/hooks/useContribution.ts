@@ -15,7 +15,7 @@ interface PageData {
   components: ComponentData[];
 }
 
-interface Contribution {
+export interface Contribution {
   id: string;
   signature: string;
   pages: PageData[];
