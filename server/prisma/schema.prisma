@@ -42,7 +42,6 @@ model LoginUser {
   contributions    Contribution[]
   deadlines        ContributionDeadlines[]
   Order            Order[]
-  FillYourDetails  FillYourDetails[]
 }
 
 model FillYourDetails {
@@ -54,7 +53,6 @@ model FillYourDetails {
   ExcludeFromOnlineVersion Boolean   @default(false)
   ExcludeFromPromotion     Boolean   @default(false)
   projectId                String
-  project                  LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
   created_at               DateTime  @default(now())
   updated_at               DateTime  @updatedAt
 }
