@@ -123,7 +123,7 @@ export default function ContributionsPage() {
                 return (
                   <div
                     key={contribIndex}
-                    className="break-inside-avoid mb-6 bg-white rounded-2xl shadow-lg transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] flex flex-col"
+                    className="break-inside-avoid mb-6 bg-white shadow-lg transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] flex flex-col"
                   >
                     <div className="p-4">
                       <p className="text-lg font-semibold text-gray-800 mb-3">
