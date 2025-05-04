@@ -486,44 +486,25 @@ app.get('/api/contributions/:projectId', (req, res) => __awaiter(void 0, void 0,
                         components: {
                             select: {
                                 type: true,
-                                value: true,
                                 imageUrl: true,
+                                value: true,
                             },
                         },
                     },
                 },
             },
         });
-        // Summarize contributions
-        const summarizedContributions = contributions.map(contribution => {
-            let photo = null;
-            let message = null;
-            // Iterate through pages to find photos and messages
-            for (const page of contribution.pages) {
-                for (const component of page.components) {
-                    if (component.type === 'photo' && component.imageUrl && !photo) {
-                        photo = component.imageUrl; // Pick the first photo
-                    }
-                    if ((component.type === 'paragraph' || component.type === 'caption') && component.value && !message) {
-                        message = component.value; // Pick the first message
-                    }
-                }
-            }
-            return {
-                id: contribution.id,
-                contributorName: contribution.signature,
-                message: message ? (message.length > 100 ? message.slice(0, 100) + '...' : message) : null,
-                photo: photo,
-            };
-        });
+        if (!contributions) {
+            return res.status(404).json({ message: 'Contributions not found' });
+        }
         return res.status(200).json({
-            contributions: summarizedContributions,
             totalContributions: contributions.length,
+            contributions,
         });
     }
     catch (error) {
         console.error('Error fetching contributions:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal server error' });
     }
 }));
 //Listening to the server
