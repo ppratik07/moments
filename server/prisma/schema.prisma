@@ -55,6 +55,7 @@ model FillYourDetails {
   projectId                String
   created_at               DateTime  @default(now())
   updated_at               DateTime  @updatedAt
+  contributions            Contribution[]
 }
 
 // Contribution model
@@ -66,6 +67,8 @@ model Contribution {
   pages     Page[] // One-to-many relationship with Page
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  fillYourDetailsId String?      // New field to link with FillYourDetails
+  fillYourDetails  FillYourDetails? @relation(fields: [fillYourDetailsId], references: [id], onDelete: SetNull)
 }
 
 // Page model
