@@ -42,18 +42,21 @@ model LoginUser {
   contributions    Contribution[]
   deadlines        ContributionDeadlines[]
   Order            Order[]
+  FillYourDetails  FillYourDetails[]
 }
 
 model FillYourDetails {
-  id                       String   @id @default(uuid())
+  id                       String    @id @default(uuid())
   first_name               String
   last_name                String
-  email                    String   @unique
+  email                    String    @unique
   relationship             String
-  ExcludeFromOnlineVersion Boolean  @default(false)
-  ExcludeFromPromotion     Boolean  @default(false)
-  created_at               DateTime @default(now())
-  updated_at               DateTime @updatedAt
+  ExcludeFromOnlineVersion Boolean   @default(false)
+  ExcludeFromPromotion     Boolean   @default(false)
+  projectId                String
+  project                  LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
 }
 
 // Contribution model
