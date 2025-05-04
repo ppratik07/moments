@@ -67,13 +67,13 @@ export const useContributions = (projectId: string | undefined): ContributionsRe
 
         setContributionsData({
           totalContributions: data.totalContributions,
-          contributions: data.contributions.map((contrib: any) => ({
+          contributions: data.contributions.map((contrib: Contribution) => ({
             id: contrib.id,
             signature: contrib.signature,
             contributorName: contrib.signature, // Assuming signature is the contributor's name
             createdAt: contrib.createdAt,
-            pages: contrib.pages.map((page: any) => ({
-              components: page.components.map((comp: any) => ({
+            pages: contrib.pages.map((page) => ({
+              components: page.components.map((comp) => ({
                 type: comp.type,
                 imageUrl: comp.imageUrl || null,
                 value: comp.value || null,
