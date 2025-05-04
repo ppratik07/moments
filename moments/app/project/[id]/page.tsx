@@ -3,9 +3,9 @@ import DashboardCard from "@/components/dashboard/DashBoardCard";
 import Sidebar from "@/components/dashboard/SideBar";
 import { Header } from "@/components/landing/Header";
 import { Button } from "@/components/ui/button";
-import { useProjectStore } from "@/store/useProjectStore";
+//import { useProjectStore } from "@/store/useProjectStore";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { useContributionCount } from "@/hooks/useContributionCount";
@@ -19,15 +19,58 @@ import { shareOnFacebook, shareOnInstagram, shareOnTikTok, shareOnTwitter } from
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
   const projectId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const { imageKey, projectName } = useProjectStore();
+  // const { imageKey, projectName } = useProjectStore();
   const { contributionCount } = useContributionCount(projectId);
   const { deadlineDate, daysLeft, isDeadlineApproaching } = useDeadline(projectId);
   const { lastContributionDate } = useLastContribution(projectId);
   const { projectStatus } = useProjectStatus(projectId);
   const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
   const isPrintingState = projectStatus?.status === 'printing';
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [projectNames, setProjectNames] = useState<string | null>(null);
+  const [imageKeys, setImageKeys] = useState<string | null>(null);
   const router = useRouter();
   const { getToken } = useAuth();
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!projectId) {
+        setError('Invalid project ID');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const token = await getToken();
+        if (!token) throw new Error('No token available');
+
+        const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const project = response.data.project;
+        if (!project) {
+          throw new Error('Project not found');
+        }
+
+        setProjectNames(project.projectName);
+        setImageKeys(project.imageKey || null);
+        console.log('projectkey',project.imageKey);
+      } catch (err) {
+        console.error('Error fetching project:', err);
+        setError('Failed to load project details');
+        toast.error('Error fetching project details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProject();
+  }, [projectId, getToken]);
 
   // Feedback modal state
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
@@ -64,15 +107,22 @@ export default function ProjectIdDashboard() {
     }
   };
 
+  if (loading) {
+    return <div className="p-8">Loading project data...</div>;
+  }
+  if (error) {
+    return <div className="text-red-500 p-8">Error: {error}</div>;
+  }
+
   return (
     <div>
       <input type="hidden" value={projectId} />
       <Header isSignedIn={true} />
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar imageKey={imageKey} projectId={projectId} />
+        <Sidebar imageKey={imageKeys || ''} projectId={projectId} />
         <main className="w-full max-w-7xl mx-auto p-8">
           <div className="flex justify-between items-start">
-            <h1 className="text-3xl font-bold">{projectName}</h1>
+            <h1 className="text-3xl font-bold">{projectNames}</h1>
             <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-2 rounded-md">
               Order Book
             </button>

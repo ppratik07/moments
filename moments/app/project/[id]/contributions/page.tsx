@@ -1,26 +1,69 @@
 'use client'
 import Sidebar from "@/components/dashboard/SideBar";
 import { Header } from "@/components/landing/Header";
-import { useProjectStore } from "@/store/useProjectStore";
+//import { useProjectStore } from "@/store/useProjectStore";
 import { useParams } from "next/navigation";
 import Image from "next/image";
 import { useContributions } from "@/hooks/useContribution";
+import axios from "axios";
+import { HTTP_BACKEND } from "@/utils/config";
+import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 
 export default function ContributionsPage() {
   const params: Record<string, string | string[]> | null = useParams();
   const projectId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  const { imageKey, projectName } = useProjectStore();
+  //const { imageKey, projectName } = useProjectStore();
   const { contributionsData, loading, error } = useContributions(projectId);
+  const [projectNames, setProjectNames] = useState<string | null>(null);
+  const [imageKeys, setImageKeys] = useState<string | null>(null);
+  const { getToken } = useAuth();
+  const [, setErrors] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const fetchProject = async () => {
+      if (!projectId) {
+        setErrors('Invalid project ID');
+        return;
+      }
 
+      try {
+        const token = await getToken();
+        if (!token) throw new Error('No token available');
+
+        const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const project = response.data.project;
+        if (!project) {
+          throw new Error('Project not found');
+        }
+
+        setProjectNames(project.projectName);
+        setImageKeys(project.imageKey || null);
+        console.log('projectkey', project.imageKey);
+      } catch (errors) {
+        console.error('Error fetching project:', errors);
+        setErrors('Failed to load project details');
+        toast.error('Error fetching project details');
+      } 
+    };
+
+    fetchProject();
+  }, [projectId, getToken]);
   return (
     <div>
       <Header isSignedIn={true} />
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar imageKey={imageKey}/>
+        <Sidebar imageKey={imageKeys || ''} />
         <main className="flex-1 p-8">
           {/* Header Section */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">{projectName}</h1>
+            <h1 className="text-3xl font-bold">{projectNames}</h1>
           </div>
 
           {/* Stats Section */}
