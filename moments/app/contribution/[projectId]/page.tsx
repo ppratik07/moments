@@ -17,60 +17,7 @@ import { useEffect, useState } from "react";
 import LayoutEditorPage from '@/components/LayoutEditorPage';
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
-//fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4
-// Type definitions (unchanged)
-interface Position {
-  x_position?: number;
-  y_position?: number;
-  x_coordinate?: number;
-  y_coordinate?: number;
-}
-
-interface Size {
-  width: number;
-  height: number;
-}
-
-interface Styles {
-  font_family?: string;
-  font_size?: number;
-  font_weight?: string;
-}
-
-interface Editor {
-  label: string;
-  placeholder: string;
-  max_characters: number;
-}
-
-interface CroppingInfo {
-  x_position: number;
-  y_position: number;
-  width: number;
-  height: number;
-}
-
-interface Original {
-  url: string;
-  cropping_info: CroppingInfo;
-}
-
-interface Component {
-  type: 'heading' | 'signature' | 'paragraph' | 'caption' | 'photo';
-  position: Position;
-  size: Size;
-  styles?: Styles;
-  editor?: Editor;
-  value?: string;
-  image_url?: string;
-  original?: Original;
-}
-
-export interface Layout {
-  guid: string;
-  name?: string;
-  components: Component[];
-}
+import { Component, Layout } from "@/types/contributionpage.types";
 
 interface ExtendedPage extends Page {
   guid?: string;

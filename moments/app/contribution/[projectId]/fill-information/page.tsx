@@ -1,5 +1,5 @@
 'use client'
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ChatSupportButton from "@/components/ChatSupportButton";
 import { Stepper } from "@/components/Stepper";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 import { HTTP_BACKEND } from "@/utils/config";
@@ -23,6 +23,12 @@ export default function YourInformationPage() {
         excludeOnline: false,
         notifyMe: false,
     });
+    const pathname = usePathname();
+    const projectId = useMemo(() => {
+        const parts = pathname?.split('/');
+        const idIndex = (parts?.indexOf('contribution') ?? -1) + 1;
+        return parts?.[idIndex] ?? null;
+      }, [pathname]);
 
     const [showDialog, setShowDialog] = useState(false);
 
@@ -56,7 +62,10 @@ export default function YourInformationPage() {
         if (!validate()) return;
     
         try {
-            const response = await axios.post(`${HTTP_BACKEND}/api/submit-information`, form);
+            const response = await axios.post(`${HTTP_BACKEND}/api/submit-information`, {
+                ...form,
+                projectId,
+            });
             if (response.status !== 200) {
                 toast.error("Failed to submit information.");
                 return;
