@@ -8,7 +8,6 @@ import { useContributions } from "@/hooks/useContribution";
 import { useFetchProject } from "@/hooks/useFetchProject";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
 
 
 export default function ContributionsPage() {
