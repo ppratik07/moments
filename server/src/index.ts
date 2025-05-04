@@ -341,6 +341,7 @@ app.post("/api/submit-information",async (req: Request, res: Response): Promise<
       relationship,
       excludeOnline,
       notifyMe,
+      projectId
     } = req.body;
 
     if (!firstName || !lastName || !email || !relationship) {
@@ -356,6 +357,7 @@ app.post("/api/submit-information",async (req: Request, res: Response): Promise<
           relationship,
           ExcludeFromOnlineVersion: excludeOnline,
           ExcludeFromPromotion: notifyMe,
+          projectId 
         },
       });
 

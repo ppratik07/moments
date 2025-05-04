@@ -293,7 +293,7 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
 }));
 //Fill your information page
 app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, relationship, excludeOnline, notifyMe, } = req.body;
+    const { firstName, lastName, email, relationship, excludeOnline, notifyMe, projectId } = req.body;
     if (!firstName || !lastName || !email || !relationship) {
         return res.status(400).json({ message: "All fields are required" });
     }
@@ -306,6 +306,7 @@ app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void
                 relationship,
                 ExcludeFromOnlineVersion: excludeOnline,
                 ExcludeFromPromotion: notifyMe,
+                projectId
             },
         });
         return res.status(200).json({
