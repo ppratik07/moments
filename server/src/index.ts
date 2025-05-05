@@ -585,6 +585,53 @@ app.get('/api/contributions/:projectId', async(req: Request, res: Response): Pro
   }
 })
 
+// New endpoint for saving layouts
+app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  const { projectId, layouts } = req.body;
+  const userId = req.userId;
+
+  if (!projectId || !userId || !Array.isArray(layouts)) {
+    return res.status(400).json({ error: "Missing projectId, userId, or invalid layouts" });
+  }
+
+  try {
+    // Validate project exists and belongs to user
+    const project = await prisma.loginUser.findFirst({
+      where: { id: projectId, userId },
+    });
+
+    if (!project) {
+      return res.status(404).json({ error: "Project not found or unauthorized" });
+    }
+
+    // Delete existing layouts for this project to avoid duplicates
+    await prisma.layout.deleteMany({
+      where: { projectId },
+    });
+
+    // Save new layouts
+    const savedLayouts = await prisma.layout.createMany({
+      data: layouts.map((layout) => ({
+        id: layout.id,
+        projectId,
+        userId,
+        pageType: layout.pageType,
+        isPreview: layout.isPreview,
+        section: layout.section,
+        config: layout.config,
+      })),
+    });
+
+    res.status(201).json({
+      message: "Layouts saved successfully",
+      count: savedLayouts.count,
+    });
+  } catch (error) {
+    console.error("Error saving layouts:", error);
+    res.status(500).json({ error: "Failed to save layouts" });
+  }
+});
+
 //Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
