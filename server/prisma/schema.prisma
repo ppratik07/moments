@@ -39,36 +39,40 @@ model LoginUser {
   createdAt        DateTime                @default(now())
   imageKey         String?
   uploadUrl        String?
+  previewPdfUrl    String? // New field to store the preview PDF URL
+  totalPages       Int? // New field to store the total pages (interior pages only)
+  isFirstRender    Boolean                 @default(true)
   contributions    Contribution[]
   deadlines        ContributionDeadlines[]
   Order            Order[]
+  Layouts          Layout[]
 }
 
 model FillYourDetails {
-  id                       String    @id @default(uuid())
+  id                       String         @id @default(uuid())
   first_name               String
   last_name                String
-  email                    String    @unique
+  email                    String         @unique
   relationship             String
-  ExcludeFromOnlineVersion Boolean   @default(false)
-  ExcludeFromPromotion     Boolean   @default(false)
+  ExcludeFromOnlineVersion Boolean        @default(false)
+  ExcludeFromPromotion     Boolean        @default(false)
   projectId                String
-  created_at               DateTime  @default(now())
-  updated_at               DateTime  @updatedAt
+  created_at               DateTime       @default(now())
+  updated_at               DateTime       @updatedAt
   contributions            Contribution[]
 }
 
 // Contribution model
 model Contribution {
-  id        String    @id @default(uuid())
-  projectId String
-  project   LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  signature String
-  pages     Page[] // One-to-many relationship with Page
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  fillYourDetailsId String?      // New field to link with FillYourDetails
-  fillYourDetails  FillYourDetails? @relation(fields: [fillYourDetailsId], references: [id], onDelete: SetNull)
+  id                String           @id @default(uuid())
+  projectId         String
+  project           LoginUser        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  signature         String
+  pages             Page[] // One-to-many relationship with Page
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  fillYourDetailsId String? // New field to link with FillYourDetails
+  fillYourDetails   FillYourDetails? @relation(fields: [fillYourDetailsId], references: [id], onDelete: SetNull)
 }
 
 // Page model
@@ -129,4 +133,17 @@ model Order {
   total     Float
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+model Layout {
+  id        String    @id @default(uuid())
+  projectId String
+  userId    String
+  pageType  String
+  isPreview Boolean
+  section   String?
+  config    Json
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  loginUser LoginUser @relation(fields: [projectId], references: [id])
 }
