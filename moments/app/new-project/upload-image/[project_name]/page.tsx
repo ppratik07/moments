@@ -26,7 +26,7 @@ export default function NewEventPage() {
   const params = useParams();
   const { setImageKey, projectId, setLayouts, eventTypes } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
-  const { isSignedIn, user } = useCurrentUser();
+  const { isSignedIn } = useCurrentUser();
   const router = useRouter();
   const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
 
@@ -49,7 +49,6 @@ export default function NewEventPage() {
         setShareLink(shareLink);
       } catch (error) {
         console.error('Error setting share link:', error);
-        toast.error('Failed to generate share link');
       }
     }
   }, [projectId]);
@@ -63,7 +62,19 @@ export default function NewEventPage() {
   const [projectDescription, setProjectDescription] = useState<string>('');
   const [projectImageKey, setProjectImageKeyState] = useState<string | null>(null);
 
-  // Initialize state on the client
+  useEffect(() => {
+    if (projectId && projectName && projectImageKey && projectDescription) {
+      localStorage.setItem(
+        `project-${projectId}`,
+        JSON.stringify({
+          projectName,
+          imageKey: projectImageKey,
+          eventDescription: projectDescription,
+        })
+      );
+    }
+  }, [projectId, projectName, projectImageKey, projectDescription]);
+
   useEffect(() => {
     setProjectName(decodedProjectName);
     setProjectDescription(
@@ -166,10 +177,8 @@ export default function NewEventPage() {
 
       setLayouts(layouts);
 
-      if (projectId && user?.id) {
+      if (projectId) {
         localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
-        console.log('Layouts saved to local storage:', layouts);
-
         try {
           await axios.post(
             `${HTTP_BACKEND}/api/layouts`,
@@ -190,7 +199,7 @@ export default function NewEventPage() {
     };
 
     generateAndSaveLayouts();
-  }, [projectId, projectName, projectImageKey, storedImageKey, setLayouts, user]);
+  }, [projectId, projectName, projectImageKey, storedImageKey, setLayouts]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareLink);
@@ -201,6 +210,7 @@ export default function NewEventPage() {
   const handleResetToDefault = async () => {
     if (!eventTypes) {
       toast.error('Event type not specified');
+      setShowResetConfirm(false);
       return;
     }
 
@@ -226,29 +236,6 @@ export default function NewEventPage() {
       setPreview(previewUrl);
       setProjectImageKeyState(key);
       setImageKey(key);
-      if (projectId) {
-        axios
-          .patch(
-            `${HTTP_BACKEND}/api/users/${projectId}/upload-image`,
-            {
-              imageKey: key,
-              uploadUrl: getImageUrl(key),
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
-            }
-          )
-          .then(() => {
-            toast.success('Image updated successfully');
-          })
-          .catch((error) => {
-            console.error('Error updating image:', error);
-            toast.error('Failed to update image');
-          });
-      }
     },
     projectId: projectId || '',
   });
