@@ -273,7 +273,7 @@ export default function ProjectIdDashboard() {
                       : "View your completed contributions."
                   }
                   buttonText="View Contributions"
-                  onButtonClick={() => router.push(`/dashboard/${projectId}/contributions`)}
+                  onButtonClick={() => router.push(`project/${projectId}/contributions`)}
                 />
                 <DashboardCard
                   title="Days Left to Contribute"
