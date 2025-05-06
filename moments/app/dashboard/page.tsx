@@ -26,7 +26,7 @@ export default function DashboardPage() {
     const { signOut } = useClerk();
     useEffect(() => {
         if (!isSignedIn) {
-            router.push('/'); // Redirect to login if not signed in
+            router.push('/');
             localStorage.removeItem('token')
             return;
         }
