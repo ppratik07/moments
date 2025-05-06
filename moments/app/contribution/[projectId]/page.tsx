@@ -17,7 +17,60 @@ import { useEffect, useState } from "react";
 import LayoutEditorPage from '@/components/LayoutEditorPage';
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
-import { Component, Layout } from "@/types/contributionpage.types";
+//fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4
+// Type definitions (unchanged)
+interface Position {
+  x_position?: number;
+  y_position?: number;
+  x_coordinate?: number;
+  y_coordinate?: number;
+}
+
+interface Size {
+  width: number;
+  height: number;
+}
+
+interface Styles {
+  font_family?: string;
+  font_size?: number;
+  font_weight?: string;
+}
+
+interface Editor {
+  label: string;
+  placeholder: string;
+  max_characters: number;
+}
+
+interface CroppingInfo {
+  x_position: number;
+  y_position: number;
+  width: number;
+  height: number;
+}
+
+interface Original {
+  url: string;
+  cropping_info: CroppingInfo;
+}
+
+interface Component {
+  type: 'heading' | 'signature' | 'paragraph' | 'caption' | 'photo';
+  position: Position;
+  size: Size;
+  styles?: Styles;
+  editor?: Editor;
+  value?: string;
+  image_url?: string;
+  original?: Original;
+}
+
+export interface Layout {
+  guid: string;
+  name?: string;
+  components: Component[];
+}
 
 interface ExtendedPage extends Page {
   guid?: string;
@@ -27,7 +80,7 @@ interface ExtendedPage extends Page {
 
 export default function ContributionPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-  const [signature, setSignature] = useState('');
+  const [signature, setSignature] = useState('Your Name Here');
   const [pages, setPages] = useState<ExtendedPage[]>([
     { layout: 0, images: [null, null, null, null], message: '', components: availableLayouts[0].components },
   ]);
