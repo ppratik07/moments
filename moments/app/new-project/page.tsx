@@ -37,17 +37,8 @@ export default function StartProjectForm() {
     const [progress, setProgress] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(false);
     const { getToken } = useAuth();
-    const { setProjectName, setEventDescription } = useProjectStore();
-
-    // const initializeProjectId = () => {
-    //     const id = uuidv4();
-    //     useProjectStore.getState().setProjectId(id);
-    // };
-
-    // useEffect(() => {
-    //     initializeProjectId();
-    // }, []);
-
+    const { setProjectName, setEventDescription,setEventTypes } = useProjectStore();
+    
     useEffect(() => {
         if (showHeadsUp) {
             setShowModal(true);
@@ -56,7 +47,8 @@ export default function StartProjectForm() {
 
     const handleEventTypeChange = async (name: string) => {
         setEventType(name);
-
+        useProjectStore.setState({ eventTypes: name });
+        setEventTypes(name);
         try {
             const res = await axios.get(`${HTTP_BACKEND}/event-type`, {
                 params: { name },
@@ -64,6 +56,7 @@ export default function StartProjectForm() {
 
             if (res.data && res.data.description) {
                 setEventDescription(res.data.description); // Store event description in the state
+                useProjectStore.setState({ eventDescription: res.data.description });
             }
         } catch (error) {
             console.error("Error fetching event type description:", error);

@@ -20,10 +20,11 @@ export default function NewEventPage() {
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
   const params = useParams();
-  const { setImageKey, projectId, setLayouts } = useProjectStore();
+  const { setImageKey, projectId, setLayouts, eventTypes } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
   const { isSignedIn, user } = useCurrentUser();
   const router = useRouter();
@@ -152,7 +153,7 @@ export default function NewEventPage() {
           },
         },
       ];
-  
+
       const layouts = defaultLayouts.concat(
         defaultLayouts
           .filter((layout) => layout.isPreview)
@@ -162,13 +163,13 @@ export default function NewEventPage() {
             isPreview: false,
           }))
       );
-  
+
       setLayouts(layouts);
-  
+
       if (projectId && user?.id) {
         localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
         console.log('Layouts saved to local storage:', layouts);
-        
+
         try {
           await axios.post(
             `${HTTP_BACKEND}/api/layouts`,
@@ -187,7 +188,7 @@ export default function NewEventPage() {
         }
       }
     };
-  
+
     generateAndSaveLayouts();
   }, [projectId, projectName, projectImageKey, storedImageKey, setLayouts, user]);
 
@@ -197,27 +198,50 @@ export default function NewEventPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleResetToDefault = async () => {
+    if (!eventTypes) {
+      toast.error('Event type not specified');
+      return;
+    }
+
+    try {
+      const response = await axios.get(`${HTTP_BACKEND}/event-type`, {
+        params: { name: eventTypes },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      setProjectDescription(response.data.description);
+      toast.success('Description reset to default');
+    } catch (error) {
+      console.error('Error fetching default description:', error);
+      toast.error('Failed to reset description');
+    }
+    setShowResetConfirm(false);
+  };
+
   const { handleImageChange } = useImageUpload({
     onSuccess: (key, file) => {
       const previewUrl = URL.createObjectURL(file);
       setPreview(previewUrl);
       setProjectImageKeyState(key);
       setImageKey(key);
-      // Update image in backend
       if (projectId) {
-        fetch(`/api/users/${projectId}/upload-image`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            imageKey: key,
-            uploadUrl: getImageUrl(key),
-          }),
-        })
-          .then((response) => {
-            if (!response.ok) throw new Error('Failed to update image');
+        axios
+          .patch(
+            `${HTTP_BACKEND}/api/users/${projectId}/upload-image`,
+            {
+              imageKey: key,
+              uploadUrl: getImageUrl(key),
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+              },
+            }
+          )
+          .then(() => {
             toast.success('Image updated successfully');
           })
           .catch((error) => {
@@ -391,15 +415,7 @@ export default function NewEventPage() {
             <div className="flex justify-between items-center mt-4">
               <button
                 className="text-sm text-blue-600 underline"
-                onClick={() => {
-                  setProjectName(decodedProjectName);
-                  setProjectDescription(
-                    Array.isArray(fallbackProjectDescription)
-                      ? fallbackProjectDescription.join(' ')
-                      : fallbackProjectDescription
-                  );
-                  setProjectImageKeyState(storedImageKey ?? null);
-                }}
+                onClick={() => setShowResetConfirm(true)}
               >
                 Reset to Default
               </button>
@@ -414,6 +430,29 @@ export default function NewEventPage() {
                   Save
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
+            <h3 className="text-lg font-bold mb-2">Confirm Reset</h3>
+            <p className="text-sm mb-4">Are you sure you want to reset the description to the default?</p>
+            <div className="flex justify-end space-x-2">
+              <Button
+                className="px-4 py-2 bg-gray-200 rounded"
+                onClick={() => setShowResetConfirm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={handleResetToDefault}
+              >
+                Confirm
+              </Button>
             </div>
           </div>
         </div>

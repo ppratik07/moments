@@ -14,13 +14,13 @@ interface Layout {
 type ProjectState = {
   projectName: string;
   imageKey: string;
-  eventType : string | null;
+  eventTypes : string | null;
   eventDescription : string | null;
   projectId : string | null;
   layouts: Layout[];
   setProjectName: (name: string) => void;
   setImageKey: (key: string) => void;
-  setEventType: (type: string) => void;
+  setEventTypes: (type: string) => void;
   setEventDescription: (description: string) => void; 
   setProjectId:(id: string) => void;
   setLayouts: (layouts: Layout[]) => void;
@@ -31,13 +31,13 @@ export const useProjectStore = create<ProjectState>()(
     (set) => ({
       projectName: "",
       imageKey: "",
-      eventType: null,
+      eventTypes: null,
       eventDescription: null,
       projectId : null,
       layouts:[],
       setProjectName: (name) => set({ projectName: name }),
       setImageKey: (key) => set({ imageKey: key }),
-      setEventType: (type) => set({ eventType: type }),
+      setEventTypes: (type) => set({ eventTypes: type }),
       setEventDescription: (description) => set({ eventDescription: description }),
       setProjectId: (id) => set({ projectId: id }),
       setLayouts: (layouts) => set({ layouts }),
