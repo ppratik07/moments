@@ -1,3 +1,6 @@
+'use client';
+
+import { useAuth } from "@clerk/nextjs";
 import {
   Album,
   BringToFront,
@@ -16,23 +19,56 @@ export default function Sidebar({ imageKey, projectId }: { imageKey: string; pro
   const baseUrl = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
   const imageUrl = `${baseUrl}/${imageKey}`;
   const [isMemoryBookOpen, setMemoryBookOpen] = useState(true);
+  const { getToken } = useAuth();
+
+  // Function to handle preview click
+  const handlePreviewClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const token = await getToken();
+    const response = await fetch(`http://localhost:8080/api/preview/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const html = await response.text();
+    const newWindow = window.open('', '_blank');
+    newWindow?.document.write(html);
+  };
+  
+  const handleDownloadPdf = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const token = await getToken();
+    const response = await fetch(`http://localhost:8080/api/pdf/${projectId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  };
 
   const navItems = [
     { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: `/project/${projectId}` },
     { icon: <SlidersHorizontal size={18} />, label: "Contributions", href: `/project/${projectId}/contributions` },
-    { icon: <UsersRound size={18} />, label: "Invite", href: "/dashboard/invite" },
+    { icon: <UsersRound size={18} />, label: "Invite", href: `/project/${projectId}/invite` },
     {
       icon: <Album size={18} />,
       label: "Memory Book",
       expandable: true,
       children: [
-        { label: "Preview Book", href: "/dashboard/memory-book/preview" },
-        { label: "Customize Book", href: "/dashboard/memory-book/customize" },
-        { label: "Online Version", href: "/dashboard/memory-book/online" },
+        { 
+          label: "Preview Book", 
+          href: `/project/${projectId}/memory-book/preview`, 
+          onClick: handlePreviewClick 
+        },
+        { label: "Customize Book", href: `/project/${projectId}/memory-book/customize` },
+        { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
+        { 
+          label: "Download PDF", 
+          href: `/project/${projectId}/memory-book/pdf`, 
+          onClick: handleDownloadPdf 
+        },
       ],
     },
-    { icon: <BringToFront size={18} />, label: "Orders", href: "/dashboard/orders" },
-    { icon: <Settings size={18} />, label: "Settings", href: "/dashboard/settings" },
+    { icon: <BringToFront size={18} />, label: "Orders", href: `/project/${projectId}/orders` },
+    { icon: <Settings size={18} />, label: "Settings", href: `/project/${projectId}/settings` },
   ];
 
   return (
@@ -64,6 +100,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey: string; pro
                       <Link
                         key={i}
                         href={child.href}
+                        onClick={child.onClick}
                         className="block text-sm text-gray-600 hover:text-blue-600"
                       >
                         {child.label}

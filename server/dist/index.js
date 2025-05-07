@@ -20,11 +20,12 @@ const uuid_1 = require("uuid");
 const dotenv_1 = __importDefault(require("dotenv"));
 const client_1 = require("@prisma/client");
 const middleware_1 = require("./middleware/middleware");
+const request_1 = __importDefault(require("request"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
 app.use((0, cors_1.default)({
-    origin: process.env.FRONTEND_URL, //allowing from frontend
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
 }));
@@ -39,7 +40,12 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
 });
-//Get the event type and description
+// Utility function to strip query parameters from a URL
+function stripQueryParams(url) {
+    const index = url.indexOf('?');
+    return index !== -1 ? url.substring(0, index) : url;
+}
+// Existing Endpoints (unchanged)
 app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name } = req.query;
     if (!name || typeof name !== "string") {
@@ -61,7 +67,6 @@ app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function*
         res.status(500).json({ error: "Internal server error" });
     }
 }));
-//Stroring the login inforation
 app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
     console.log("Received req.userId in /api/users:", req.userId);
@@ -87,7 +92,6 @@ app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void
         res.status(500).json({ error: "Server error" });
     }
 }));
-//getting the image url and storing it in r2 storage
 app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const fileType = req.query.fileType;
     if (!fileType) {
@@ -101,7 +105,7 @@ app.get("/api/get-presign-url", (req, res) => __awaiter(void 0, void 0, void 0, 
         ContentType: fileType,
     });
     try {
-        const uploadUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 60 }); // 60 sec
+        const uploadUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 60 });
         res.json({ uploadUrl, key });
     }
     catch (error) {
@@ -119,7 +123,6 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
         res.status(400).json({ error: "Missing or invalid key parameter" });
     }
     try {
-        // Step 1: Delete the object from R2
         const deleteCommand = new client_s3_1.DeleteObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME,
             Key: key,
@@ -132,7 +135,6 @@ app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, 
         res.status(500).json({ error: "Failed to delete image" });
     }
 }));
-// Get projects for the logged-in user
 app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const userId = req.userId;
@@ -147,7 +149,7 @@ app.get("/api/user-projects", middleware_1.authMiddleware, (req, res) => __await
                 bookName: true,
                 createdAt: true,
                 eventType: true,
-                eventDescription: true, //Need to fix this later
+                eventDescription: true,
                 imageKey: true,
                 uploadUrl: true,
             },
@@ -189,7 +191,6 @@ app.get('/api/user-projects/:projectId', (req, res) => __awaiter(void 0, void 0,
     }
 }));
 app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    //Need to send token for future
     const { projectId } = req.params;
     const { imageKey, uploadUrl } = req.body;
     console.log(projectId, imageKey, uploadUrl);
@@ -215,33 +216,28 @@ app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, 
         res.status(500).json({ error: "Server error" });
     }
 }));
-//store the user info
 app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    {
-        const { firstName, lastName, email } = req.body;
-        if (!firstName || !lastName || !email) {
-            res.status(400).json({ message: "All fields are required" });
-        }
-        const user = yield prisma.userInformation.create({
-            data: {
-                first_name: firstName,
-                last_name: lastName,
-                email,
-            },
-        });
-        return res.status(200).send({
-            message: "User information filled successfully",
-        });
+    const { firstName, lastName, email } = req.body;
+    if (!firstName || !lastName || !email) {
+        res.status(400).json({ message: "All fields are required" });
     }
+    const user = yield prisma.userInformation.create({
+        data: {
+            first_name: firstName,
+            last_name: lastName,
+            email,
+        },
+    });
+    return res.status(200).send({
+        message: "User information filled successfully",
+    });
 }));
 app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { projectId, signature, pages } = req.body;
-        // Validate input
         if (!projectId || !signature || !pages) {
             return res.status(400).json({ error: "Missing required fields" });
         }
-        // Validate pages data
         for (const page of pages) {
             if (page.layoutId < 0) {
                 return res.status(400).json({ error: "Invalid layoutId" });
@@ -251,7 +247,7 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
                 return res.status(400).json({ error: "Invalid images array" });
             }
         }
-        // Create contribution and nested pages/components
+        console.log('Received contribution pages:', JSON.stringify(pages, null, 2));
         const contribution = yield prisma.contribution.create({
             data: {
                 projectId,
@@ -260,19 +256,23 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
                     create: pages.map((page) => ({
                         guid: page.guid,
                         layoutId: page.layoutId,
-                        images: page.images, // Already filtered to contain only strings
+                        images: page.images.map(stripQueryParams),
                         message: page.message,
                         components: {
-                            create: page.components.map((component) => ({
-                                type: component.type,
-                                position: component.position || null,
-                                size: component.size,
-                                styles: component.styles || null,
-                                editor: component.editor || null,
-                                value: component.value,
-                                imageUrl: component.image_url,
-                                original: component.original || null,
-                            })),
+                            create: page.components.map((component) => {
+                                const cleanedImageUrl = component.image_url ? stripQueryParams(component.image_url) : component.image_url;
+                                console.log('Saving component with imageUrl:', cleanedImageUrl);
+                                return {
+                                    type: component.type,
+                                    position: component.position || null,
+                                    size: component.size,
+                                    styles: component.styles || null,
+                                    editor: component.editor || null,
+                                    value: component.value,
+                                    imageUrl: cleanedImageUrl,
+                                    original: component.original || null,
+                                };
+                            }),
                         },
                     })),
                 },
@@ -291,7 +291,6 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
         yield prisma.$disconnect();
     }
 }));
-//Fill your information page
 app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { firstName, lastName, email, relationship, excludeOnline, notifyMe, projectId } = req.body;
     if (!firstName || !lastName || !email || !relationship) {
@@ -319,7 +318,6 @@ app.post("/api/submit-information", (req, res) => __awaiter(void 0, void 0, void
         res.status(500).json({ message: "Internal server error" });
     }
 }));
-//Get the contribution count
 app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
     try {
@@ -335,18 +333,11 @@ app.get("/contributions/count/:projectId", (req, res) => __awaiter(void 0, void 
 }));
 app.get("/api/deadline/:projectId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
-    //Authenticate authorization
     const { projectId } = req.params;
     if (!projectId || typeof projectId !== "string") {
         return res.status(400).json({ message: "Invalid projectId" });
     }
     try {
-        // // Verify user authentication
-        // const token = await getToken({ req });
-        // if (!token) {
-        //   return res.status(401).json({ message: "Unauthorized" });
-        // }
-        // Fetch the deadline for the project
         const deadline = yield prisma.contributionDeadlines.findFirst({
             where: {
                 projectId,
@@ -363,7 +354,6 @@ app.get("/api/deadline/:projectId", (req, res) => __awaiter(void 0, void 0, void
                 .status(404)
                 .json({ message: "No active deadline found for this project" });
         }
-        // Return the deadline (prefer actual_deadline if available, otherwise calculate_date)
         const deadlineDate = (_a = deadline.actual_deadline) !== null && _a !== void 0 ? _a : deadline.calculate_date;
         return res.status(200).json({
             deadline: deadlineDate ? deadlineDate.toISOString() : null,
@@ -433,11 +423,10 @@ app.get("/api/project-status/:projectId", (req, res) => __awaiter(void 0, void 0
         return res.status(400).json({ message: "Invalid projectId" });
     }
     try {
-        // Check if an order exists to determine printing status
         const order = yield prisma.order.findFirst({
             where: { projectId },
         });
-        const status = order ? "printing" : "gathering"; // Simplify for demo; adjust based on your logic
+        const status = order ? "printing" : "gathering";
         return res.status(200).json({ status });
     }
     catch (error) {
@@ -470,7 +459,7 @@ app.get('/api/orders/:projectId', (req, res) => __awaiter(void 0, void 0, void 0
     }
     catch (error) {
         console.error('Error fetching order:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 }));
 app.get('/api/contributions/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -508,7 +497,6 @@ app.get('/api/contributions/:projectId', (req, res) => __awaiter(void 0, void 0,
         res.status(500).json({ error: 'Internal server error' });
     }
 }));
-// New endpoint for saving layouts
 app.post("/api/layouts", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId, layouts } = req.body;
     const userId = req.userId;
@@ -516,18 +504,15 @@ app.post("/api/layouts", middleware_1.authMiddleware, (req, res) => __awaiter(vo
         return res.status(400).json({ error: "Missing projectId, userId, or invalid layouts" });
     }
     try {
-        // Validate project exists and belongs to user
         const project = yield prisma.loginUser.findFirst({
             where: { id: projectId, userId },
         });
         if (!project) {
             return res.status(404).json({ error: "Project not found or unauthorized" });
         }
-        // Delete existing layouts for this project to avoid duplicates
         yield prisma.layout.deleteMany({
             where: { projectId },
         });
-        // Save new layouts
         const savedLayouts = yield prisma.layout.createMany({
             data: layouts.map((layout) => ({
                 id: layout.id,
@@ -549,7 +534,318 @@ app.post("/api/layouts", middleware_1.authMiddleware, (req, res) => __awaiter(vo
         res.status(500).json({ error: "Failed to save layouts" });
     }
 }));
-//Listening to the server
+// Updated /api/preview/:projectId to return JSON
+app.get('/api/preview/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    const userId = req.userId;
+    console.log('Project ID', projectId);
+    console.log('UID', userId);
+    if (!projectId || typeof projectId !== 'string' || !userId) {
+        return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
+    }
+    try {
+        const project = yield prisma.loginUser.findUnique({
+            where: { id: projectId, userId },
+            select: { projectName: true },
+        });
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found or unauthorized' });
+        }
+        const contributionsData = yield prisma.contribution.findMany({
+            where: { projectId },
+            include: {
+                pages: {
+                    include: {
+                        components: {
+                            select: {
+                                type: true,
+                                imageUrl: true,
+                                value: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        const pages = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
+            const contributorName = contrib.signature || 'Anonymous';
+            const excludedFromBook = false;
+            if (excludedFromBook)
+                return [];
+            return yield Promise.all(contrib.pages.map((page) => __awaiter(void 0, void 0, void 0, function* () {
+                const components = yield Promise.all(page.components.map((comp) => __awaiter(void 0, void 0, void 0, function* () {
+                    if (comp.type === 'photo' && comp.imageUrl) {
+                        const cleanedImageUrl = stripQueryParams(comp.imageUrl);
+                        console.log('Cleaned imageUrl:', cleanedImageUrl);
+                        try {
+                            const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+                            const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+                            console.log('Generating signed URL for key:', key);
+                            const command = new client_s3_1.GetObjectCommand({
+                                Bucket: process.env.R2_BUCKET_NAME,
+                                Key: key,
+                            });
+                            const signedUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
+                            console.log('Signed URL:', signedUrl);
+                            return Object.assign(Object.assign({}, comp), { imageUrl: signedUrl });
+                        }
+                        catch (error) {
+                            console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
+                            return Object.assign(Object.assign({}, comp), { imageUrl: '' });
+                        }
+                    }
+                    return comp;
+                })));
+                return {
+                    contributorName,
+                    photos: components
+                        .filter((comp) => comp.type === 'photo' && comp.imageUrl)
+                        .map((comp) => ({ imageUrl: comp.imageUrl })),
+                    paragraphs: components
+                        .filter((comp) => comp.type === 'paragraph' && comp.value)
+                        .map((comp) => ({ value: comp.value })),
+                };
+            })));
+        })));
+        // Flatten the pages array
+        const flattenedPages = pages.flat();
+        res.status(200).json({
+            projectName: project.projectName,
+            pages: flattenedPages,
+        });
+    }
+    catch (error) {
+        console.error('Error generating preview:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}));
+// Updated /api/pdf/:projectId
+app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    console.log('ProjectID', projectId);
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
+    }
+    try {
+        const project = yield prisma.loginUser.findUnique({
+            where: { id: projectId },
+            select: { projectName: true },
+        });
+        console.log('Project:', project);
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found or unauthorized' });
+        }
+        const contributionsData = yield prisma.contribution.findMany({
+            where: { projectId },
+            include: {
+                pages: {
+                    include: {
+                        components: {
+                            select: {
+                                type: true,
+                                imageUrl: true,
+                                value: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+        console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
+        const contributions = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
+            const pages = yield Promise.all(contrib.pages.map((page) => __awaiter(void 0, void 0, void 0, function* () {
+                const components = yield Promise.all(page.components.map((comp) => __awaiter(void 0, void 0, void 0, function* () {
+                    if (comp.type === 'photo' && comp.imageUrl) {
+                        const cleanedImageUrl = stripQueryParams(comp.imageUrl);
+                        console.log('Cleaned imageUrl for PDF:', cleanedImageUrl);
+                        try {
+                            const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+                            const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+                            console.log('Generating signed URL for PDF key:', key);
+                            const command = new client_s3_1.GetObjectCommand({
+                                Bucket: process.env.R2_BUCKET_NAME,
+                                Key: key,
+                            });
+                            const signedUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
+                            console.log('Signed URL for PDF:', signedUrl);
+                            return Object.assign(Object.assign({}, comp), { imageUrl: signedUrl });
+                        }
+                        catch (error) {
+                            console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
+                            return Object.assign(Object.assign({}, comp), { imageUrl: '' });
+                        }
+                    }
+                    return comp;
+                })));
+                return Object.assign(Object.assign({}, page), { components });
+            })));
+            return {
+                id: contrib.id,
+                contributorName: contrib.signature || 'Anonymous',
+                excludedFromBook: false,
+                pages,
+            };
+        })));
+        const html = generateBookHtml({
+            projectName: project.projectName,
+            contributions,
+        });
+        const config = {
+            url: 'https://api.docraptor.com/docs',
+            encoding: null,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            json: {
+                user_credentials: process.env.DOCRAPTER_API_KEY || '3jOFcaZidoZMhyOjTQ_Y',
+                doc: {
+                    document_content: html,
+                    type: 'pdf',
+                    test: process.env.NODE_ENV !== 'production',
+                    prince_options: {
+                        media: 'print',
+                        baseurl: process.env.R2_ENDPOINT || 'https://memorylane.db134517dd79f4a26d091b4dcda7e499.r2.cloudflarestorage.com',
+                    },
+                },
+            },
+        };
+        console.log('config', config);
+        request_1.default.post(config, (err, response, body) => {
+            if (err) {
+                console.error('Error generating PDF:', err);
+                return res.status(500).json({ error: 'Failed to generate PDF' });
+            }
+            if (response.statusCode !== 200) {
+                console.error('DocRaptor error:', body);
+                return res.status(response.statusCode).json({ error: 'DocRaptor API error' });
+            }
+            res.set({
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': 'inline; filename="book.pdf"',
+            });
+            res.send(body);
+        });
+    }
+    catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}));
+// Helper function to generate HTML for PDF
+function generateBookHtml(contributionsData) {
+    const { projectName, contributions } = contributionsData;
+    let pageContent = '';
+    let pageCount = 0;
+    contributions.forEach((contribution) => {
+        if (contribution.excludedFromBook)
+            return;
+        contribution.pages.forEach((page) => {
+            if (pageCount % 2 === 0 && pageCount > 0) {
+                pageContent += '</div>';
+            }
+            if (pageCount % 2 === 0) {
+                pageContent += '<div class="page">';
+            }
+            pageContent += `
+        <div class="contribution">
+          <h2 class="contributor-name">${contribution.contributorName}</h2>
+      `;
+            const photos = page.components.filter((comp) => comp.type === 'photo' && comp.imageUrl);
+            photos.forEach((photo) => {
+                pageContent += `
+          <img 
+            src="${photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}" 
+            alt="Contribution photo" 
+            class="photo" 
+            onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Image failed to load:', '${photo.imageUrl}')"
+          >
+        `;
+            });
+            const paragraphs = page.components.filter((comp) => comp.type === 'paragraph' && comp.value);
+            paragraphs.forEach((paragraph) => {
+                pageContent += `<p class="paragraph">${paragraph.value}</p>`;
+            });
+            if (photos.length === 0 && paragraphs.length === 0) {
+                pageContent += `<p class="no-content">No content available</p>`;
+            }
+            pageContent += '</div>';
+            pageCount++;
+        });
+    });
+    if (pageCount % 2 !== 0 || pageCount === 0) {
+        pageContent += '</div>';
+    }
+    return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${projectName} - Book Preview</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background: #fff;
+        }
+        .book-container {
+          max-width: 210mm;
+          margin: 0 auto;
+          background: #fff;
+        }
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 10mm;
+          box-sizing: border-box;
+          background: #fff;
+          page-break-after: always;
+        }
+        .contribution {
+          margin-bottom: 10mm;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 5mm;
+        }
+        .contributor-name {
+          font-size: 16pt;
+          font-weight: bold;
+          margin-bottom: 5mm;
+          color: #333;
+        }
+        .photo {
+          max-width: 100%;
+          height: auto;
+          margin-bottom: 5mm;
+          border-radius: 4px;
+          display: block;
+        }
+        .paragraph {
+          font-size: 12pt;
+          line-height: 1.5;
+          color: #555;
+          margin-bottom: 5mm;
+        }
+        .no-content {
+          font-size: 12pt;
+          color: #999;
+          text-align: center;
+        }
+        @page {
+          size: A4;
+          margin: 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="book-container" class="book-container">
+        ${pageContent}
+      </div>
+    </body>
+    </html>
+  `;
+}
+// Listening to the server
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
 });

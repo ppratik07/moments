@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import {
   S3Client,
+  GetObjectCommand,
   PutObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
@@ -11,6 +12,8 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { authMiddleware } from "./middleware/middleware";
+import request from "request";
+
 dotenv.config();
 
 const app = express();
@@ -18,7 +21,7 @@ const PORT = process.env.PORT || 8080;
 
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL, //allowing from frontend
+    origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
   })
@@ -37,7 +40,13 @@ const s3 = new S3Client({
   },
 });
 
-//Get the event type and description
+// Utility function to strip query parameters from a URL
+function stripQueryParams(url: string): string {
+  const index = url.indexOf('?');
+  return index !== -1 ? url.substring(0, index) : url;
+}
+
+// Existing Endpoints (unchanged)
 app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
   const { name } = req.query;
   if (!name || typeof name !== "string") {
@@ -61,36 +70,33 @@ app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-//Stroring the login inforation
-app.post("/api/users",authMiddleware,async (req: Request, res: Response): Promise<any> => {
-    const { projectName, bookName, dueDate, eventType, eventDescription } =
-      req.body;
-    console.log("Received req.userId in /api/users:", req.userId);
-    try {
-      const userDetails = await prisma.loginUser.create({
-        data: {
-          projectName,
-          bookName,
-          dueDate: new Date(dueDate),
-          eventType,
-          eventDescription,
-          userId: req.userId || "",
-        },
-      });
 
-      return res.status(201).json({
-        message: "Data saved successfully",
-        userId: req.userId,
-        projectId: userDetails.id,
-      });
-    } catch (error) {
-      console.error("Failed to create project:", error);
-      res.status(500).json({ error: "Server error" });
-    }
+app.post("/api/users", authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
+  console.log("Received req.userId in /api/users:", req.userId);
+  try {
+    const userDetails = await prisma.loginUser.create({
+      data: {
+        projectName,
+        bookName,
+        dueDate: new Date(dueDate),
+        eventType,
+        eventDescription,
+        userId: req.userId || "",
+      },
+    });
+
+    return res.status(201).json({
+      message: "Data saved successfully",
+      userId: req.userId,
+      projectId: userDetails.id,
+    });
+  } catch (error) {
+    console.error("Failed to create project:", error);
+    res.status(500).json({ error: "Server error" });
   }
-);
+});
 
-//getting the image url and storing it in r2 storage
 app.get("/api/get-presign-url", async (req, res) => {
   const fileType = req.query.fileType as string;
 
@@ -108,7 +114,7 @@ app.get("/api/get-presign-url", async (req, res) => {
   });
 
   try {
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 }); // 60 sec
+    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
     res.json({ uploadUrl, key });
   } catch (error) {
     console.error("Error generating presigned URL:", error);
@@ -127,7 +133,6 @@ app.delete("/api/delete-image", async (req, res) => {
     res.status(400).json({ error: "Missing or invalid key parameter" });
   }
   try {
-    // Step 1: Delete the object from R2
     const deleteCommand = new DeleteObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
       Key: key as string,
@@ -142,126 +147,116 @@ app.delete("/api/delete-image", async (req, res) => {
   }
 });
 
-// Get projects for the logged-in user
-app.get("/api/user-projects",authMiddleware,async (req: Request, res: Response): Promise<any> => {
-    try {
-      const userId = req.userId;
-      if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
-      }
-      const projects = await prisma.loginUser.findMany({
-        where: { userId },
-        select: {
-          id: true,
-          projectName: true,
-          bookName: true,
-          createdAt: true,
-          eventType: true,
-          eventDescription: true, //Need to fix this later
-          imageKey: true,
-          uploadUrl: true,
-        },
-      });
-      return res.status(200).json({ projects });
-    } catch (error) {
-      console.error("Error fetching user projects:", error);
-      res.status(500).json({ error: "Internal server error" });
+app.get("/api/user-projects", authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  try {
+    const userId = req.userId;
+    if (!userId) {
+      return res.status(400).json({ error: "User ID is required" });
     }
+    const projects = await prisma.loginUser.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        projectName: true,
+        bookName: true,
+        createdAt: true,
+        eventType: true,
+        eventDescription: true,
+        imageKey: true,
+        uploadUrl: true,
+      },
+    });
+    return res.status(200).json({ projects });
+  } catch (error) {
+    console.error("Error fetching user projects:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-);
+});
 
 app.get('/api/user-projects/:projectId', async (req: Request, res: Response): Promise<any> => {
-    const { projectId } = req.params;
+  const { projectId } = req.params;
 
-    if (!projectId || typeof projectId !== 'string') {
-      return res.status(400).json({ message: 'Invalid projectId' });
-    }
-
-    try {
-      const project = await prisma.loginUser.findUnique({
-        where: { id: projectId },
-        select: {
-          id: true,
-          projectName: true,
-          bookName: true,
-          createdAt: true,
-          eventType: true,
-          eventDescription: true,
-          imageKey: true,
-          uploadUrl: true,
-        },
-      });
-
-      if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-      }
-
-      return res.status(200).json({ project });
-    } catch (error) {
-      console.error('Error fetching user projects:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-})
-
-app.patch("/api/users/:projectId/upload-image",async (req: Request, res: Response): Promise<any> => {
-    //Need to send token for future
-    const { projectId } = req.params;
-    const { imageKey, uploadUrl } = req.body;
-    console.log(projectId, imageKey, uploadUrl);
-    if (!imageKey || !uploadUrl) {
-      return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
-    }
-
-    try {
-      const updatedProject = await prisma.loginUser.update({
-        where: { id: projectId },
-        data: {
-          imageKey,
-          uploadUrl,
-        },
-      });
-      console.log("Updated project:", updatedProject);
-      res.json({
-        message: "Image updated successfully",
-        project: updatedProject,
-      });
-    } catch (error) {
-      console.error("Failed to update image info:", error);
-      res.status(500).json({ error: "Server error" });
-    }
+  if (!projectId || typeof projectId !== 'string') {
+    return res.status(400).json({ message: 'Invalid projectId' });
   }
-);
 
-//store the user info
-app.post("/api/user-information",async (req: Request, res: Response): Promise<any> => {
-    {
-      const { firstName, lastName, email } = req.body;
-      if (!firstName || !lastName || !email) {
-        res.status(400).json({ message: "All fields are required" });
-      }
-      const user = await prisma.userInformation.create({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          email,
-        },
-      });
-      return res.status(200).send({
-        message: "User information filled successfully",
-      });
+  try {
+    const project = await prisma.loginUser.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        projectName: true,
+        bookName: true,
+        createdAt: true,
+        eventType: true,
+        eventDescription: true,
+        imageKey: true,
+        uploadUrl: true,
+      },
+    });
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found' });
     }
+
+    return res.status(200).json({ project });
+  } catch (error) {
+    console.error('Error fetching user projects:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
-);
+});
+
+app.patch("/api/users/:projectId/upload-image", async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  const { imageKey, uploadUrl } = req.body;
+  console.log(projectId, imageKey, uploadUrl);
+  if (!imageKey || !uploadUrl) {
+    return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
+  }
+
+  try {
+    const updatedProject = await prisma.loginUser.update({
+      where: { id: projectId },
+      data: {
+        imageKey,
+        uploadUrl,
+      },
+    });
+    console.log("Updated project:", updatedProject);
+    res.json({
+      message: "Image updated successfully",
+      project: updatedProject,
+    });
+  } catch (error) {
+    console.error("Failed to update image info:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/user-information", async (req: Request, res: Response): Promise<any> => {
+  const { firstName, lastName, email } = req.body;
+  if (!firstName || !lastName || !email) {
+    res.status(400).json({ message: "All fields are required" });
+  }
+  const user = await prisma.userInformation.create({
+    data: {
+      first_name: firstName,
+      last_name: lastName,
+      email,
+    },
+  });
+  return res.status(200).send({
+    message: "User information filled successfully",
+  });
+});
 
 app.post("/api/save-contribution", async (req, res): Promise<any> => {
   try {
     const { projectId, signature, pages } = req.body;
 
-    // Validate input
     if (!projectId || !signature || !pages) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    // Validate pages data
     for (const page of pages) {
       if (page.layoutId < 0) {
         return res.status(400).json({ error: "Invalid layoutId" });
@@ -275,7 +270,7 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
         return res.status(400).json({ error: "Invalid images array" });
       }
     }
-    // Create contribution and nested pages/components
+    console.log('Received contribution pages:', JSON.stringify(pages, null, 2));
     const contribution = await prisma.contribution.create({
       data: {
         projectId,
@@ -300,19 +295,23 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
             }) => ({
               guid: page.guid,
               layoutId: page.layoutId,
-              images: page.images, // Already filtered to contain only strings
+              images: page.images.map(stripQueryParams),
               message: page.message,
               components: {
-                create: page.components.map((component) => ({
-                  type: component.type,
-                  position: component.position || null,
-                  size: component.size,
-                  styles: component.styles || null,
-                  editor: component.editor || null,
-                  value: component.value,
-                  imageUrl: component.image_url,
-                  original: component.original || null,
-                })),
+                create: page.components.map((component) => {
+                  const cleanedImageUrl = component.image_url ? stripQueryParams(component.image_url) : component.image_url;
+                  console.log('Saving component with imageUrl:', cleanedImageUrl);
+                  return {
+                    type: component.type,
+                    position: component.position || null,
+                    size: component.size,
+                    styles: component.styles || null,
+                    editor: component.editor || null,
+                    value: component.value,
+                    imageUrl: cleanedImageUrl,
+                    original: component.original || null,
+                  };
+                }),
               },
             })
           ),
@@ -332,46 +331,44 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
   }
 });
 
-//Fill your information page
-app.post("/api/submit-information",async (req: Request, res: Response): Promise<any> => {
-    const {
-      firstName,
-      lastName,
-      email,
-      relationship,
-      excludeOnline,
-      notifyMe,
-      projectId
-    } = req.body;
+app.post("/api/submit-information", async (req: Request, res: Response): Promise<any> => {
+  const {
+    firstName,
+    lastName,
+    email,
+    relationship,
+    excludeOnline,
+    notifyMe,
+    projectId
+  } = req.body;
 
-    if (!firstName || !lastName || !email || !relationship) {
-      return res.status(400).json({ message: "All fields are required" });
-    }
-
-    try {
-      const user = await prisma.fillYourDetails.create({
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          email,
-          relationship,
-          ExcludeFromOnlineVersion: excludeOnline,
-          ExcludeFromPromotion: notifyMe,
-          projectId 
-        },
-      });
-
-      return res.status(200).json({
-        message: "User information saved successfully",
-        user,
-      });
-    } catch (error) {
-      console.error("Error saving user information:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
+  if (!firstName || !lastName || !email || !relationship) {
+    return res.status(400).json({ message: "All fields are required" });
   }
-);
-//Get the contribution count
+
+  try {
+    const user = await prisma.fillYourDetails.create({
+      data: {
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        relationship,
+        ExcludeFromOnlineVersion: excludeOnline,
+        ExcludeFromPromotion: notifyMe,
+        projectId
+      },
+    });
+
+    return res.status(200).json({
+      message: "User information saved successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Error saving user information:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 app.get("/contributions/count/:projectId", async (req, res) => {
   const { projectId } = req.params;
 
@@ -385,168 +382,156 @@ app.get("/contributions/count/:projectId", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-app.get("/api/deadline/:projectId",async (req: Request, res: Response): Promise<any> => {
-    //Authenticate authorization
-    const { projectId } = req.params;
 
-    if (!projectId || typeof projectId !== "string") {
-      return res.status(400).json({ message: "Invalid projectId" });
-    }
+app.get("/api/deadline/:projectId", async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
 
-    try {
-      // // Verify user authentication
-      // const token = await getToken({ req });
-      // if (!token) {
-      //   return res.status(401).json({ message: "Unauthorized" });
-      // }
-
-      // Fetch the deadline for the project
-      const deadline = await prisma.contributionDeadlines.findFirst({
-        where: {
-          projectId,
-          deadline_enabled: true,
-        },
-        select: {
-          actual_deadline: true,
-          calculate_date: true,
-          deadline_enabled: true,
-        },
-      });
-
-      if (!deadline) {
-        return res
-          .status(404)
-          .json({ message: "No active deadline found for this project" });
-      }
-
-      // Return the deadline (prefer actual_deadline if available, otherwise calculate_date)
-      const deadlineDate = deadline.actual_deadline ?? deadline.calculate_date;
-
-      return res.status(200).json({
-        deadline: deadlineDate ? deadlineDate.toISOString() : null,
-        deadline_enabled: deadline.deadline_enabled,
-      });
-    } catch (error) {
-      console.error("Error fetching deadline:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+  if (!projectId || typeof projectId !== "string") {
+    return res.status(400).json({ message: "Invalid projectId" });
   }
-);
+
+  try {
+    const deadline = await prisma.contributionDeadlines.findFirst({
+      where: {
+        projectId,
+        deadline_enabled: true,
+      },
+      select: {
+        actual_deadline: true,
+        calculate_date: true,
+        deadline_enabled: true,
+      },
+    });
+
+    if (!deadline) {
+      return res
+        .status(404)
+        .json({ message: "No active deadline found for this project" });
+    }
+
+    const deadlineDate = deadline.actual_deadline ?? deadline.calculate_date;
+
+    return res.status(200).json({
+      deadline: deadlineDate ? deadlineDate.toISOString() : null,
+      deadline_enabled: deadline.deadline_enabled,
+    });
+  } catch (error) {
+    console.error("Error fetching deadline:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 app.get("/api/lastcontribution/:projectId", async (req: Request, res: Response): Promise<any> => {
-    const { projectId } = req.params;
+  const { projectId } = req.params;
 
-    if (!projectId || typeof projectId !== "string") {
-      return res.status(400).json({ message: "Invalid projectId" });
-    }
-
-    try {
-      const lastContribution = await prisma.contribution.findFirst({
-        where: { projectId },
-        orderBy: { createdAt: "desc" },
-        take: 1,
-      });
-
-      if (!lastContribution) {
-        return res.status(404).json({ message: "No contributions found" });
-      }
-
-      return res.status(200).json({
-        lastContributionDate: lastContribution.createdAt.toISOString(),
-      });
-    } catch (error) {
-      console.error("Error fetching last contribution:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+  if (!projectId || typeof projectId !== "string") {
+    return res.status(400).json({ message: "Invalid projectId" });
   }
-);
-app.post("/api/feedback",authMiddleware,async (req: Request, res: Response): Promise<any> => {
-    const { projectId, content }: { projectId: string; content: string } =
-      req.body;
 
-    if (
-      !projectId ||
-      !content ||
-      typeof projectId !== "string" ||
-      typeof content !== "string"
-    ) {
-      return res.status(400).json({ message: "Invalid projectId or content" });
+  try {
+    const lastContribution = await prisma.contribution.findFirst({
+      where: { projectId },
+      orderBy: { createdAt: "desc" },
+      take: 1,
+    });
+
+    if (!lastContribution) {
+      return res.status(404).json({ message: "No contributions found" });
     }
-    const userId = req.userId;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
-    try {
-      const feedback = await prisma.feedback.create({
-        data: {
-          userId,
-          projectId,
-          content,
-        },
-      });
-      return res
-        .status(201)
-        .json({ message: "Feedback submitted successfully", feedback });
-    } catch (error) {
-      console.error("Error saving feedback:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+
+    return res.status(200).json({
+      lastContributionDate: lastContribution.createdAt.toISOString(),
+    });
+  } catch (error) {
+    console.error("Error fetching last contribution:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
-);
+});
 
-app.get("/api/project-status/:projectId",async (req: Request, res: Response): Promise<any> => {
-    const { projectId } = req.params;
+app.post("/api/feedback", authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  const { projectId, content }: { projectId: string; content: string } = req.body;
 
-    if (!projectId || typeof projectId !== "string") {
-      return res.status(400).json({ message: "Invalid projectId" });
-    }
-
-    try {
-      // Check if an order exists to determine printing status
-      const order = await prisma.order.findFirst({
-        where: { projectId },
-      });
-
-      const status = order ? "printing" : "gathering"; // Simplify for demo; adjust based on your logic
-
-      return res.status(200).json({ status });
-    } catch (error) {
-      console.error("Error fetching project status:", error);
-      return res.status(500).json({ message: "Internal Server Error" });
-    }
+  if (
+    !projectId ||
+    !content ||
+    typeof projectId !== "string" ||
+    typeof content !== "string"
+  ) {
+    return res.status(400).json({ message: "Invalid projectId or content" });
   }
-);
+  const userId = req.userId;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const feedback = await prisma.feedback.create({
+      data: {
+        userId,
+        projectId,
+        content,
+      },
+    });
+    return res
+      .status(201)
+      .json({ message: "Feedback submitted successfully", feedback });
+  } catch (error) {
+    console.error("Error saving feedback:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.get("/api/project-status/:projectId", async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+
+  if (!projectId || typeof projectId !== "string") {
+    return res.status(400).json({ message: "Invalid projectId" });
+  }
+
+  try {
+    const order = await prisma.order.findFirst({
+      where: { projectId },
+    });
+
+    const status = order ? "printing" : "gathering";
+
+    return res.status(200).json({ status });
+  } catch (error) {
+    console.error("Error fetching project status:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 app.get('/api/orders/:projectId', async (req: Request, res: Response): Promise<any> => {
-      const {projectId} = req.params;
-      if (!projectId || typeof projectId !== 'string') {
-        return res.status(400).json({ message: 'Invalid projectId' });
-      }
-      try {    
-        const order = await prisma.order.findFirst({
-          where: { projectId },
-          select: {
-            id: true,
-            createdAt: true,
-            total: true,
-          },
-        });
-    
-        if (!order) {
-          return res.status(404).json({ message: 'No order found for this project' });
-        }
-    
-        return res.status(200).json({
-          orderId: order.id,
-          orderDate: order.createdAt.toISOString(),
-          total: order.total,
-        });
-      } catch (error) {
-        console.error('Error fetching order:', error);
-        return res.status(500).json({ message: 'Internal Server Error' });
-      }     
-})
-app.get('/api/contributions/:projectId', async(req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  if (!projectId || typeof projectId !== 'string') {
+    return res.status(400).json({ message: 'Invalid projectId' });
+  }
+  try {
+    const order = await prisma.order.findFirst({
+      where: { projectId },
+      select: {
+        id: true,
+        createdAt: true,
+        total: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: 'No order found for this project' });
+    }
+
+    return res.status(200).json({
+      orderId: order.id,
+      orderDate: order.createdAt.toISOString(),
+      total: order.total,
+    });
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+app.get('/api/contributions/:projectId', async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
 
   if (!projectId || typeof projectId !== 'string') {
@@ -583,9 +568,8 @@ app.get('/api/contributions/:projectId', async(req: Request, res: Response): Pro
     console.error('Error fetching contributions:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
-})
+});
 
-// New endpoint for saving layouts
 app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Promise<any> => {
   const { projectId, layouts } = req.body;
   const userId = req.userId;
@@ -595,7 +579,6 @@ app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Pr
   }
 
   try {
-    // Validate project exists and belongs to user
     const project = await prisma.loginUser.findFirst({
       where: { id: projectId, userId },
     });
@@ -604,12 +587,10 @@ app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Pr
       return res.status(404).json({ error: "Project not found or unauthorized" });
     }
 
-    // Delete existing layouts for this project to avoid duplicates
     await prisma.layout.deleteMany({
       where: { projectId },
     });
 
-    // Save new layouts
     const savedLayouts = await prisma.layout.createMany({
       data: layouts.map((layout) => ({
         id: layout.id,
@@ -632,7 +613,341 @@ app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Pr
   }
 });
 
-//Listening to the server
+// Updated /api/preview/:projectId to return JSON
+app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  const userId = req.userId;
+  console.log('Project ID', projectId);
+  console.log('UID',userId );
+  if (!projectId || typeof projectId !== 'string' || !userId) {
+    return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
+  }
+
+  try {
+    const project = await prisma.loginUser.findUnique({
+      where: { id: projectId, userId },
+      select: { projectName: true },
+    });
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found or unauthorized' });
+    }
+
+    const contributionsData = await prisma.contribution.findMany({
+      where: { projectId },
+      include: {
+        pages: {
+          include: {
+            components: {
+              select: {
+                type: true,
+                imageUrl: true,
+                value: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+
+    const pages = await Promise.all(contributionsData.map(async (contrib) => {
+      const contributorName = contrib.signature || 'Anonymous';
+      const excludedFromBook = false;
+
+      if (excludedFromBook) return [];
+
+      return await Promise.all(contrib.pages.map(async (page) => {
+        const components = await Promise.all(page.components.map(async (comp) => {
+          if (comp.type === 'photo' && comp.imageUrl) {
+            const cleanedImageUrl = stripQueryParams(comp.imageUrl);
+            console.log('Cleaned imageUrl:', cleanedImageUrl);
+            try {
+              const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+              const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+              console.log('Generating signed URL for key:', key);
+              const command = new GetObjectCommand({
+                Bucket: process.env.R2_BUCKET_NAME!,
+                Key: key,
+              });
+              const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+              console.log('Signed URL:', signedUrl);
+              return { ...comp, imageUrl: signedUrl };
+            } catch (error) {
+              console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
+              return { ...comp, imageUrl: '' };
+            }
+          }
+          return comp;
+        }));
+
+        return {
+          contributorName,
+          photos: components
+            .filter((comp: any) => comp.type === 'photo' && comp.imageUrl)
+            .map((comp: any) => ({ imageUrl: comp.imageUrl })),
+          paragraphs: components
+            .filter((comp: any) => comp.type === 'paragraph' && comp.value)
+            .map((comp: any) => ({ value: comp.value })),
+        };
+      }));
+    }));
+
+    // Flatten the pages array
+    const flattenedPages = pages.flat();
+
+    res.status(200).json({
+      projectName: project.projectName,
+      pages: flattenedPages,
+    });
+  } catch (error) {
+    console.error('Error generating preview:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Updated /api/pdf/:projectId
+app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  console.log('ProjectID',projectId);
+  if (!projectId || typeof projectId !== 'string') {
+    return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
+  }
+
+  try {
+    const project = await prisma.loginUser.findUnique({
+      where: { id: projectId },
+      select: { projectName: true },
+    });
+    console.log('Project:', project);
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found or unauthorized' });
+    }
+
+    const contributionsData = await prisma.contribution.findMany({
+      where: { projectId },
+      include: {
+        pages: {
+          include: {
+            components: {
+              select: {
+                type: true,
+                imageUrl: true,
+                value: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
+
+    const contributions = await Promise.all(contributionsData.map(async (contrib) => {
+      const pages = await Promise.all(contrib.pages.map(async (page) => {
+        const components = await Promise.all(page.components.map(async (comp) => {
+          if (comp.type === 'photo' && comp.imageUrl) {
+            const cleanedImageUrl = stripQueryParams(comp.imageUrl);
+            console.log('Cleaned imageUrl for PDF:', cleanedImageUrl);
+            try {
+              const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+              const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+              console.log('Generating signed URL for PDF key:', key);
+              const command = new GetObjectCommand({
+                Bucket: process.env.R2_BUCKET_NAME!,
+                Key: key,
+              });
+              const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+              console.log('Signed URL for PDF:', signedUrl);
+              return { ...comp, imageUrl: signedUrl };
+            } catch (error) {
+              console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
+              return { ...comp, imageUrl: '' };
+            }
+          }
+          return comp;
+        }));
+        return { ...page, components };
+      }));
+      return {
+        id: contrib.id,
+        contributorName: contrib.signature || 'Anonymous',
+        excludedFromBook: false,
+        pages,
+      };
+    }));
+
+    const html = generateBookHtml({
+      projectName: project.projectName,
+      contributions,
+    });
+
+    const config = {
+      url: 'https://api.docraptor.com/docs',
+      encoding: null,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      json: {
+        user_credentials: process.env.DOCRAPTER_API_KEY! || '3jOFcaZidoZMhyOjTQ_Y',
+        doc: {
+          document_content: html,
+          type: 'pdf',
+          test: process.env.NODE_ENV !== 'production',
+          prince_options: {
+            media: 'print',
+            baseurl: process.env.R2_ENDPOINT || 'https://memorylane.db134517dd79f4a26d091b4dcda7e499.r2.cloudflarestorage.com',
+          },
+        },
+      },
+    };
+    console.log('config',config);
+    request.post(config, (err, response, body) => {
+      if (err) {
+        console.error('Error generating PDF:', err);
+        return res.status(500).json({ error: 'Failed to generate PDF' });
+      }
+
+      if (response.statusCode !== 200) {
+        console.error('DocRaptor error:', body);
+        return res.status(response.statusCode).json({ error: 'DocRaptor API error' });
+      }
+
+      res.set({
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="book.pdf"',
+      });
+      res.send(body);
+    });
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Helper function to generate HTML for PDF
+function generateBookHtml(contributionsData: { projectName: string; contributions: any[] }): string {
+  const { projectName, contributions } = contributionsData;
+  let pageContent = '';
+  let pageCount = 0;
+
+  contributions.forEach((contribution) => {
+    if (contribution.excludedFromBook) return;
+
+    contribution.pages.forEach((page: any) => {
+      if (pageCount % 2 === 0 && pageCount > 0) {
+        pageContent += '</div>';
+      }
+      if (pageCount % 2 === 0) {
+        pageContent += '<div class="page">';
+      }
+
+      pageContent += `
+        <div class="contribution">
+          <h2 class="contributor-name">${contribution.contributorName}</h2>
+      `;
+
+      const photos = page.components.filter((comp: any) => comp.type === 'photo' && comp.imageUrl);
+      photos.forEach((photo: any) => {
+        pageContent += `
+          <img 
+            src="${photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}" 
+            alt="Contribution photo" 
+            class="photo" 
+            onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Image failed to load:', '${photo.imageUrl}')"
+          >
+        `;
+      });
+
+      const paragraphs = page.components.filter((comp: any) => comp.type === 'paragraph' && comp.value);
+      paragraphs.forEach((paragraph: any) => {
+        pageContent += `<p class="paragraph">${paragraph.value}</p>`;
+      });
+
+      if (photos.length === 0 && paragraphs.length === 0) {
+        pageContent += `<p class="no-content">No content available</p>`;
+      }
+
+      pageContent += '</div>';
+      pageCount++;
+    });
+  });
+
+  if (pageCount % 2 !== 0 || pageCount === 0) {
+    pageContent += '</div>';
+  }
+
+  return `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${projectName} - Book Preview</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 0;
+          padding: 0;
+          background: #fff;
+        }
+        .book-container {
+          max-width: 210mm;
+          margin: 0 auto;
+          background: #fff;
+        }
+        .page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 10mm;
+          box-sizing: border-box;
+          background: #fff;
+          page-break-after: always;
+        }
+        .contribution {
+          margin-bottom: 10mm;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 5mm;
+        }
+        .contributor-name {
+          font-size: 16pt;
+          font-weight: bold;
+          margin-bottom: 5mm;
+          color: #333;
+        }
+        .photo {
+          max-width: 100%;
+          height: auto;
+          margin-bottom: 5mm;
+          border-radius: 4px;
+          display: block;
+        }
+        .paragraph {
+          font-size: 12pt;
+          line-height: 1.5;
+          color: #555;
+          margin-bottom: 5mm;
+        }
+        .no-content {
+          font-size: 12pt;
+          color: #999;
+          text-align: center;
+        }
+        @page {
+          size: A4;
+          margin: 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div id="book-container" class="book-container">
+        ${pageContent}
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
 });
