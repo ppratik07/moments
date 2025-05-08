@@ -63,8 +63,8 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
           href: `/previewbook/${projectId}`, 
           onClick: handlePreviewClick 
         },
-        { label: "Customize Book", href: `/project/${projectId}/memory-book/customize` },
-        { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
+        // { label: "Customize Book", href: `/project/${projectId}/memory-book/customize` },
+        // { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
         { 
           label: "Download PDF", 
           href: `/project/${projectId}/memory-book/pdf`, 
