@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function Sidebar({ imageKey, projectId }: { imageKey?: string; projectId?: string }) {
@@ -20,6 +21,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   const imageUrl = imageKey ? `${baseUrl}/${imageKey}` : undefined;
   const [isMemoryBookOpen, setMemoryBookOpen] = useState(true);
   const { getToken } = useAuth();
+  const router = useRouter();
 
   // Function to handle preview click
   const handlePreviewClick = async (e: React.MouseEvent) => {
@@ -28,11 +30,14 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
     const response = await fetch(`http://localhost:8080/api/preview/${projectId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
-    const html = await response.text();
-    const newWindow = window.open('', '_blank');
-    newWindow?.document.write(html);
+    const bookData = await response.json();
+    if (!bookData.pages) {
+      console.error("No pages found in book data");
+      return;
+    }
+    router.push(`/previewbook/${projectId}`);
   };
-
+  
   const handleDownloadPdf = async (e: React.MouseEvent) => {
     e.preventDefault();
     const token = await getToken();
@@ -53,17 +58,17 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
       label: "Memory Book",
       expandable: true,
       children: [
-        {
-          label: "Preview Book",
-          href: `/previewbook/${projectId}`,
-          onClick: handlePreviewClick
+        { 
+          label: "Preview Book", 
+          href: `/previewbook/${projectId}`, 
+          onClick: handlePreviewClick 
         },
         { label: "Customize Book", href: `/project/${projectId}/memory-book/customize` },
         { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
-        {
-          label: "Download PDF",
-          href: `/project/${projectId}/memory-book/pdf`,
-          onClick: handleDownloadPdf
+        { 
+          label: "Download PDF", 
+          href: `/project/${projectId}/memory-book/pdf`, 
+          onClick: handleDownloadPdf 
         },
       ],
     },
@@ -98,27 +103,16 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
                 </button>
                 {isMemoryBookOpen && (
                   <div className="ml-6 mt-1 space-y-2">
-                    {item.children.map((child, i) => {
-                      const isButton = typeof child.onClick === 'function';
-
-                      return isButton ? (
-                        <button
-                          key={i}
-                          onClick={child.onClick}
-                          className="block text-left text-sm text-gray-600 hover:text-blue-600 w-full"
-                        >
-                          {child.label}
-                        </button>
-                      ) : (
-                        <Link
-                          key={i}
-                          href={child.href}
-                          className="block text-sm text-gray-600 hover:text-blue-600"
-                        >
-                          {child.label}
-                        </Link>
-                      );
-                    })}
+                    {item.children.map((child, i) => (
+                      <Link
+                        key={i}
+                        href={child.href}
+                        onClick={child.onClick}
+                        className="block text-sm text-gray-600 hover:text-blue-600"
+                      >
+                        {child.label}
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>
