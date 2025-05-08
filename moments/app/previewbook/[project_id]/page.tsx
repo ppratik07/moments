@@ -53,22 +53,30 @@ const Page = forwardRef((props: PageProps, ref: ForwardedRef<HTMLDivElement>) =>
 Page.displayName = 'Page';
 
 const PreviewBookPage = () => {
-  const params: Record<string, string | string[]> | null = useParams();
+  const params = useParams();
   const project_id = Array.isArray(params?.project_id) ? params.project_id[0] : params?.project_id;
   const [pages, setPages] = useState<PageData[]>([]);
-  const [pdfUrl, setPdfUrl] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const flipBookRef = useRef<FlipBookRef | null>(null);
   const router = useRouter();
   const { getToken } = useAuth();
 
   useEffect(() => {
-    const fetchBookAndPdf = async () => {
-      if (!project_id || typeof project_id !== 'string') return;
+    const fetchBook = async () => {
+      if (!project_id || typeof project_id !== 'string') {
+        setError('Invalid project ID');
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
       try {
         const token = await getToken();
         if (!token) {
+          setError('Authentication required');
           router.push('/login');
           return;
         }
@@ -76,39 +84,47 @@ const PreviewBookPage = () => {
         const bookResponse = await fetch(`${HTTP_BACKEND}/api/preview/${project_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!bookResponse.ok) throw new Error('Failed to fetch book preview');
+        if (!bookResponse.ok) {
+          throw new Error(`Failed to fetch book preview: ${bookResponse.statusText}`);
+        }
         const bookData = await bookResponse.json();
         setPages(bookData.pages || []);
-
-        const pdfResponse = await fetch(`${HTTP_BACKEND}/api/pdf/${project_id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!pdfResponse.ok) throw new Error('Failed to fetch PDF');
-        const pdfBlob = await pdfResponse.blob();
-        setPdfUrl(URL.createObjectURL(pdfBlob));
       } catch (error) {
-        console.error('Error fetching book or PDF:', error);
+        console.error('Error fetching book:', error);
+        setError('Failed to load book preview. Please try again later.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchBookAndPdf();
+    fetchBook();
   }, [project_id, router, getToken]);
 
   useEffect(() => {
     if (flipBookRef.current && flipBookRef.current.pageFlip) {
-        const pageFlipInstance = flipBookRef.current.pageFlip();
-        if (pageFlipInstance && typeof pageFlipInstance.getPageCount === 'function') {
-            const pageCount = pageFlipInstance.getPageCount();
-            setTotalPages(pageCount);
-        }
+      const pageFlipInstance = flipBookRef.current.pageFlip();
+      if (pageFlipInstance && typeof pageFlipInstance.getPageCount === 'function') {
+        const pageCount = pageFlipInstance.getPageCount();
+        setTotalPages(pageCount);
+      }
     }
-}, [pages]);
+  }, [pages]);
 
   const nextButtonClick = () => flipBookRef.current?.pageFlip().flipNext();
   const prevButtonClick = () => flipBookRef.current?.pageFlip().flipPrev();
   const onPage = (e: { data: number }) => setCurrentPage(e.data);
 
-  if (!project_id || typeof project_id !== 'string') return <div>Loading...</div>;
+  if (!project_id || typeof project_id !== 'string') {
+    return <div className="text-red-600 text-center mt-10">Invalid project ID</div>;
+  }
+
+  if (isLoading) {
+    return <div className="text-center mt-10">Loading book preview...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-600 text-center mt-10">{error}</div>;
+  }
 
   return (
     <>
@@ -190,7 +206,9 @@ const PreviewBookPage = () => {
                   >
                     Previous page
                   </button>
-                  <span>[<span>{currentPage}</span> of <span>{totalPages}</span>]</span>
+                  <span>
+                    [<span>{currentPage}</span> of <span>{totalPages}</span>]
+                  </span>
                   <button
                     type="button"
                     onClick={nextButtonClick}
@@ -201,20 +219,9 @@ const PreviewBookPage = () => {
                 </div>
               </>
             ) : (
-              <p>Loading book...</p>
+              <p className="text-center text-gray-400">No book content available</p>
             )}
           </div>
-
-          {pdfUrl && (
-            <div className="mt-8">
-              <h1 className="text-2xl font-bold mb-4">PDF Preview</h1>
-              <iframe
-                src={pdfUrl}
-                className="w-full h-[80vh] border rounded"
-                title="PDF Preview"
-              />
-            </div>
-          )}
         </div>
       </div>
     </>
