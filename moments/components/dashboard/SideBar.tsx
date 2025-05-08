@@ -15,9 +15,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 
-export default function Sidebar({ imageKey, projectId }: { imageKey: string; projectId?: string }) {
+export default function Sidebar({ imageKey, projectId }: { imageKey?: string; projectId?: string }) {
   const baseUrl = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
-  const imageUrl = `${baseUrl}/${imageKey}`;
+  const imageUrl = imageKey ? `${baseUrl}/${imageKey}` : undefined;
   const [isMemoryBookOpen, setMemoryBookOpen] = useState(true);
   const { getToken } = useAuth();
 
@@ -73,13 +73,15 @@ export default function Sidebar({ imageKey, projectId }: { imageKey: string; pro
 
   return (
     <aside className="w-[19rem] bg-white border-r p-4">
-      <Image
-        src={imageUrl}
-        alt="Project cover"
-        className="mb-6"
-        width={300}
-        height={300}
-      />
+      {imageUrl && (
+        <Image
+          src={imageUrl}
+          alt="Project cover"
+          className="mb-6"
+          width={300}
+          height={300}
+        />
+      )}
 
       <nav className="space-y-3">
         {navItems.map((item, idx) => {
