@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { HTTP_BACKEND } from '@/utils/config';
 import { useAuth } from '@clerk/nextjs';
+import Sidebar from '@/components/dashboard/SideBar'; 
 
 // Define the type for HTMLFlipBook ref based on react-pageflip
 interface FlipBookRef {
@@ -62,8 +63,6 @@ const PreviewBookPage = () => {
     const project_id = Array.isArray(params?.project_id) ? params.project_id[0] : params?.project_id;
     const [pages, setPages] = useState<PageData[]>([]);
     const [pdfUrl, setPdfUrl] = useState<string>('');
-    const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [memoryBookOpen, setMemoryBookOpen] = useState(true);
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const flipBookRef = useRef<FlipBookRef | null>(null);
@@ -148,102 +147,14 @@ const PreviewBookPage = () => {
                 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" />
             </Head>
             <div className="flex min-h-screen bg-gray-100">
-                {/* Menu Toggle Button for Mobile */}
-                <button
-                    className="fixed top-4 left-4 z-[1001] md:hidden px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                >
-                    ☰ Menu
-                </button>
-
                 {/* Sidebar */}
-                <div
-                    className={`fixed top-0 left-0 w-64 h-full bg-gray-100 p-4 overflow-y-auto z-[1000] transform transition-transform md:transform-none ${
-                        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    } md:translate-x-0`}
-                >
-                    <div className="flex flex-col h-full">
-                        <div className="p-4">
-                            <h2 className="text-xl font-bold text-gray-800">Memory Lane</h2>
-                        </div>
-                        <nav className="mt-4 flex-1">
-                            <ul className="space-y-2">
-                                <li>
-                                    <a
-                                        href={`/dashboard/${project_id}`}
-                                        className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded"
-                                    >
-                                        <span className="ml-3">Dashboard</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a
-                                        href={`/contribution/${project_id}`}
-                                        className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded"
-                                    >
-                                        <span className="ml-3">Contribution Form</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <div
-                                        className="flex items-center p-2 text-gray-700 cursor-pointer hover:bg-gray-200 rounded"
-                                        onClick={() => setMemoryBookOpen(!memoryBookOpen)}
-                                    >
-                                        <span className="ml-3 font-medium">Memory Book</span>
-                                        <svg
-                                            className={`w-5 h-5 ml-auto transform transition-transform ${
-                                                memoryBookOpen ? 'rotate-180' : ''
-                                            }`}
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M19 9l-7 7-7-7"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <ul
-                                        className={`pl-6 space-y-1 ${memoryBookOpen ? '' : 'hidden'}`}
-                                    >
-                                        <li>
-                                            <a
-                                                href={`/previewbook/${project_id}`}
-                                                className="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded"
-                                            >
-                                                <span className="ml-3">Preview Book</span>
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a
-                                                href={`${HTTP_BACKEND}/api/pdf/${project_id}`}
-                                                className="flex items-center p-2 text-gray-600 hover:bg-gray-200 rounded"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                            >
-                                                <span className="ml-3">Download PDF</span>
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </li>
-                                <li>
-                                    <a
-                                        href={`/feedback/${project_id}`}
-                                        className="flex items-center p-2 text-gray-700 hover:bg-gray-200 rounded"
-                                    >
-                                        <span className="ml-3">Feedback</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
+                <Sidebar
+                    projectId={project_id}
+                    imageKey="default-image-key" // Replace with actual image key or fetch dynamically
+                />
 
                 {/* Main Content */}
-                <div className="flex-1 ml-0 md:ml-64 p-6">
+                <div className="flex-1 ml-0 md:ml-[19rem] p-6">
                     {/* Book Preview */}
                     <div className="mb-8">
                         <h1 className="text-2xl font-bold mb-4">Book Preview</h1>
