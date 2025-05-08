@@ -9,7 +9,8 @@ import { Header } from '@/components/landing/Header';
 
 const DownloadPage = () => {
   const params = useParams();
-  const project_id = Array.isArray(params?.project_id) ? params.project_id[0] : params?.project_id;
+  const project_id = Array.isArray(params?.projectId) ? params.projectId[0] : params?.projectId;
+  console.log('Project ID:', project_id);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +51,7 @@ const DownloadPage = () => {
     };
 
     fetchPdf();
-  }, [project_id, router, getToken]);
+  }, [params, project_id, router, getToken]);
 
   if (error) {
     return (

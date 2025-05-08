@@ -19,8 +19,14 @@ interface FlipBookRef {
 
 interface PageData {
   contributorName: string;
-  photos: { imageUrl: string }[];
-  paragraphs: { value: string }[];
+  components: {
+    type: string;
+    imageUrl?: string;
+    value?: string;
+    position?: { x: number; y: number };
+    size?: { width: number; height: number };
+    styles?: Record<string, any>;
+  }[];
 }
 
 interface PageProps {
@@ -42,8 +48,8 @@ const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivEl
 PageCover.displayName = 'PageCover';
 
 const Page = forwardRef((props: PageProps, ref: ForwardedRef<HTMLDivElement>) => (
-  <div className="page bg-white p-10 box-border relative" ref={ref}>
-    <div className="page-content p-10">
+  <div className="page bg-white p-10 box-border relative h-full" ref={ref}>
+    <div className="page-content p-10 relative h-full">
       <h2 className="text-center text-xl font-bold text-gray-800 mb-5">Contribution - Page {props.number}</h2>
       <div className="page-text">{props.children}</div>
       <div className="absolute bottom-10 right-10 text-sm text-gray-400">{props.number + 1}</div>
@@ -53,8 +59,8 @@ const Page = forwardRef((props: PageProps, ref: ForwardedRef<HTMLDivElement>) =>
 Page.displayName = 'Page';
 
 const PreviewBookPage = () => {
-  const params = useParams();
-  const project_id = Array.isArray(params?.project_id) ? params.project_id[0] : params?.project_id;
+  const params = useParams<{ project_id: string }>();
+  const project_id = params?.project_id;
   const [pages, setPages] = useState<PageData[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -88,6 +94,7 @@ const PreviewBookPage = () => {
           throw new Error(`Failed to fetch book preview: ${bookResponse.statusText}`);
         }
         const bookData = await bookResponse.json();
+        console.log('Fetched pages:', JSON.stringify(bookData.pages, null, 2)); // Debug log
         setPages(bookData.pages || []);
       } catch (error) {
         console.error('Error fetching book:', error);
@@ -135,7 +142,7 @@ const PreviewBookPage = () => {
       <Header isSignedIn />
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar projectId={project_id} />
-        <div className="flex-1 ml-0 md:ml-[5rem] p-6">
+        <div className="flex-1 ml-0 md:ml-[2rem] p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-4">Book Preview</h1>
             {pages.length > 0 ? (
@@ -168,33 +175,135 @@ const PreviewBookPage = () => {
                   ref={flipBookRef}
                 >
                   <PageCover>Memory Lane Book</PageCover>
-                  {pages.map((page, index) => (
-                    <Page key={index} number={index + 1}>
-                      <div className="mb-10 border-b border-gray-200 pb-5">
-                        <h3 className="text-lg font-bold text-gray-800 mb-5">{page.contributorName}</h3>
-                        {page.photos.map((photo, idx) => (
-                          <Image
-                            key={idx}
-                            src={photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}
-                            alt="Contribution photo"
-                            width={300}
-                            height={200}
-                            className="mb-10 rounded block"
-                            onError={(e) => {
-                              e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Image+Failed+to+Load';
-                              console.error('Image failed to load:', photo.imageUrl);
-                            }}
-                          />
-                        ))}
-                        {page.paragraphs.map((para, pidx) => (
-                          <p key={pidx} className="text-base leading-relaxed text-gray-600 mb-5">{para.value}</p>
-                        ))}
-                        {page.photos.length === 0 && page.paragraphs.length === 0 && (
-                          <p className="text-center text-gray-400">No content available</p>
-                        )}
-                      </div>
-                    </Page>
-                  ))}
+                  {pages.map((page, index) => {
+                    const photos = page.components.filter(comp => comp.type === 'photo' && comp.imageUrl);
+                    const paragraphs = page.components.filter(comp => comp.type === 'paragraph' && comp.value);
+
+                    console.log(`Page ${index + 1} - Photos: ${photos.length}, Paragraphs: ${paragraphs.length}`); // Debug log
+
+                    // Case 1: Only text (no photos)
+                    if (photos.length === 0 && paragraphs.length > 0) {
+                      return (
+                        <Page key={index} number={index + 1}>
+                          <div className="contribution flex flex-col items-center justify-center min-h-full">
+                            <h3 className="text-lg font-bold text-gray-800 mb-5">{page.contributorName}</h3>
+                            {paragraphs.map((para, pidx) => (
+                              <p
+                                key={pidx}
+                                className="text-base leading-relaxed text-gray-600 mb-5 text-center max-w-lg"
+                                style={para.styles || {}}
+                              >
+                                {para.value}
+                              </p>
+                            ))}
+                          </div>
+                        </Page>
+                      );
+                    }
+
+                    // Case 2: Exactly two photos, no text
+                    if (photos.length === 2 && paragraphs.length === 0) {
+                      return (
+                        <Page key={index} number={index + 1}>
+                          <div className="contribution flex flex-col min-h-full">
+                            <h3 className="text-lg font-bold text-gray-800 mb-5 text-center">{page.contributorName}</h3>
+                            <div className="flex flex-row flex-wrap justify-between gap-4">
+                              {photos.map((photo, idx) => {
+                                const style: React.CSSProperties = {
+                                  width: photo.size?.width ? `${photo.size.width}px` : '45%',
+                                  height: photo.size?.height ? `${photo.size.height}px` : 'auto',
+                                  zIndex: idx + 1,
+                                  ...photo.styles,
+                                };
+                                console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, photo.imageUrl); // Debug log
+                                return (
+                                  <Image
+                                    key={idx}
+                                    src={photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}
+                                    alt="Contribution photo"
+                                    width={photo.size?.width || 300}
+                                    height={photo.size?.height || 200}
+                                    className="rounded"
+                                    style={style}
+                                    onError={(e) => {
+                                      e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Image+Failed+to+Load';
+                                      console.error('Image failed to load:', photo.imageUrl);
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </Page>
+                      );
+                    }
+
+                    // General case: Any number of photos and/or paragraphs
+                    return (
+                      <Page key={index} number={index + 1}>
+                        <div className="contribution flex flex-col min-h-full items-center">
+                          <h3 className="text-lg font-bold text-gray-800 mb-5">{page.contributorName}</h3>
+                          <div className="flex flex-col items-center gap-4 w-full">
+                            {page.components.map((component, idx) => {
+                              const style: React.CSSProperties = {
+                                position: 'relative', // Disable absolute positioning
+                                width: component.size?.width ? `${component.size.width}px` : 'auto',
+                                height: component.size?.height ? `${component.size.height}px` : 'auto',
+                                zIndex: idx + 1,
+                                ...component.styles,
+                              };
+
+                              if (component.type === 'paragraph' && component.value) {
+                                return (
+                                  <p
+                                    key={idx}
+                                    className="text-base leading-relaxed text-gray-600 mb-5 text-center max-w-lg overflow-auto max-h-[700px] px-4"
+                                    style={style}
+                                  >
+                                    {component.value}
+                                  </p>
+                                );
+                              }
+                              return null; // Skip photos here, render them below
+                            })}
+                            <div className="flex flex-wrap justify-center gap-4">
+                              {page.components.map((component, idx) => {
+                                if (component.type === 'photo' && component.imageUrl) {
+                                  const style: React.CSSProperties = {
+                                    position: 'relative',
+                                    width: component.size?.width ? `${component.size.width}px` : '300px',
+                                    height: component.size?.height ? `${component.size.height}px` : '200px',
+                                    zIndex: idx + 1,
+                                    ...component.styles,
+                                  };
+                                  console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, component.imageUrl); // Debug log
+                                  return (
+                                    <Image
+                                      key={idx}
+                                      src={component.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}
+                                      alt="Contribution photo"
+                                      width={component.size?.width || 300}
+                                      height={component.size?.height || 200}
+                                      className="rounded w-full h-auto"
+                                      style={style}
+                                      onError={(e) => {
+                                        e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Image+Failed+to+Load';
+                                        console.error('Image failed to load:', component.imageUrl);
+                                      }}
+                                    />
+                                  );
+                                }
+                                return null;
+                              })}
+                            </div>
+                          </div>
+                          {page.components.length === 0 && (
+                            <p className="text-center text-gray-400">No content available</p>
+                          )}
+                        </div>
+                      </Page>
+                    );
+                  })}
                   <PageCover>The End</PageCover>
                 </HTMLFlipBook>
 

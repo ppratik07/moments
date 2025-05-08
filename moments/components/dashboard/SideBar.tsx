@@ -67,7 +67,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
         // { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
         { 
           label: "Download PDF", 
-          href: `/project/${projectId}/memory-book/pdf`, 
+          href: `/download/${projectId}`, 
           onClick: handleDownloadPdf 
         },
       ],

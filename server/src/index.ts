@@ -618,7 +618,7 @@ app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Res
   const { projectId } = req.params;
   const userId = req.userId;
   console.log('Project ID', projectId);
-  console.log('UID',userId );
+  console.log('UID', userId);
   if (!projectId || typeof projectId !== 'string' || !userId) {
     return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
   }
@@ -642,13 +642,15 @@ app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Res
                 type: true,
                 imageUrl: true,
                 value: true,
+                position: true, // Include position
+                size: true,     // Include size
+                styles: true,   // Include styles
               },
             },
           },
         },
       },
     });
-
 
     const pages = await Promise.all(contributionsData.map(async (contrib) => {
       const contributorName = contrib.signature || 'Anonymous';
@@ -682,12 +684,7 @@ app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Res
 
         return {
           contributorName,
-          photos: components
-            .filter((comp: any) => comp.type === 'photo' && comp.imageUrl)
-            .map((comp: any) => ({ imageUrl: comp.imageUrl })),
-          paragraphs: components
-            .filter((comp: any) => comp.type === 'paragraph' && comp.value)
-            .map((comp: any) => ({ value: comp.value })),
+          components, // Return full components array with position, size, styles
         };
       }));
     }));

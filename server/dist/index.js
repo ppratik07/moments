@@ -561,6 +561,9 @@ app.get('/api/preview/:projectId', middleware_1.authMiddleware, (req, res) => __
                                 type: true,
                                 imageUrl: true,
                                 value: true,
+                                position: true, // Include position
+                                size: true, // Include size
+                                styles: true, // Include styles
                             },
                         },
                     },
@@ -598,12 +601,7 @@ app.get('/api/preview/:projectId', middleware_1.authMiddleware, (req, res) => __
                 })));
                 return {
                     contributorName,
-                    photos: components
-                        .filter((comp) => comp.type === 'photo' && comp.imageUrl)
-                        .map((comp) => ({ imageUrl: comp.imageUrl })),
-                    paragraphs: components
-                        .filter((comp) => comp.type === 'paragraph' && comp.value)
-                        .map((comp) => ({ value: comp.value })),
+                    components, // Return full components array with position, size, styles
                 };
             })));
         })));
