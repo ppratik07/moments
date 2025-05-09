@@ -8,6 +8,7 @@ import { HTTP_BACKEND } from '@/utils/config';
 import { useAuth } from '@clerk/nextjs';
 import Sidebar from '@/components/dashboard/SideBar';
 import { Header } from '@/components/landing/Header';
+import { Button } from '@/components/ui/button';
 
 interface FlipBookRef {
   pageFlip: () => {
@@ -266,7 +267,7 @@ const PreviewBookPage = () => {
                               }
                               return null; // Skip photos here, render them below
                             })}
-                            <div className="flex flex-wrap justify-center gap-4">
+                            <div className="flex flex-wrap justify-center gap-4 mt-5">
                               {page.components.map((component, idx) => {
                                 if (component.type === 'photo' && component.imageUrl) {
                                   const style: React.CSSProperties = {
@@ -308,23 +309,23 @@ const PreviewBookPage = () => {
                 </HTMLFlipBook>
 
                 <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
+                  <Button
                     type="button"
                     onClick={prevButtonClick}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-4 py-2 text-white rounded hover:bg-blue-700"
                   >
                     Previous page
-                  </button>
+                  </Button>
                   <span>
                     [<span>{currentPage}</span> of <span>{totalPages}</span>]
                   </span>
-                  <button
+                  <Button
                     type="button"
                     onClick={nextButtonClick}
-                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    className="px-4 py-2 text-white rounded hover:bg-blue-700"
                   >
                     Next page
-                  </button>
+                  </Button>
                 </div>
               </>
             ) : (
