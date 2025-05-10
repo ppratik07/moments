@@ -612,20 +612,63 @@ app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Pr
     res.status(500).json({ error: "Failed to save layouts" });
   }
 });
-
-// Updated /api/preview/:projectId to return JSON
-app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
+app.get('/api/layouts/:projectId', async (req: Request, res: Response): Promise<void> => {
   const { projectId } = req.params;
-  const userId = req.userId;
+  // const userId = req.userId as string;
+
+  console.log('GET /api/layouts called with:', { projectId });
+
+  if (!projectId || typeof projectId !== 'string') {
+    console.log('Invalid projectId');
+    res.status(400).json({ error: 'Missing or invalid projectId' });
+    return;
+  }
+
+  try {
+    // Verify project exists and belongs to user
+    const project = await prisma.loginUser.findFirst({
+      where: { id: projectId },
+    });
+
+    if (!project) {
+      console.log('Project not found or unauthorized');
+      res.status(404).json({ error: 'Project not found or unauthorized' });
+      return;
+    }
+
+    // Fetch the first front cover layout
+    const frontCover = await prisma.layout.findFirst({
+      where: {
+        projectId,
+        pageType: 'front_cover',
+        isPreview: true,
+      },
+    });
+
+    if (!frontCover) {
+      console.log('No front cover found');
+      res.status(200).json(null); // Return null instead of empty array
+    } else {
+      res.status(200).json(frontCover);
+    }
+  } catch (error) {
+    console.error('Error fetching front cover:', error);
+    res.status(500).json({ error: 'Failed to fetch front cover' });
+  }
+});
+// Updated /api/preview/:projectId to return JSON
+app.get('/api/preview/:projectId', async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  // const userId = req.userId;
   console.log('Project ID', projectId);
-  console.log('UID', userId);
-  if (!projectId || typeof projectId !== 'string' || !userId) {
+  // console.log('UID', userId);
+  if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
   }
 
   try {
     const project = await prisma.loginUser.findUnique({
-      where: { id: projectId, userId },
+      where: { id: projectId},
       select: { projectName: true },
     });
     if (!project) {
@@ -705,7 +748,7 @@ app.get('/api/preview/:projectId', authMiddleware, async (req: Request, res: Res
 // Updated /api/pdf/:projectId
 app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
-  console.log('ProjectID',projectId);
+  console.log('ProjectID', projectId);
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
   }
@@ -718,6 +761,37 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
     console.log('Project:', project);
     if (!project) {
       return res.status(404).json({ message: 'Project not found or unauthorized' });
+    }
+
+    // Fetch front cover layout
+    const frontCover = await prisma.layout.findFirst({
+      where: {
+        projectId,
+        pageType: 'front_cover',
+        isPreview: true,
+      },
+    });
+
+    console.log('Front Cover:', JSON.stringify(frontCover, null, 2));
+
+    // Generate signed URL for front cover image (if exists)
+    let frontCoverImageUrl = '';
+    if (frontCover?.config && typeof frontCover.config === 'object' && 'imageKey' in frontCover.config) {
+      const cleanedImageUrl = stripQueryParams(frontCover.config.imageKey as string);
+      try {
+        const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+        const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+        console.log('Generating signed URL for front cover key:', key);
+        const command = new GetObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME!,
+          Key: key,
+        });
+        frontCoverImageUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+        console.log('Signed URL for front cover:', frontCoverImageUrl);
+      } catch (error) {
+        console.error('Error generating signed URL for front cover:', error);
+        frontCoverImageUrl = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
+      }
     }
 
     const contributionsData = await prisma.contribution.findMany({
@@ -776,6 +850,18 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
     const html = generateBookHtml({
       projectName: project.projectName,
       contributions,
+      frontCover: frontCover
+        ? {
+            title: (frontCover.config as any)?.title || 'No Title',
+            imageUrl: frontCoverImageUrl,
+            description: (frontCover.config as any)?.description || '',
+            titleStyle: (frontCover.config as any)?.titleStyle || {},
+            imageStyle: (frontCover.config as any)?.imageStyle || {},
+            descriptionStyle: (frontCover.config as any)?.descriptionStyle || {},
+            containerStyle: (frontCover.config as any)?.containerStyle || {},
+            hoverEffects: (frontCover.config as any)?.hoverEffects || {},
+          }
+        : null,
     });
 
     const config = {
@@ -797,7 +883,8 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
         },
       },
     };
-    console.log('config',config);
+    console.log('DocRaptor config:', JSON.stringify(config, null, 2));
+
     request.post(config, (err, response, body) => {
       if (err) {
         console.error('Error generating PDF:', err);
@@ -821,12 +908,58 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
   }
 });
 
-// Helper function to generate HTML for PDF
-function generateBookHtml(contributionsData: { projectName: string; contributions: any[] }): string {
-  const { projectName, contributions } = contributionsData;
+// Updated generateBookHtml to include front cover
+function generateBookHtml(data: {
+  projectName: string;
+  contributions: any[];
+  frontCover: {
+    title: string;
+    imageUrl: string;
+    description: string;
+    titleStyle: any;
+    imageStyle: any;
+    descriptionStyle: any;
+    containerStyle: any;
+    hoverEffects: any;
+  } | null;
+}): string {
+  const { projectName, contributions, frontCover } = data;
   let pageContent = '';
-  let pageCount = 0;
 
+  // Add front cover as the first page
+  pageContent += '<div class="page front-cover">';
+  if (frontCover) {
+    pageContent += `
+      <div class="front-cover-container">
+        <h1 class="front-cover-title">${frontCover.title}</h1>
+        ${
+          frontCover.imageUrl
+            ? `<img 
+                 src="${frontCover.imageUrl}" 
+                 alt="Front Cover" 
+                 class="front-cover-image" 
+                 onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Front cover image failed to load:', '${frontCover.imageUrl}')"
+               >`
+            : ''
+        }
+        ${
+          frontCover.description
+            ? `<p class="front-cover-description">${frontCover.description}</p>`
+            : ''
+        }
+      </div>
+    `;
+  } else {
+    pageContent += `
+      <div class="front-cover-container">
+        <h1 class="front-cover-title">Memory Lane Book</h1>
+      </div>
+    `;
+  }
+  pageContent += '</div>';
+
+  // Add contribution pages
+  let pageCount = 0; // Start after front cover
   contributions.forEach((contribution) => {
     if (contribution.excludedFromBook) return;
 
@@ -899,6 +1032,55 @@ function generateBookHtml(contributionsData: { projectName: string; contribution
           box-sizing: border-box;
           background: #fff;
           page-break-after: always;
+        }
+        .front-cover {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 20mm;
+          background: #fff;
+        }
+        .front-cover-container {
+          position: relative;
+          width: 100%;
+          max-width: 180mm;
+          text-align: center;
+          border: 2px dashed #9ca3af;
+          padding: 10mm;
+          box-sizing: border-box;
+        }
+        .front-cover-title {
+          font-size: ${frontCover?.titleStyle?.fontSize || '30pt'};
+          font-weight: ${frontCover?.titleStyle?.fontWeight || 'bold'};
+          margin-bottom: ${frontCover?.titleStyle?.marginBottom || '15mm'};
+          margin-top: ${frontCover?.titleStyle?.marginTop || '10mm'};
+          text-align: ${frontCover?.titleStyle?.textAlign || 'center'};
+          color: #000;
+          word-break: break-word;
+        }
+        .front-cover-image {
+          width: ${frontCover?.imageStyle?.width ? `${frontCover.imageStyle.width}px` : '280px'};
+          height: ${frontCover?.imageStyle?.height ? `${frontCover.imageStyle.height}px` : '200px'};
+          object-fit: ${frontCover?.imageStyle?.objectFit || 'contain'};
+          box-shadow: ${frontCover?.imageStyle?.shadow || '0 4px 6px rgba(0, 0, 0, 0.1)'};
+          margin-bottom: ${frontCover?.imageStyle?.marginBottom || '15mm'};
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .front-cover-description {
+          max-width: ${frontCover?.descriptionStyle?.maxWidth || '80%'};
+          color: ${frontCover?.descriptionStyle?.color || '#4b5563'};
+          font-size: ${frontCover?.descriptionStyle?.fontSize || '13pt'};
+          text-align: ${frontCover?.descriptionStyle?.textAlign || 'center'};
+          margin-top: ${frontCover?.descriptionStyle?.marginTop || '10mm'};
+          font-style: ${frontCover?.descriptionStyle?.fontStyle || 'italic'};
+          line-height: ${frontCover?.descriptionStyle?.lineHeight || '1.5'};
+          word-break: break-word;
+          margin-left: auto;
+          margin-right: auto;
         }
         .contribution {
           margin-bottom: 10mm;

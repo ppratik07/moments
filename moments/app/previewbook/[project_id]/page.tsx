@@ -9,43 +9,90 @@ import { useAuth } from '@clerk/nextjs';
 import Sidebar from '@/components/dashboard/SideBar';
 import { Header } from '@/components/landing/Header';
 import { Button } from '@/components/ui/button';
+import { getImageUrl } from '@/helpers/getImageUrl';
+import { FlipBookRef, Layout, PageCoverProps, PageData, PageProps } from '@/types/previewbook.types';
 
-interface FlipBookRef {
-  pageFlip: () => {
-    flipNext: () => void;
-    flipPrev: () => void;
-    getPageCount: () => number;
-  };
-}
 
-interface PageData {
-  contributorName: string;
-  components: {
-    type: string;
-    imageUrl?: string;
-    value?: string;
-    position?: { x: number; y: number };
-    size?: { width: number; height: number };
-    styles?: Record<string, string | number | boolean | undefined>;
-  }[];
-}
+const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivElement>) => {
+  const { layout, children } = props;
 
-interface PageProps {
-  number: number;
-  children?: React.ReactNode;
-}
+  if (layout && layout.pageType === 'front_cover') {
+    return (
+      <div
+        className={`page page-cover relative bg-white ${layout.config.containerStyle?.shadow ?? ''} ${
+          layout.config.containerStyle?.border ?? ''
+        } w-full h-full p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${
+          layout.config.hoverEffects?.rotate ?? ''
+        } ${layout.config.hoverEffects?.scale ?? ''} ${layout.config.hoverEffects?.shadow ?? ''}`}
+        ref={ref}
+        data-density="hard"
+      >
+        <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
+        <div className="relative flex flex-col items-center w-full">
+          <h1
+            className={`${layout.config.titleStyle?.fontSize ?? 'text-3xl'} ${
+              layout.config.titleStyle?.fontWeight ?? 'font-bold'
+            } ${layout.config.titleStyle?.marginBottom ?? 'mb-6'} ${
+              layout.config.titleStyle?.textAlign ?? 'text-center'
+            } ${layout.config.titleStyle?.marginTop ?? 'mt-3'} break-words`}
+          >
+            {layout.config.title || 'No Title'}
+          </h1>
+          {layout.config.imageKey && (
+            <div className={layout.config.imageStyle?.marginBottom ?? 'mb-6'}>
+              <Image
+                src={
+                  typeof layout.config.imageKey === 'string' && layout.config.imageKey.startsWith('data:')
+                    ? layout.config.imageKey
+                    : getImageUrl(layout.config.imageKey) || 'https://via.placeholder.com/300x200?text=Image+Not+Found'
+                }
+                alt="Front Cover"
+                width={layout.config.imageStyle?.width ?? 280}
+                height={layout.config.imageStyle?.height ?? 200}
+                className={`${layout.config.imageStyle?.objectFit ?? 'object-contain'} ${
+                  layout.config.imageStyle?.shadow ?? 'shadow-md'
+                }`}
+                onError={(e) => {
+                  e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Image+Failed+to+Load';
+                  console.error('Front cover image failed to load:', layout.config.imageKey);
+                }}
+              />
+            </div>
+          )}
+          {layout.config.description && (
+            <div
+              className={`${layout.config.descriptionStyle?.maxWidth ?? 'max-w-[80%]'} ${
+                layout.config.descriptionStyle?.color ?? 'text-gray-700'
+              } ${layout.config.descriptionStyle?.fontSize ?? 'text-[13px]'} ${
+                layout.config.descriptionStyle?.textAlign ?? 'text-center'
+              } ${layout.config.descriptionStyle?.marginTop ?? 'mt-4'}`}
+            >
+              <p
+                className={`${layout.config.descriptionStyle?.fontStyle ?? 'italic'} ${
+                  layout.config.descriptionStyle?.lineHeight ?? 'leading-relaxed'
+                } break-words`}
+              >
+                {layout.config.description}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
-interface PageCoverProps {
-  children?: React.ReactNode;
-}
-
-const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivElement>) => (
-  <div className="page page-cover bg-gray-100 border-2 border-gray-800 flex items-center justify-center" ref={ref} data-density="hard">
-    <div className="text-center">
-      <h2 className="text-2xl font-bold text-gray-800">{props.children}</h2>
+  return (
+    <div
+      className="page page-cover bg-gray-100 border-2 border-gray-800 flex items-center justify-center"
+      ref={ref}
+      data-density="hard"
+    >
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-800">{children}</h2>
+      </div>
     </div>
-  </div>
-));
+  );
+});
 PageCover.displayName = 'PageCover';
 
 const Page = forwardRef((props: PageProps, ref: ForwardedRef<HTMLDivElement>) => (
@@ -63,19 +110,26 @@ const PreviewBookPage = () => {
   const params = useParams<{ project_id: string }>();
   const project_id = params?.project_id;
   const [pages, setPages] = useState<PageData[]>([]);
+  const [frontCover, setFrontCover] = useState<Layout | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const flipBookRef = useRef<FlipBookRef | null>(null);
   const router = useRouter();
-  const { getToken } = useAuth();
+  const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
-    const fetchBook = async () => {
+    const fetchData = async () => {
       if (!project_id || typeof project_id !== 'string') {
         setError('Invalid project ID');
         setIsLoading(false);
+        return;
+      }
+
+      if (!isSignedIn) {
+        setError('Authentication required');
+        router.push('/');
         return;
       }
 
@@ -83,11 +137,10 @@ const PreviewBookPage = () => {
       try {
         const token = await getToken();
         if (!token) {
-          setError('Authentication required');
-          router.push('/login');
-          return;
+          throw new Error('Failed to obtain authentication token');
         }
 
+        // Fetch book pages
         const bookResponse = await fetch(`${HTTP_BACKEND}/api/preview/${project_id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -95,18 +148,29 @@ const PreviewBookPage = () => {
           throw new Error(`Failed to fetch book preview: ${bookResponse.statusText}`);
         }
         const bookData = await bookResponse.json();
-        console.log('Fetched pages:', JSON.stringify(bookData.pages, null, 2)); // Debug log
+        console.log('Fetched pages:', JSON.stringify(bookData.pages, null, 2));
         setPages(bookData.pages || []);
+
+        // Fetch front cover layout
+        const layoutResponse = await fetch(`${HTTP_BACKEND}/api/layouts/${project_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!layoutResponse.ok) {
+          throw new Error(`Failed to fetch front cover: ${layoutResponse.statusText}`);
+        }
+        const frontCover: Layout | null = await layoutResponse.json();
+        console.log('Fetched front cover:', JSON.stringify(frontCover, null, 2));
+        setFrontCover(frontCover);
       } catch (error) {
-        console.error('Error fetching book:', error);
-        setError('Failed to load book preview. Please try again later.');
+        console.error('Error fetching data:', error);
+        setError(`Failed to load book preview or front cover: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBook();
-  }, [project_id, router, getToken]);
+    fetchData();
+  }, [project_id, router, getToken, isSignedIn]);
 
   useEffect(() => {
     if (flipBookRef.current && flipBookRef.current.pageFlip) {
@@ -116,7 +180,7 @@ const PreviewBookPage = () => {
         setTotalPages(pageCount);
       }
     }
-  }, [pages]);
+  }, [pages, frontCover]);
 
   const nextButtonClick = () => flipBookRef.current?.pageFlip().flipNext();
   const prevButtonClick = () => flipBookRef.current?.pageFlip().flipPrev();
@@ -140,13 +204,13 @@ const PreviewBookPage = () => {
         <title>Memory Lane - Book Preview</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
-      <Header isSignedIn />
+      <Header isSignedIn={isSignedIn ?? false} />
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar projectId={project_id} />
         <div className="flex-1 ml-0 md:ml-[2rem] p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-4">Book Preview</h1>
-            {pages.length > 0 ? (
+            {pages.length > 0 || frontCover ? (
               <>
                 <HTMLFlipBook
                   width={600}
@@ -175,14 +239,13 @@ const PreviewBookPage = () => {
                   onFlip={onPage}
                   ref={flipBookRef}
                 >
-                  <PageCover>Memory Lane Book</PageCover>
+                  <PageCover layout={frontCover ?? undefined}>Memory Lane Book</PageCover>
                   {pages.map((page, index) => {
-                    const photos = page.components.filter(comp => comp.type === 'photo' && comp.imageUrl);
-                    const paragraphs = page.components.filter(comp => comp.type === 'paragraph' && comp.value);
+                    const photos = page.components.filter((comp) => comp.type === 'photo' && comp.imageUrl);
+                    const paragraphs = page.components.filter((comp) => comp.type === 'paragraph' && comp.value);
 
-                    console.log(`Page ${index + 1} - Photos: ${photos.length}, Paragraphs: ${paragraphs.length}`); // Debug log
+                    console.log(`Page ${index + 1} - Photos: ${photos.length}, Paragraphs: ${paragraphs.length}`);
 
-                    // Case 1: Only text (no photos)
                     if (photos.length === 0 && paragraphs.length > 0) {
                       return (
                         <Page key={index} number={index + 1}>
@@ -202,7 +265,6 @@ const PreviewBookPage = () => {
                       );
                     }
 
-                    // Case 2: Exactly two photos, no text
                     if (photos.length === 2 && paragraphs.length === 0) {
                       return (
                         <Page key={index} number={index + 1}>
@@ -216,7 +278,7 @@ const PreviewBookPage = () => {
                                   zIndex: idx + 1,
                                   ...photo.styles,
                                 };
-                                console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, photo.imageUrl); // Debug log
+                                console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, photo.imageUrl);
                                 return (
                                   <Image
                                     key={idx}
@@ -239,7 +301,6 @@ const PreviewBookPage = () => {
                       );
                     }
 
-                    // General case: Any number of photos and/or paragraphs
                     return (
                       <Page key={index} number={index + 1}>
                         <div className="contribution flex flex-col min-h-full items-center">
@@ -247,7 +308,7 @@ const PreviewBookPage = () => {
                           <div className="flex flex-col items-center gap-4 w-full">
                             {page.components.map((component, idx) => {
                               const style: React.CSSProperties = {
-                                position: 'relative', // Disable absolute positioning
+                                position: 'relative',
                                 width: component.size?.width ? `${component.size.width}px` : 'auto',
                                 height: component.size?.height ? `${component.size.height}px` : 'auto',
                                 zIndex: idx + 1,
@@ -265,7 +326,7 @@ const PreviewBookPage = () => {
                                   </p>
                                 );
                               }
-                              return null; // Skip photos here, render them below
+                              return null;
                             })}
                             <div className="flex flex-wrap justify-center gap-4 mt-5">
                               {page.components.map((component, idx) => {
@@ -277,7 +338,7 @@ const PreviewBookPage = () => {
                                     zIndex: idx + 1,
                                     ...component.styles,
                                   };
-                                  console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, component.imageUrl); // Debug log
+                                  console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, component.imageUrl);
                                   return (
                                     <Image
                                       key={idx}

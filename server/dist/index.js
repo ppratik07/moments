@@ -534,18 +534,58 @@ app.post("/api/layouts", middleware_1.authMiddleware, (req, res) => __awaiter(vo
         res.status(500).json({ error: "Failed to save layouts" });
     }
 }));
-// Updated /api/preview/:projectId to return JSON
-app.get('/api/preview/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get('/api/layouts/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
-    const userId = req.userId;
+    // const userId = req.userId as string;
+    console.log('GET /api/layouts called with:', { projectId });
+    if (!projectId || typeof projectId !== 'string') {
+        console.log('Invalid projectId');
+        res.status(400).json({ error: 'Missing or invalid projectId' });
+        return;
+    }
+    try {
+        // Verify project exists and belongs to user
+        const project = yield prisma.loginUser.findFirst({
+            where: { id: projectId },
+        });
+        if (!project) {
+            console.log('Project not found or unauthorized');
+            res.status(404).json({ error: 'Project not found or unauthorized' });
+            return;
+        }
+        // Fetch the first front cover layout
+        const frontCover = yield prisma.layout.findFirst({
+            where: {
+                projectId,
+                pageType: 'front_cover',
+                isPreview: true,
+            },
+        });
+        if (!frontCover) {
+            console.log('No front cover found');
+            res.status(200).json(null); // Return null instead of empty array
+        }
+        else {
+            res.status(200).json(frontCover);
+        }
+    }
+    catch (error) {
+        console.error('Error fetching front cover:', error);
+        res.status(500).json({ error: 'Failed to fetch front cover' });
+    }
+}));
+// Updated /api/preview/:projectId to return JSON
+app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    // const userId = req.userId;
     console.log('Project ID', projectId);
-    console.log('UID', userId);
-    if (!projectId || typeof projectId !== 'string' || !userId) {
+    // console.log('UID', userId);
+    if (!projectId || typeof projectId !== 'string') {
         return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
     }
     try {
         const project = yield prisma.loginUser.findUnique({
-            where: { id: projectId, userId },
+            where: { id: projectId },
             select: { projectName: true },
         });
         if (!project) {
@@ -619,6 +659,7 @@ app.get('/api/preview/:projectId', middleware_1.authMiddleware, (req, res) => __
 }));
 // Updated /api/pdf/:projectId
 app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _b, _c, _d, _e, _f, _g, _h;
     const { projectId } = req.params;
     console.log('ProjectID', projectId);
     if (!projectId || typeof projectId !== 'string') {
@@ -632,6 +673,35 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
         console.log('Project:', project);
         if (!project) {
             return res.status(404).json({ message: 'Project not found or unauthorized' });
+        }
+        // Fetch front cover layout
+        const frontCover = yield prisma.layout.findFirst({
+            where: {
+                projectId,
+                pageType: 'front_cover',
+                isPreview: true,
+            },
+        });
+        console.log('Front Cover:', JSON.stringify(frontCover, null, 2));
+        // Generate signed URL for front cover image (if exists)
+        let frontCoverImageUrl = '';
+        if ((frontCover === null || frontCover === void 0 ? void 0 : frontCover.config) && typeof frontCover.config === 'object' && 'imageKey' in frontCover.config) {
+            const cleanedImageUrl = stripQueryParams(frontCover.config.imageKey);
+            try {
+                const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
+                const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
+                console.log('Generating signed URL for front cover key:', key);
+                const command = new client_s3_1.GetObjectCommand({
+                    Bucket: process.env.R2_BUCKET_NAME,
+                    Key: key,
+                });
+                frontCoverImageUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
+                console.log('Signed URL for front cover:', frontCoverImageUrl);
+            }
+            catch (error) {
+                console.error('Error generating signed URL for front cover:', error);
+                frontCoverImageUrl = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
+            }
         }
         const contributionsData = yield prisma.contribution.findMany({
             where: { projectId },
@@ -687,6 +757,18 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
         const html = generateBookHtml({
             projectName: project.projectName,
             contributions,
+            frontCover: frontCover
+                ? {
+                    title: ((_b = frontCover.config) === null || _b === void 0 ? void 0 : _b.title) || 'No Title',
+                    imageUrl: frontCoverImageUrl,
+                    description: ((_c = frontCover.config) === null || _c === void 0 ? void 0 : _c.description) || '',
+                    titleStyle: ((_d = frontCover.config) === null || _d === void 0 ? void 0 : _d.titleStyle) || {},
+                    imageStyle: ((_e = frontCover.config) === null || _e === void 0 ? void 0 : _e.imageStyle) || {},
+                    descriptionStyle: ((_f = frontCover.config) === null || _f === void 0 ? void 0 : _f.descriptionStyle) || {},
+                    containerStyle: ((_g = frontCover.config) === null || _g === void 0 ? void 0 : _g.containerStyle) || {},
+                    hoverEffects: ((_h = frontCover.config) === null || _h === void 0 ? void 0 : _h.hoverEffects) || {},
+                }
+                : null,
         });
         const config = {
             url: 'https://api.docraptor.com/docs',
@@ -707,7 +789,7 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                 },
             },
         };
-        console.log('config', config);
+        console.log('DocRaptor config:', JSON.stringify(config, null, 2));
         request_1.default.post(config, (err, response, body) => {
             if (err) {
                 console.error('Error generating PDF:', err);
@@ -729,11 +811,41 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ error: 'Internal server error' });
     }
 }));
-// Helper function to generate HTML for PDF
-function generateBookHtml(contributionsData) {
-    const { projectName, contributions } = contributionsData;
+// Updated generateBookHtml to include front cover
+function generateBookHtml(data) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
+    const { projectName, contributions, frontCover } = data;
     let pageContent = '';
-    let pageCount = 0;
+    // Add front cover as the first page
+    pageContent += '<div class="page front-cover">';
+    if (frontCover) {
+        pageContent += `
+      <div class="front-cover-container">
+        <h1 class="front-cover-title">${frontCover.title}</h1>
+        ${frontCover.imageUrl
+            ? `<img 
+                 src="${frontCover.imageUrl}" 
+                 alt="Front Cover" 
+                 class="front-cover-image" 
+                 onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Front cover image failed to load:', '${frontCover.imageUrl}')"
+               >`
+            : ''}
+        ${frontCover.description
+            ? `<p class="front-cover-description">${frontCover.description}</p>`
+            : ''}
+      </div>
+    `;
+    }
+    else {
+        pageContent += `
+      <div class="front-cover-container">
+        <h1 class="front-cover-title">Memory Lane Book</h1>
+      </div>
+    `;
+    }
+    pageContent += '</div>';
+    // Add contribution pages
+    let pageCount = 0; // Start after front cover
     contributions.forEach((contribution) => {
         if (contribution.excludedFromBook)
             return;
@@ -799,6 +911,55 @@ function generateBookHtml(contributionsData) {
           box-sizing: border-box;
           background: #fff;
           page-break-after: always;
+        }
+        .front-cover {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          padding: 20mm;
+          background: #fff;
+        }
+        .front-cover-container {
+          position: relative;
+          width: 100%;
+          max-width: 180mm;
+          text-align: center;
+          border: 2px dashed #9ca3af;
+          padding: 10mm;
+          box-sizing: border-box;
+        }
+        .front-cover-title {
+          font-size: ${((_a = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _a === void 0 ? void 0 : _a.fontSize) || '30pt'};
+          font-weight: ${((_b = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _b === void 0 ? void 0 : _b.fontWeight) || 'bold'};
+          margin-bottom: ${((_c = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _c === void 0 ? void 0 : _c.marginBottom) || '15mm'};
+          margin-top: ${((_d = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _d === void 0 ? void 0 : _d.marginTop) || '10mm'};
+          text-align: ${((_e = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _e === void 0 ? void 0 : _e.textAlign) || 'center'};
+          color: #000;
+          word-break: break-word;
+        }
+        .front-cover-image {
+          width: ${((_f = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _f === void 0 ? void 0 : _f.width) ? `${frontCover.imageStyle.width}px` : '280px'};
+          height: ${((_g = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _g === void 0 ? void 0 : _g.height) ? `${frontCover.imageStyle.height}px` : '200px'};
+          object-fit: ${((_h = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _h === void 0 ? void 0 : _h.objectFit) || 'contain'};
+          box-shadow: ${((_j = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _j === void 0 ? void 0 : _j.shadow) || '0 4px 6px rgba(0, 0, 0, 0.1)'};
+          margin-bottom: ${((_k = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _k === void 0 ? void 0 : _k.marginBottom) || '15mm'};
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .front-cover-description {
+          max-width: ${((_l = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _l === void 0 ? void 0 : _l.maxWidth) || '80%'};
+          color: ${((_m = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _m === void 0 ? void 0 : _m.color) || '#4b5563'};
+          font-size: ${((_o = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _o === void 0 ? void 0 : _o.fontSize) || '13pt'};
+          text-align: ${((_p = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _p === void 0 ? void 0 : _p.textAlign) || 'center'};
+          margin-top: ${((_q = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _q === void 0 ? void 0 : _q.marginTop) || '10mm'};
+          font-style: ${((_r = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _r === void 0 ? void 0 : _r.fontStyle) || 'italic'};
+          line-height: ${((_s = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _s === void 0 ? void 0 : _s.lineHeight) || '1.5'};
+          word-break: break-word;
+          margin-left: auto;
+          margin-right: auto;
         }
         .contribution {
           margin-bottom: 10mm;
