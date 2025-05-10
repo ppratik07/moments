@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
@@ -14,19 +15,44 @@ import VideoModal from '@/components/VideoModal';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
+import { CurrentUser, Layout } from '@/types/frontlayout.types';
+
+
+// Custom debounce hook
+function useDebounce<T extends (...args: unknown[]) => void>(callback: T, delay: number) {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  return (...args: Parameters<T>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  };
+}
 
 export default function NewEventPage() {
   const [preview, setPreview] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
+  const [showEditModal, setShowEditModal] = useState<boolean>(false);
+  const [showResetConfirm, setShowResetConfirm] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
+  const isSaving = useRef<boolean>(false);
   const params = useParams();
-  const { setImageKey, projectId, setLayouts, eventTypes } = useProjectStore();
+  const {
+    setImageKey,
+    projectId,
+    setLayouts,
+    layouts,
+    eventTypes,
+    setProjectName: setStoreProjectName,
+    setEventDescription,
+  } = useProjectStore();
   const [shareLink, setShareLink] = useState<string>('');
-  const { isSignedIn } = useCurrentUser();
+  const { isSignedIn } = useCurrentUser() as CurrentUser;
   const router = useRouter();
   const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
 
@@ -63,7 +89,18 @@ export default function NewEventPage() {
   const [projectImageKey, setProjectImageKeyState] = useState<string | null>(null);
 
   useEffect(() => {
-    if (projectId && projectName && projectImageKey && projectDescription) {
+    setProjectName(decodedProjectName);
+    setProjectDescription(
+      Array.isArray(fallbackProjectDescription)
+        ? fallbackProjectDescription.join(' ')
+        : fallbackProjectDescription
+    );
+    setProjectImageKeyState(storedImageKey ?? null);
+  }, [decodedProjectName, fallbackProjectDescription, storedImageKey]);
+
+  // Save project data to localStorage
+  useEffect(() => {
+    if (projectId && projectName && (projectImageKey || projectDescription)) {
       localStorage.setItem(
         `project-${projectId}`,
         JSON.stringify({
@@ -75,18 +112,22 @@ export default function NewEventPage() {
     }
   }, [projectId, projectName, projectImageKey, projectDescription]);
 
+  // Load or generate layouts on mount
   useEffect(() => {
-    setProjectName(decodedProjectName);
-    setProjectDescription(
-      Array.isArray(fallbackProjectDescription) ? fallbackProjectDescription.join(' ') : fallbackProjectDescription
-    );
-    setProjectImageKeyState(storedImageKey ?? null);
-  }, [decodedProjectName, fallbackProjectDescription, storedImageKey]);
+    const loadAndGenerateLayouts = async () => {
+      if (!projectId) return;
 
-  // Initialize and persist layouts for book pages
-  useEffect(() => {
-    const generateAndSaveLayouts = async () => {
-      const defaultLayouts = [
+      // Load existing layouts from localStorage
+      const savedLayouts = localStorage.getItem(`layouts-${projectId}`);
+      if (savedLayouts) {
+        const parsedLayouts: Layout[] = JSON.parse(savedLayouts);
+        setLayouts(parsedLayouts);
+        console.log('Loaded layouts from localStorage:', parsedLayouts);
+        return;
+      }
+
+      // Generate new layouts if none exist
+      const defaultLayouts: Layout[] = [
         {
           id: uuidv4(),
           pageType: 'front_cover',
@@ -94,63 +135,53 @@ export default function NewEventPage() {
           config: {
             imageKey: projectImageKey || storedImageKey,
             title: projectName,
+            description: projectDescription,
             backgroundColor: '#ffffff',
             alignment: 'center',
-          },
-        },
-        {
-          id: uuidv4(),
-          pageType: 'title_page',
-          isPreview: false,
-          config: {
-            title: projectName,
-            subtitle: '',
-            alignment: 'center',
-            fontSize: 24,
-          },
-        },
-        {
-          id: uuidv4(),
-          pageType: 'section_page',
-          section: 'friends',
-          isPreview: false,
-          config: {
-            title: 'Friends',
-            alignment: 'right',
-            backgroundColor: '#f0f0f0',
-          },
-        },
-        {
-          id: uuidv4(),
-          pageType: 'section_page',
-          section: 'family',
-          isPreview: false,
-          config: {
-            title: 'Family',
-            alignment: 'right',
-            backgroundColor: '#f0f0f0',
-          },
-        },
-        {
-          id: uuidv4(),
-          pageType: 'section_page',
-          section: 'coworkers',
-          isPreview: false,
-          config: {
-            title: 'Coworkers',
-            alignment: 'right',
-            backgroundColor: '#f0f0f0',
-          },
-        },
-        {
-          id: uuidv4(),
-          pageType: 'section_page',
-          section: 'other_relationship',
-          isPreview: false,
-          config: {
-            title: 'Other Relationships',
-            alignment: 'right',
-            backgroundColor: '#f0f0f0',
+            borderStyle: {
+              type: 'dashed',
+              width: 2,
+              color: '#gray-400',
+              inset: 4,
+            },
+            containerStyle: {
+              shadow: 'shadow-2xl',
+              border: 'border-4 border-gray-300',
+              width: '150mm',
+              height: '210mm',
+              padding: '2rem',
+              display: 'flex flex-col items-center',
+            },
+            titleStyle: {
+              fontSize: 'text-3xl',
+              fontWeight: 'font-bold',
+              marginBottom: 'mb-6',
+              textAlign: 'text-center',
+              marginTop: 'mt-3',
+              wordBreak: 'break-words',
+            },
+            imageStyle: {
+              width: 280,
+              height: 200,
+              objectFit: 'object-contain',
+              shadow: 'shadow-md',
+              marginBottom: 'mb-6',
+            },
+            descriptionStyle: {
+              maxWidth: '80%',
+              color: 'text-gray-700',
+              fontSize: 'text-[13px]',
+              textAlign: 'text-center',
+              marginTop: 'mt-4',
+              fontStyle: 'italic',
+              lineHeight: 'leading-relaxed',
+              wordBreak: 'break-words',
+            },
+            hoverEffects: {
+              rotate: 'hover:rotate-3d',
+              scale: 'hover:scale-105',
+              shadow: 'hover:shadow-2xl',
+            },
           },
         },
         {
@@ -165,7 +196,7 @@ export default function NewEventPage() {
         },
       ];
 
-      const layouts = defaultLayouts.concat(
+      const layouts: Layout[] = defaultLayouts.concat(
         defaultLayouts
           .filter((layout) => layout.isPreview)
           .map((layout) => ({
@@ -176,30 +207,85 @@ export default function NewEventPage() {
       );
 
       setLayouts(layouts);
+      localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
 
-      if (projectId) {
-        localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
-        try {
-          await axios.post(
-            `${HTTP_BACKEND}/api/layouts`,
-            { projectId, layouts },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${localStorage.getItem('token')}`,
-              },
-            }
-          );
-          toast.success('Layouts saved successfully');
-        } catch (error) {
-          console.error('Error saving layouts:', error);
-          toast.error('Failed to save layouts');
-        }
+      try {
+        await axios.post(
+          `${HTTP_BACKEND}/api/layouts`,
+          { projectId, layouts },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        toast.success('Layouts saved successfully');
+      } catch (error) {
+        console.error('Error saving layouts:', error);
+        toast.error('Failed to save layouts');
       }
     };
 
-    generateAndSaveLayouts();
-  }, [projectId, projectName, projectImageKey, storedImageKey, setLayouts]);
+    loadAndGenerateLayouts();
+  }, [projectId, setLayouts]);
+
+  // Update layouts when project details change
+  const debouncedUpdateLayouts = useDebounce(async () => {
+    if (isSaving.current || !projectId) return;
+
+    isSaving.current = true;
+    console.log('Debounced updateLayouts called with:', {
+      projectId,
+      projectName,
+      projectImageKey,
+      projectDescription,
+    });
+
+    const savedLayouts = localStorage.getItem(`layouts-${projectId}`);
+    if (savedLayouts) {
+      const parsedLayouts: Layout[] = JSON.parse(savedLayouts);
+      const updatedLayouts: Layout[] = parsedLayouts.map((layout) => {
+        if (layout.pageType === 'front_cover') {
+          return {
+            ...layout,
+            config: {
+              ...layout.config,
+              imageKey: projectImageKey || storedImageKey,
+              title: projectName,
+              description: projectDescription,
+            },
+          };
+        }
+        return layout;
+      });
+
+      setLayouts(updatedLayouts);
+      localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
+
+      try {
+        await axios.post(
+          `${HTTP_BACKEND}/api/layouts`,
+          { projectId, layouts: updatedLayouts },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        toast.success('Layouts updated successfully');
+      } catch (error) {
+        console.error('Error updating layouts:', error);
+        toast.error('Failed to update layouts');
+      }
+    }
+    isSaving.current = false;
+  }, 1000);
+
+  useEffect(() => {
+    debouncedUpdateLayouts();
+  }, [projectId, projectName, projectImageKey, storedImageKey, projectDescription]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareLink);
@@ -215,13 +301,14 @@ export default function NewEventPage() {
     }
 
     try {
-      const response = await axios.get(`${HTTP_BACKEND}/event-type`, {
+      const response = await axios.get<{ description: string }>(`${HTTP_BACKEND}/event-type`, {
         params: { name: eventTypes },
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
       setProjectDescription(response.data.description);
+      setEventDescription(response.data.description);
       toast.success('Description reset to default');
     } catch (error) {
       console.error('Error fetching default description:', error);
@@ -231,7 +318,7 @@ export default function NewEventPage() {
   };
 
   const { handleImageChange } = useImageUpload({
-    onSuccess: (key, file) => {
+    onSuccess: (key: string, file: File) => {
       const previewUrl = URL.createObjectURL(file);
       setPreview(previewUrl);
       setProjectImageKeyState(key);
@@ -239,6 +326,80 @@ export default function NewEventPage() {
     },
     projectId: projectId || '',
   });
+
+  const saveUpdatedLayouts = async () => {
+    if (isSaving.current || !projectId) return;
+
+    isSaving.current = true;
+    console.log('saveUpdatedLayouts called with:', {
+      projectId,
+      projectName,
+      projectImageKey,
+      projectDescription,
+    });
+
+    try {
+      const savedLayouts = localStorage.getItem(`layouts-${projectId}`);
+      let updatedLayouts = layouts; // Use current layouts state as fallback
+
+      if (savedLayouts) {
+        const parsedLayouts: Layout[] = JSON.parse(savedLayouts);
+        updatedLayouts = parsedLayouts.map((layout) => {
+          if (layout.pageType === 'front_cover') {
+            return {
+              ...layout,
+              config: {
+                ...layout.config,
+                imageKey: projectImageKey || storedImageKey,
+                title: projectName,
+                description: projectDescription,
+              },
+            };
+          }
+          return layout;
+        });
+      }
+
+      // Update store state
+      setLayouts(updatedLayouts);
+      setStoreProjectName(projectName);
+      setEventDescription(projectDescription);
+      if (projectImageKey) {
+        setImageKey(projectImageKey);
+      }
+
+      // Save to localStorage
+      localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
+
+      // Save to backend
+      await axios.post(
+        `${HTTP_BACKEND}/api/layouts`,
+        { projectId, layouts: updatedLayouts },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+      toast.success('Layouts updated successfully');
+    } catch (error) {
+      console.error('Error updating layouts:', error);
+      toast.error('Failed to update layouts');
+    } finally {
+      isSaving.current = false;
+    }
+  };
+
+  const handleSaveEdit = () => {
+    saveUpdatedLayouts();
+    setShowEditModal(false);
+  };
+
+  // Find the front_cover layout to render
+  const frontCoverLayout = layouts.find(
+    (layout) => layout.pageType === 'front_cover' && layout.isPreview
+  ) as Layout | undefined;
 
   return (
     <div className="min-h-screen bg-white">
@@ -256,10 +417,16 @@ export default function NewEventPage() {
         </div>
 
         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
-          <Button className="bg-primary text-white px-4 py-2 rounded cursor-pointer" onClick={handleDashboardClick}>
+          <Button
+            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
+            onClick={handleDashboardClick}
+          >
             Dashboard
           </Button>
-          <Button className="bg-primary text-white px-4 py-2 rounded cursor-pointer" onClick={() => setShowEditModal(true)}>
+          <Button
+            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
+            onClick={() => setShowEditModal(true)}
+          >
             Edit this Page
           </Button>
         </div>
@@ -295,36 +462,74 @@ export default function NewEventPage() {
         <div className="mt-12">
           <h2 className="text-4xl font-bold mb-4 text-left">Contribute</h2>
           <p className="text-md text-gray-600 mb-6 text-left">
-            Add a memory, well wish, or photo. Want to add more photos? Simply click view layout on the contribution page and view the other layouts and update the photos and description.
-            Share it to your friends, family, and colleagues.
+            Add a memory, well wish, or photo. Want to add more photos? Simply click view layout on the contribution page
+            and view the other layouts and update the photos and description. Share it to your friends, family, and
+            colleagues.
           </p>
 
-          <div className="flex justify-center">
-            <div className="relative bg-white shadow-2xl border-4 border-gray-300 w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out hover:rotate-3d hover:scale-105 hover:shadow-2xl">
-              <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
-              <div className="relative flex flex-col items-center w-full">
-                <h1 className="text-3xl font-bold mb-6 break-words text-center mt-3">{projectName}</h1>
-                {projectImageKey && (
-                  <div className="mb-6">
-                    <Image
-                      src={
-                        typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
-                          ? projectImageKey
-                          : getImageUrl(projectImageKey) || ''
-                      }
-                      alt="Celebration"
-                      width={280}
-                      height={200}
-                      className="object-contain shadow-md"
-                    />
-                  </div>
-                )}
-                <div className="max-w-[80%] text-gray-700 text-[13px] text-center mt-4">
-                  <p className="break-words italic leading-relaxed">{projectDescription}</p>
+          {frontCoverLayout ? (
+            <div className="flex justify-center">
+              <div
+                className={`relative bg-white ${frontCoverLayout.config.containerStyle?.shadow ?? ''} ${
+                  frontCoverLayout.config.containerStyle?.border ?? ''
+                } w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${
+                  frontCoverLayout.config.hoverEffects?.rotate ?? ''
+                } ${frontCoverLayout.config.hoverEffects?.scale ?? ''} ${
+                  frontCoverLayout.config.hoverEffects?.shadow ?? ''
+                }`}
+              >
+                <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
+                <div className="relative flex flex-col items-center w-full">
+                  <h1
+                    className={`${frontCoverLayout.config.titleStyle?.fontSize ?? ''} ${
+                      frontCoverLayout.config.titleStyle?.fontWeight ?? ''
+                    } ${frontCoverLayout.config.titleStyle?.marginBottom ?? ''} ${
+                      frontCoverLayout.config.titleStyle?.textAlign ?? ''
+                    } ${frontCoverLayout.config.titleStyle?.marginTop ?? ''} break-words`}
+                  >
+                    {frontCoverLayout.config.title || 'No Title'}
+                  </h1>
+                  {frontCoverLayout.config.imageKey && (
+                    <div className={frontCoverLayout.config.imageStyle?.marginBottom ?? ''}>
+                      <Image
+                        src={
+                          typeof frontCoverLayout.config.imageKey === 'string' &&
+                          frontCoverLayout.config.imageKey.startsWith('data:')
+                            ? frontCoverLayout.config.imageKey
+                            : getImageUrl(frontCoverLayout.config.imageKey) || ''
+                        }
+                        alt="Celebration"
+                        width={frontCoverLayout.config.imageStyle?.width ?? 280}
+                        height={frontCoverLayout.config.imageStyle?.height ?? 200}
+                        className={`${frontCoverLayout.config.imageStyle?.objectFit ?? ''} ${
+                          frontCoverLayout.config.imageStyle?.shadow ?? ''
+                        }`}
+                      />
+                    </div>
+                  )}
+                  {frontCoverLayout.config.description && (
+                    <div
+                      className={`${frontCoverLayout.config.descriptionStyle?.maxWidth ?? ''} ${
+                        frontCoverLayout.config.descriptionStyle?.color ?? ''
+                      } ${frontCoverLayout.config.descriptionStyle?.fontSize ?? ''} ${
+                        frontCoverLayout.config.descriptionStyle?.textAlign ?? ''
+                      } ${frontCoverLayout.config.descriptionStyle?.marginTop ?? ''}`}
+                    >
+                      <p
+                        className={`${frontCoverLayout.config.descriptionStyle?.fontStyle ?? ''} ${
+                          frontCoverLayout.config.descriptionStyle?.lineHeight ?? ''
+                        } break-words`}
+                      >
+                        {frontCoverLayout.config.description}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <p>No front cover layout found. Please try refreshing or editing the page.</p>
+          )}
         </div>
       </main>
       <Footer />
@@ -337,11 +542,13 @@ export default function NewEventPage() {
             <h3 className="text-lg font-bold mb-2">🎉 Project Created!</h3>
             <p className="text-sm mb-2">Your project has been created and this is the landing page for your project!</p>
             <p className="text-sm mb-2 font-bold">✏️ Edit this Page</p>
-            <p className="text-xs mb-2">Click “Edit this Page” at the top to customize it.</p>
+            <p className="text-xs mb-2">Click Edit this Page at the top to customize it.</p>
             <p className="text-sm font-bold">📨 Invite Friends!</p>
             <p className="text-xs">Copy the sharing link above to invite your friends.</p>
             <div className="text-right mt-4">
-              <Button size="sm" onClick={() => setShowModal(false)}>Got it</Button>
+              <Button size="sm" onClick={() => setShowModal(false)}>
+                Got it
+              </Button>
             </div>
           </div>
         </div>
@@ -388,7 +595,7 @@ export default function NewEventPage() {
               type="text"
               className="w-full p-2 border rounded mb-4 font-bold"
               value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setProjectName(e.target.value)}
             />
 
             <label className="block font-semibold mb-1">Project Description</label>
@@ -396,7 +603,7 @@ export default function NewEventPage() {
               rows={6}
               className="w-full p-2 border rounded mb-4"
               value={projectDescription}
-              onChange={(e) => setProjectDescription(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setProjectDescription(e.target.value)}
             />
 
             <div className="flex justify-between items-center mt-4">
@@ -412,7 +619,7 @@ export default function NewEventPage() {
                 </Button>
                 <Button
                   className="px-4 py-2 bg-blue-600 text-white rounded"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={handleSaveEdit}
                 >
                   Save
                 </Button>
