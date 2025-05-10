@@ -80,7 +80,7 @@ const DownloadPage = () => {
       <Header isSignedIn />
       <div className="flex min-h-screen bg-gray-100">
         <Sidebar projectId={project_id} />
-        <div className="flex-1 ml-0 md:ml-[5rem] p-6">
+        <div className="flex-1 ml-0 md:ml-[2rem] p-6">
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-4">PDF Preview</h1>
             {pdfUrl ? (
