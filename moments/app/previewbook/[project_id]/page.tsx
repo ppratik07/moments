@@ -26,7 +26,7 @@ interface PageData {
     value?: string;
     position?: { x: number; y: number };
     size?: { width: number; height: number };
-    styles?: Record<string, any>;
+    styles?: Record<string, string | number | boolean | undefined>;
   }[];
 }
 
