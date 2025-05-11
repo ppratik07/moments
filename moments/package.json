@@ -17,6 +17,7 @@
     "@radix-ui/react-progress": "^1.1.4",
     "@radix-ui/react-select": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.0",
+    "@stripe/stripe-js": "^7.3.0",
     "@types/react-beautiful-dnd": "^13.1.8",
     "@uppy/core": "^4.4.4",
     "@uppy/dashboard": "^4.3.3",

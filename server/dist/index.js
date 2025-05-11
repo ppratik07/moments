@@ -21,6 +21,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const client_1 = require("@prisma/client");
 const middleware_1 = require("./middleware/middleware");
 const request_1 = __importDefault(require("request"));
+const stripe_1 = __importDefault(require("stripe"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
@@ -40,6 +41,10 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
 });
+if (!process.env.STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
+}
+const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
 // Utility function to strip query parameters from a URL
 function stripQueryParams(url) {
     const index = url.indexOf('?');
@@ -1004,6 +1009,32 @@ function generateBookHtml(data) {
     </html>
   `;
 }
+app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const session = yield stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd',
+                        product_data: {
+                            name: 'Book',
+                        },
+                        unit_amount: 2500, // $25.00
+                    },
+                    quantity: 1,
+                },
+            ],
+            mode: 'payment',
+            success_url: `${req.headers.origin}/success`,
+            cancel_url: `${req.headers.origin}/cancel`,
+        });
+        res.status(200).json({ id: session.id });
+    }
+    catch (err) {
+        res.status(500).json({ message: 'Error creating checkout', error: err });
+    }
+}));
 // Listening to the server
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);

@@ -13,6 +13,7 @@ import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { authMiddleware } from "./middleware/middleware";
 import request from "request";
+import Stripe from 'stripe';
 
 dotenv.config();
 
@@ -39,6 +40,10 @@ const s3 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   },
 });
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
+}
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Utility function to strip query parameters from a URL
 function stripQueryParams(url: string): string {
@@ -1125,6 +1130,33 @@ function generateBookHtml(data: {
     </html>
   `;
 }
+
+app.post('/api/create-checkout-session', async (req: Request, res: Response): Promise<any> => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Book',
+            },
+            unit_amount: 2500, // $25.00
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${req.headers.origin}/success`,
+      cancel_url: `${req.headers.origin}/cancel`,
+    });
+
+    res.status(200).json({ id: session.id });
+  } catch (err) {
+    res.status(500).json({ message : 'Error creating checkout',error : err });
+  }
+})
 
 // Listening to the server
 app.listen(PORT, () => {

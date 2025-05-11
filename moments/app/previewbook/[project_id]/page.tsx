@@ -10,7 +10,9 @@ import Sidebar from '@/components/dashboard/SideBar';
 import { Header } from '@/components/landing/Header';
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/helpers/getImageUrl';
+import { loadStripe } from '@stripe/stripe-js';
 import { FlipBookRef, Layout, PageCoverProps, PageData, PageProps } from '@/types/previewbook.types';
+import axios from 'axios';
 
 
 const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivElement>) => {
@@ -19,22 +21,18 @@ const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivEl
   if (layout && layout.pageType === 'front_cover') {
     return (
       <div
-        className={`page page-cover relative bg-white ${layout.config.containerStyle?.shadow ?? ''} ${
-          layout.config.containerStyle?.border ?? ''
-        } w-full h-full p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${
-          layout.config.hoverEffects?.rotate ?? ''
-        } ${layout.config.hoverEffects?.scale ?? ''} ${layout.config.hoverEffects?.shadow ?? ''}`}
+        className={`page page-cover relative bg-white ${layout.config.containerStyle?.shadow ?? ''} ${layout.config.containerStyle?.border ?? ''
+          } w-full h-full p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${layout.config.hoverEffects?.rotate ?? ''
+          } ${layout.config.hoverEffects?.scale ?? ''} ${layout.config.hoverEffects?.shadow ?? ''}`}
         ref={ref}
         data-density="hard"
       >
         <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
         <div className="relative flex flex-col items-center w-full">
           <h1
-            className={`${layout.config.titleStyle?.fontSize ?? 'text-3xl'} ${
-              layout.config.titleStyle?.fontWeight ?? 'font-bold'
-            } ${layout.config.titleStyle?.marginBottom ?? 'mb-6'} ${
-              layout.config.titleStyle?.textAlign ?? 'text-center'
-            } ${layout.config.titleStyle?.marginTop ?? 'mt-3'} break-words`}
+            className={`${layout.config.titleStyle?.fontSize ?? 'text-3xl'} ${layout.config.titleStyle?.fontWeight ?? 'font-bold'
+              } ${layout.config.titleStyle?.marginBottom ?? 'mb-6'} ${layout.config.titleStyle?.textAlign ?? 'text-center'
+              } ${layout.config.titleStyle?.marginTop ?? 'mt-3'} break-words`}
           >
             {layout.config.title || 'No Title'}
           </h1>
@@ -49,9 +47,8 @@ const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivEl
                 alt="Front Cover"
                 width={layout.config.imageStyle?.width ?? 280}
                 height={layout.config.imageStyle?.height ?? 200}
-                className={`${layout.config.imageStyle?.objectFit ?? 'object-contain'} ${
-                  layout.config.imageStyle?.shadow ?? 'shadow-md'
-                }`}
+                className={`${layout.config.imageStyle?.objectFit ?? 'object-contain'} ${layout.config.imageStyle?.shadow ?? 'shadow-md'
+                  }`}
                 onError={(e) => {
                   e.currentTarget.src = 'https://via.placeholder.com/300x200?text=Image+Failed+to+Load';
                   console.error('Front cover image failed to load:', layout.config.imageKey);
@@ -61,16 +58,13 @@ const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivEl
           )}
           {layout.config.description && (
             <div
-              className={`${layout.config.descriptionStyle?.maxWidth ?? 'max-w-[80%]'} ${
-                layout.config.descriptionStyle?.color ?? 'text-gray-700'
-              } ${layout.config.descriptionStyle?.fontSize ?? 'text-[13px]'} ${
-                layout.config.descriptionStyle?.textAlign ?? 'text-center'
-              } ${layout.config.descriptionStyle?.marginTop ?? 'mt-4'}`}
+              className={`${layout.config.descriptionStyle?.maxWidth ?? 'max-w-[80%]'} ${layout.config.descriptionStyle?.color ?? 'text-gray-700'
+                } ${layout.config.descriptionStyle?.fontSize ?? 'text-[13px]'} ${layout.config.descriptionStyle?.textAlign ?? 'text-center'
+                } ${layout.config.descriptionStyle?.marginTop ?? 'mt-4'}`}
             >
               <p
-                className={`${layout.config.descriptionStyle?.fontStyle ?? 'italic'} ${
-                  layout.config.descriptionStyle?.lineHeight ?? 'leading-relaxed'
-                } break-words`}
+                className={`${layout.config.descriptionStyle?.fontStyle ?? 'italic'} ${layout.config.descriptionStyle?.lineHeight ?? 'leading-relaxed'
+                  } break-words`}
               >
                 {layout.config.description}
               </p>
@@ -197,7 +191,21 @@ const PreviewBookPage = () => {
   if (error) {
     return <div className="text-red-600 text-center mt-10">{error}</div>;
   }
-
+  //Stripe Checkout
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+  const handleCheckout = async()=>{
+    const stripe  = await stripePromise;
+    if(!stripe){
+      console.error('Stripe.js has not loader');
+      return;
+    }
+    const response = await axios.post(`${HTTP_BACKEND}/api/create-checkout-session`)
+    const {id} = await response.data;
+    const result = await stripe.redirectToCheckout({ sessionId: id });
+    if(result.error){
+      console.error(result.error.message);
+    }
+  }
   return (
     <>
       <Head>
@@ -386,6 +394,11 @@ const PreviewBookPage = () => {
                     className="px-4 py-2 text-white rounded hover:bg-blue-700"
                   >
                     Next page
+                  </Button>
+                </div>
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={handleCheckout} className='hover:bg-amber-600 cursor-pointer'>
+                    Order Book
                   </Button>
                 </div>
               </>
