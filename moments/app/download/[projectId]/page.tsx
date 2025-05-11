@@ -6,6 +6,7 @@ import { HTTP_BACKEND } from '@/utils/config';
 import { useAuth } from '@clerk/nextjs';
 import Sidebar from '@/components/dashboard/SideBar';
 import { Header } from '@/components/landing/Header';
+import { RotatingLines } from 'react-loader-spinner';
 
 const DownloadPage = () => {
   const params = useParams();
@@ -18,7 +19,7 @@ const DownloadPage = () => {
   const { getToken } = useAuth();
 
   useEffect(() => {
-    console.log('Params:', params); // Debug: Log params to check project_id
+    console.log('Params:', params);
     if (!project_id || typeof project_id !== 'string') {
       setError('Invalid or missing project ID. Please select a valid project.');
       return;
@@ -68,7 +69,21 @@ const DownloadPage = () => {
   }
 
   if (isLoading) {
-    return <div className="text-center mt-10">Loading PDF...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p>
+          Loading PDF... Please wait.
+        </p>
+        <RotatingLines
+          visible={true}
+          strokeColor="gray"
+          strokeWidth="5"
+          animationDuration="0.75"
+          width="96"
+          ariaLabel="rotating-lines-loading"
+        />
+      </div>
+    );
   }
 
   return (
