@@ -325,14 +325,22 @@ export default function ContributionPage() {
               <p className="text-gray-700 text-lg mb-4">
                 {projectData.eventDescription}
               </p>
-              <div className="mt-6 space-x-4">
+                <div className="mt-6 space-x-4">
                 <button className="bg-white border text-purple-600 rounded-xs px-4 py-2 hover:shadow">
                   How it Works
                 </button>
-                <button className="bg-purple-600 text-white px-4 py-2 rounded-xs hover:bg-purple-700">
+                <button
+                  className="bg-purple-600 text-white px-4 py-2 rounded-xs hover:bg-purple-700"
+                  onClick={() => {
+                  const layoutEditorSection = document.querySelector("#layout-editor-section");
+                  if (layoutEditorSection) {
+                    layoutEditorSection.scrollIntoView({ behavior: "smooth" });
+                  }
+                  }}
+                >
                   Contribute
                 </button>
-              </div>
+                </div>
             </div>
             <div className="overflow-hidden shadow-lg">
               {projectData.imageKey && (
@@ -349,7 +357,7 @@ export default function ContributionPage() {
 
           <StepIndicator currentStep={1} />
 
-          <section className="mb-16 mt-6">
+          <section className="mb-16 mt-6" id="layout-editor-section">
             <h2 className="text-4xl font-bold mb-7">Contribute</h2>
             <ol className="text-gray-700 list-decimal list-inside mb-6">
               <li>
@@ -374,6 +382,7 @@ export default function ContributionPage() {
               <LayoutEditorPage
                 //@ts-expect-error : Not sure of the types
                 pages={mappedPages}
+            
                 //@ts-expect-error : Not sure of the types
                 setPages={(newPages: Page[]) => {
                   const updatedPages = newPages.map((page, index) => ({
