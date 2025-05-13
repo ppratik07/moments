@@ -15,6 +15,8 @@ import { useAuth } from '@clerk/nextjs';
 import { shareOnFacebook, shareOnInstagram, shareOnTikTok, shareOnTwitter } from '@/services/social';
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
@@ -22,22 +24,34 @@ export default function ProjectIdDashboard() {
   const { contributionCount } = useContributionCount(projectId);
   const { lastContributionDate } = useLastContribution(projectId);
   const { projectStatus } = useProjectStatus(projectId);
+  const router = useRouter();
+  const { getToken } = useAuth();
 
-  // Calculate deadline as 30 days from today
-  const today = new Date();
-  const deadlineDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const timeDiff = deadlineDate.getTime() - today.getTime();
-  const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-  const isDeadlineApproaching = daysLeft <= 7;
-  const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
-  const isPrintingState = projectStatus?.status === 'printing';
+  // State for deadline and calendar popup
+  const [deadlineDate, setDeadlineDate] = useState<Date | null>(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default: 30 days from now
+  );
+  const [daysLeft, setDaysLeft] = useState<number | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [projectNames, setProjectNames] = useState<string | null>(null);
   const [imageKeys, setImageKeys] = useState<string | null>(null);
-  const router = useRouter();
-  const { getToken } = useAuth();
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackContent, setFeedbackContent] = useState('');
 
+  // Calculate days left based on current date and deadline
+  useEffect(() => {
+    if (deadlineDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Normalize to midnight
+      const timeDiff = deadlineDate.getTime() - today.getTime();
+      const calculatedDaysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      setDaysLeft(calculatedDaysLeft >= 0 ? calculatedDaysLeft : 0);
+    }
+  }, [deadlineDate]);
+
+  // Fetch project details, including deadline if stored
   useEffect(() => {
     const fetchProject = async () => {
       if (!projectId) {
@@ -64,7 +78,13 @@ export default function ProjectIdDashboard() {
 
         setProjectNames(project.projectName);
         setImageKeys(project.imageKey || null);
-        console.log('projectkey', project.imageKey);
+        // Set deadline from backend if available
+        if (project.deadlineDate) {
+          const fetchedDeadline = new Date(project.deadlineDate);
+          if (!isNaN(fetchedDeadline.getTime())) {
+            setDeadlineDate(fetchedDeadline);
+          }
+        }
       } catch (err) {
         console.error('Error fetching project:', err);
         setError('Failed to load project details');
@@ -77,13 +97,46 @@ export default function ProjectIdDashboard() {
     fetchProject();
   }, [projectId, getToken]);
 
-  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
-  const [feedbackContent, setFeedbackContent] = useState('');
-
+  // Handle deadline change
   const handleChangeDeadline = () => {
-    router.push(`/dashboard/${projectId}/settings`);
+    setIsCalendarOpen(true);
   };
 
+  // Handle date selection from calendar
+  const handleDateSelect = async (date: Date | null) => {
+    if (!date) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize to midnight
+    if (date < today) {
+      toast.error('Please select a future date.');
+      return;
+    }
+
+    setDeadlineDate(date);
+    setIsCalendarOpen(false);
+
+    // Save the new deadline to the backend
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('No token available');
+
+      await axios.patch(
+        `${HTTP_BACKEND}/api/user-projects/${projectId}`,
+        { deadlineDate: date.toISOString() },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success('Deadline updated successfully!');
+    } catch (error) {
+      console.error('Error updating deadline:', error);
+      toast.error('Failed to update deadline.');
+      // Revert to previous deadline or default
+      setDeadlineDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    }
+  };
+
+  // Handle feedback submission
   const handleFeedbackSubmit = async () => {
     if (!feedbackContent.trim()) {
       toast.error('Feedback cannot be empty.');
@@ -108,6 +161,10 @@ export default function ProjectIdDashboard() {
       toast.error('Failed to submit feedback.');
     }
   };
+
+  const isDeadlineApproaching = daysLeft !== null && daysLeft <= 7;
+  const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
+  const isPrintingState = projectStatus?.status === 'printing';
 
   if (loading) {
     return <div className="p-8">Loading project data...</div>;
@@ -172,7 +229,7 @@ export default function ProjectIdDashboard() {
                     </p>
                   </div>
                   <p className="text-sm text-gray-500 mt-4">
-                    Your book has been ordered and is currently being printed. Soon it will be shipped
+                    Your book has been ordered and is currently being printed. Soon it will be shipped.
                   </p>
                   <Button
                     className="mt-4 px-6 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50"
@@ -373,37 +430,63 @@ export default function ProjectIdDashboard() {
               </div>
             </div>
           )}
+
+          {/* Calendar Popup */}
+          {isCalendarOpen && (
+            <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-semibold mb-4">Select New Deadline</h2>
+                <DatePicker
+                  selected={deadlineDate}
+                  onChange={handleDateSelect}
+                  minDate={new Date()} // Prevent selecting past dates
+                  inline // Show calendar directly
+                  dateFormat="MM/dd/yyyy"
+                  className="border rounded px-3 py-2 w-full"
+                />
+                <div className="flex justify-end gap-2 mt-4">
+                  <Button
+                    className="px-4 py-2 text-white rounded-md hover:bg-red-500"
+                    onClick={() => setIsCalendarOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feedback Modal */}
+          {isFeedbackModalOpen && (
+            <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+              <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                <h2 className="text-xl font-semibold mb-4">Give Feedback</h2>
+                <textarea
+                  className="w-full border rounded px-3 py-2 mb-4"
+                  rows={5}
+                  value={feedbackContent}
+                  onChange={(e) => setFeedbackContent(e.target.value)}
+                  placeholder="Write your feedback here..."
+                />
+                <div className="flex justify-end gap-2">
+                  <Button
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
+                    onClick={() => setIsFeedbackModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md"
+                    onClick={handleFeedbackSubmit}
+                  >
+                    Submit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
-
-      {isFeedbackModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-semibold mb-4">Give Feedback</h2>
-            <textarea
-              className="w-full border rounded px-3 py-2 mb-4"
-              rows={5}
-              value={feedbackContent}
-              onChange={(e) => setFeedbackContent(e.target.value)}
-              placeholder="Write your feedback here..."
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md"
-                onClick={() => setIsFeedbackModalOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="px-4 py-2 bg-purple-600 text-white rounded-md"
-                onClick={handleFeedbackSubmit}
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

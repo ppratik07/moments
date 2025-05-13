@@ -1035,6 +1035,161 @@ app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0,
         res.status(500).json({ message: 'Error creating checkout', error: err });
     }
 }));
+app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _j;
+    const { projectId } = req.params;
+    const userId = req.userId;
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+    }
+    if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    try {
+        const project = yield prisma.loginUser.findFirst({
+            where: {
+                id: projectId,
+                userId, // Ensure project belongs to authenticated user
+            },
+            select: {
+                projectName: true,
+                imageKey: true,
+                deadlines: {
+                    where: {
+                        deadline_enabled: true, // Fetch only enabled deadlines
+                    },
+                    orderBy: {
+                        updatedAt: 'desc', // Get the most recent deadline
+                    },
+                    take: 1, // Limit to one deadline
+                    select: {
+                        actual_deadline: true,
+                        calculate_date: true,
+                        deadline_enabled: true,
+                    },
+                },
+            },
+        });
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found or unauthorized' });
+        }
+        // Determine deadlineDate (prefer actual_deadline, fallback to calculate_date)
+        const deadline = project.deadlines.length > 0
+            ? ((_j = project.deadlines[0].actual_deadline) !== null && _j !== void 0 ? _j : project.deadlines[0].calculate_date)
+            : null;
+        return res.status(200).json({
+            project: {
+                projectName: project.projectName,
+                imageKey: project.imageKey,
+                deadlineDate: deadline ? deadline.toISOString() : null,
+            },
+        });
+    }
+    catch (error) {
+        console.error('Error fetching project:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}));
+app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _k, _l, _m, _o, _p, _q, _r;
+    const { projectId } = req.params;
+    const { deadlineDate } = req.body;
+    const userId = req.userId;
+    if (!projectId || typeof projectId !== 'string') {
+        return res.status(400).json({ message: 'Invalid projectId' });
+    }
+    if (!userId) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+    if (!deadlineDate || typeof deadlineDate !== 'string') {
+        return res.status(400).json({ message: 'Invalid or missing deadlineDate' });
+    }
+    const parsedDate = new Date(deadlineDate);
+    if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid deadlineDate format' });
+    }
+    // Ensure deadline is in the future
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Normalize to midnight
+    if (parsedDate < now) {
+        return res.status(400).json({ message: 'deadlineDate must be in the future' });
+    }
+    try {
+        // Verify project exists and belongs to the user
+        const project = yield prisma.loginUser.findFirst({
+            where: {
+                id: projectId,
+                userId,
+            },
+            select: {
+                projectName: true,
+                imageKey: true,
+            },
+        });
+        if (!project) {
+            return res.status(404).json({ message: 'Project not found or unauthorized' });
+        }
+        // Check if a deadline record exists
+        const existingDeadline = yield prisma.contributionDeadlines.findFirst({
+            where: {
+                projectId,
+                deadline_enabled: true,
+            },
+        });
+        if (!existingDeadline) {
+            // Create a new deadline record
+            yield prisma.contributionDeadlines.create({
+                data: {
+                    id: (0, uuid_1.v4)(),
+                    projectId,
+                    actual_deadline: parsedDate,
+                    deadline_enabled: true,
+                },
+            });
+        }
+        else {
+            // Update existing deadline
+            yield prisma.contributionDeadlines.update({
+                where: { id: existingDeadline.id },
+                data: {
+                    actual_deadline: parsedDate,
+                    updatedAt: new Date(), // Explicitly update timestamp
+                },
+            });
+        }
+        // Fetch updated project to return consistent response
+        const updatedProject = yield prisma.loginUser.findFirst({
+            where: { id: projectId },
+            select: {
+                projectName: true,
+                imageKey: true,
+                deadlines: {
+                    where: { deadline_enabled: true },
+                    orderBy: { updatedAt: 'desc' },
+                    take: 1,
+                    select: {
+                        actual_deadline: true,
+                        calculate_date: true,
+                    },
+                },
+            },
+        });
+        const deadline = ((_l = (_k = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _k === void 0 ? void 0 : _k.length) !== null && _l !== void 0 ? _l : 0) > 0
+            ? ((_p = (_o = (_m = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _m === void 0 ? void 0 : _m[0]) === null || _o === void 0 ? void 0 : _o.actual_deadline) !== null && _p !== void 0 ? _p : (_r = (_q = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _q === void 0 ? void 0 : _q[0]) === null || _r === void 0 ? void 0 : _r.calculate_date)
+            : null;
+        return res.status(200).json({
+            project: {
+                projectName: updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.projectName,
+                imageKey: updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.imageKey,
+                deadlineDate: deadline ? deadline.toISOString() : null,
+            },
+        });
+    }
+    catch (error) {
+        console.error('Error updating project deadline:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}));
 // Listening to the server
 app.listen(PORT, () => {
     console.log(`Server is running on ${PORT}`);
