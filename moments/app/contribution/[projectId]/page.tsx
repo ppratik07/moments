@@ -324,14 +324,14 @@ export default function ContributionPage() {
                 </button>
               </div>
             </div>
-            <div className="rounded-lg overflow-hidden shadow-lg">
+            <div className="overflow-hidden shadow-lg">
               {projectData.imageKey && (
                 <Image
                   src={getImageUrl(projectData.imageKey) ?? ''}
                   alt="Event"
                   width={600}
                   height={400}
-                  className="rounded-lg"
+                  
                 />
               )}
             </div>
