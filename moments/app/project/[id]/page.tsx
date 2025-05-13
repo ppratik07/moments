@@ -18,6 +18,7 @@ import { enUS } from 'date-fns/locale';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { RotatingLines } from 'react-loader-spinner';
+import { loadStripe } from '@stripe/stripe-js';
 
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
@@ -40,7 +41,9 @@ export default function ProjectIdDashboard() {
   const [imageKeys, setImageKeys] = useState<string | null>(null);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState('');
+  const[copied,setCopied] = useState<boolean>(false);
 
+  const currentUrl = new URL(window.location.href);
   // Calculate days left based on current date and deadline
   useEffect(() => {
     if (deadlineDate) {
@@ -162,6 +165,26 @@ export default function ProjectIdDashboard() {
       toast.error('Failed to submit feedback.');
     }
   };
+  const handleCopy = ()=>{
+    navigator.clipboard.writeText(`${currentUrl.origin}/contribution/${projectId}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  //Stripe checkout
+  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+  const handleCheckout = async()=>{
+    const stripe  = await stripePromise;
+    if(!stripe){
+      console.error('Stripe.js has not loader');
+      return;
+    }
+    const response = await axios.post(`${HTTP_BACKEND}/api/create-checkout-session`)
+    const {id} = await response.data;
+    const result = await stripe.redirectToCheckout({ sessionId: id });
+    if(result.error){
+      console.error(result.error.message);
+    }
+  }
 
   const isDeadlineApproaching = daysLeft !== null && daysLeft <= 7;
   const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
@@ -190,7 +213,7 @@ export default function ProjectIdDashboard() {
         <main className="w-full max-w-7xl mx-auto p-8">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold">{projectNames}</h1>
-            <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-2 rounded-md">
+            <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-2 rounded-md cursor-pointer" onClick={handleCheckout}>
               Order Book
             </button>
           </div>
@@ -348,10 +371,10 @@ export default function ProjectIdDashboard() {
                   <input
                     type="text"
                     className="w-full border rounded px-3 py-2"
-                    value="https://momentsmemorybooks.com"
+                    value={`${currentUrl.origin}/contribution/${projectId}`}
                     readOnly
                   />
-                  <Button className="px-10">Copy</Button>
+                  <Button className="px-10" onClick={handleCopy}>{copied ? 'Copied!' : 'Copy Link'}</Button>
                 </div>
               </div>
 
