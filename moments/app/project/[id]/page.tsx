@@ -1,29 +1,34 @@
-'use client'
-import DashboardCard from "@/components/dashboard/DashBoardCard";
-import Sidebar from "@/components/dashboard/SideBar";
-import { Header } from "@/components/landing/Header";
-import { Button } from "@/components/ui/button";
-//import { useProjectStore } from "@/store/useProjectStore";
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from "sonner";
-import { useContributionCount } from "@/hooks/useContributionCount";
-import { useDeadline } from "@/hooks/useDeadline";
-import { useLastContribution } from "@/hooks/useLastContribution";
-import { useProjectStatus } from "@/hooks/useProjectStatus";
-import { HTTP_BACKEND } from "@/utils/config";
-import { useAuth } from "@clerk/nextjs";
-import { shareOnFacebook, shareOnInstagram, shareOnTikTok, shareOnTwitter } from "@/services/social";
+'use client';
+import DashboardCard from '@/components/dashboard/DashBoardCard';
+import Sidebar from '@/components/dashboard/SideBar';
+import { Header } from '@/components/landing/Header';
+import { Button } from '@/components/ui/button';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { useContributionCount } from '@/hooks/useContributionCount';
+import { useLastContribution } from '@/hooks/useLastContribution';
+import { useProjectStatus } from '@/hooks/useProjectStatus';
+import { HTTP_BACKEND } from '@/utils/config';
+import { useAuth } from '@clerk/nextjs';
+import { shareOnFacebook, shareOnInstagram, shareOnTikTok, shareOnTwitter } from '@/services/social';
+import { format } from 'date-fns';
+import { enUS } from 'date-fns/locale';
 
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
   const projectId = Array.isArray(params?.id) ? params.id[0] : params?.id;
-  // const { imageKey, projectName } = useProjectStore();
   const { contributionCount } = useContributionCount(projectId);
-  const { deadlineDate, daysLeft, isDeadlineApproaching } = useDeadline(projectId);
   const { lastContributionDate } = useLastContribution(projectId);
   const { projectStatus } = useProjectStatus(projectId);
+
+  // Calculate deadline as 30 days from today
+  const today = new Date();
+  const deadlineDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const timeDiff = deadlineDate.getTime() - today.getTime();
+  const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  const isDeadlineApproaching = daysLeft <= 7;
   const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
   const isPrintingState = projectStatus?.status === 'printing';
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +64,7 @@ export default function ProjectIdDashboard() {
 
         setProjectNames(project.projectName);
         setImageKeys(project.imageKey || null);
-        console.log('projectkey',project.imageKey);
+        console.log('projectkey', project.imageKey);
       } catch (err) {
         console.error('Error fetching project:', err);
         setError('Failed to load project details');
@@ -72,16 +77,13 @@ export default function ProjectIdDashboard() {
     fetchProject();
   }, [projectId, getToken]);
 
-  // Feedback modal state
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState('');
 
-  // Handle navigation to settings page
   const handleChangeDeadline = () => {
     router.push(`/dashboard/${projectId}/settings`);
   };
 
-  // Handle feedback submission
   const handleFeedbackSubmit = async () => {
     if (!feedbackContent.trim()) {
       toast.error('Feedback cannot be empty.');
@@ -130,12 +132,9 @@ export default function ProjectIdDashboard() {
 
           {isPrintingState ? (
             <div className="mt-10 max-w-6xl mx-auto">
-              {/* View Book Online Button */}
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">
-                    View Book Online
-                  </h2>
+                  <h2 className="text-lg font-semibold text-gray-800">View Book Online</h2>
                   <p className="text-sm text-gray-500">
                     While your book is being printed and shipped you can view and share the online version of the book with anyone.
                   </p>
@@ -148,16 +147,14 @@ export default function ProjectIdDashboard() {
                 </Button>
               </div>
 
-              {/* Order Summary and Social Sharing */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white border rounded-lg p-6">
-                {/* Order Summary */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Order Summary</h3>
                   <div className="space-y-2 text-gray-600">
                     <p>
                       <span className="font-medium">Date Ordered:</span>{' '}
                       {projectStatus?.orderSummary
-                        ? new Date(projectStatus.orderSummary.orderDate).toLocaleDateString()
+                        ? format(new Date(projectStatus.orderSummary.orderDate), 'MM/dd/yyyy', { locale: enUS })
                         : 'Loading...'}
                     </p>
                     <p>
@@ -175,7 +172,7 @@ export default function ProjectIdDashboard() {
                     </p>
                   </div>
                   <p className="text-sm text-gray-500 mt-4">
-                    Tour book has been ordered and is currently being printed. Soon it will be shipped
+                    Your book has been ordered and is currently being printed. Soon it will be shipped
                   </p>
                   <Button
                     className="mt-4 px-6 py-2 border border-blue-500 text-blue-500 rounded-md hover:bg-blue-50"
@@ -185,11 +182,8 @@ export default function ProjectIdDashboard() {
                   </Button>
                 </div>
 
-                {/* Social Sharing */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    Delighted with your experience?
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Delighted with your experience?</h3>
                   <p className="text-sm text-gray-500 mb-4">
                     Your delight is our delight! If you loved your experience would you consider sharing your love online?
                   </p>
@@ -243,12 +237,9 @@ export default function ProjectIdDashboard() {
                 </div>
               </div>
 
-              {/* Help Us Improve */}
               <div className="flex justify-between items-center mt-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Help Us Improve!
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-800">Help Us Improve!</h3>
                   <p className="text-sm text-gray-500">
                     If you have some feedback for us on how we could do better, would you let us know here?
                   </p>
@@ -266,24 +257,23 @@ export default function ProjectIdDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-0.5 mt-8">
                 <DashboardCard
                   title="Contributions"
-                  value={contributionCount !== null ? String(contributionCount) : "—"}
+                  value={contributionCount !== null ? String(contributionCount) : '—'}
                   description={
                     isDeadlineApproaching && lastContributionDate
-                      ? `Last contribution on ${lastContributionDate.toLocaleDateString()}`
-                      : "View your completed contributions."
+                      ? `Last contribution on ${format(new Date(lastContributionDate), 'MM/dd/yyyy', { locale: enUS })}`
+                      : 'View your completed contributions.'
                   }
                   buttonText="View Contributions"
                   onButtonClick={() => router.push(`project/${projectId}/contributions`)}
                 />
                 <DashboardCard
                   title="Days Left to Contribute"
-                  value={daysLeft !== null ? String(daysLeft) : "—"}
-                  description={`Your current contribution deadline is ${deadlineDate ? deadlineDate.toLocaleDateString() : "not set"
-                    }. Need more time? Click below to change the contribution deadline.`}
+                  value={daysLeft !== null ? String(daysLeft) : '—'}
+                  description={`Your current contribution deadline is ${deadlineDate ? format(deadlineDate, 'MM/dd/yyyy', { locale: enUS }) : 'not set'}. Need more time? Click below to change the contribution deadline.`}
                   buttonText="Change Deadline"
                   onButtonClick={handleChangeDeadline}
-                  className={isDeadlineApproaching ? "border-red-500" : ""}
-                  titleClassName={isDeadlineApproaching ? "text-red-500" : ""}
+                  className={isDeadlineApproaching ? 'border-red-500' : ''}
+                  titleClassName={isDeadlineApproaching ? 'text-red-500' : ''}
                 />
               </div>
               <div className="mt-20">
@@ -386,7 +376,6 @@ export default function ProjectIdDashboard() {
         </main>
       </div>
 
-      {/* Feedback Modal */}
       {isFeedbackModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
