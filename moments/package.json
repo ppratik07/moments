@@ -39,6 +39,7 @@
     "react": "^19.0.0",
     "react-beautiful-dnd": "^13.1.1",
     "react-confetti": "^6.4.0",
+    "react-datepicker": "^8.3.0",
     "react-dom": "^19.0.0",
     "react-loader-spinner": "^6.1.6",
     "react-pageflip": "^2.0.3",
