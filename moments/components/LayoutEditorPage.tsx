@@ -80,26 +80,6 @@ interface LayoutEditorProps {
   error: string | null;
 }
 
-// Page Loader Module (Simulated)
-// const loadPage = async (pageId: string): Promise<Page> => {
-//   return {
-//     guid: pageId,
-//     layout: availableLayouts[0],
-//     components: availableLayouts[0].components
-//   };
-// };
-
-// Page Saver Module
-// const savePage = async (page: Page): Promise<void> => {
-//   const response = await fetch('/api/saveLayout', {
-//     method: 'POST',
-//     headers: { 'Content-Type': 'application/json' },
-//     body: JSON.stringify(page)
-//   });
-//   if (!response.ok) throw new Error('Failed to save layout');
-//   await response.json();
-// };
-
 const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   pages,
   setPages,
@@ -109,7 +89,6 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   handleFileUpload,
   handleRemoveImage,
   uploading,
-  error,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [isAddingNewPage, setIsAddingNewPage] = useState(false);
@@ -122,11 +101,6 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
     setIsAddingNewPage(false);
     setModalOpen(true);
   };
-
-  // const handleAddPage = () => {
-  //   setIsAddingNewPage(true);
-  //   setModalOpen(true);
-  // };
 
   const mapDataToNewLayout = (newLayout: Layout, currentComponents: Component[]): Component[] => {
     const newComponents = [...newLayout.components];
@@ -260,40 +234,30 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
 
   const renderThumbnail = (page: Page, pageIndex: number) => {
     return (
-      <div className="relative w-[200px] h-45 bg-gray-100 border border-gray-300 rounded">
+      <div className="relative w-[150px] h-[120px] bg-gray-100 border border-gray-300 rounded">
         {page.components.map((comp, compIndex) => (
           <div
-            key={`${pageIndex}-${compIndex}`} // Combine pageIndex and compIndex for a unique key
+            key={`${pageIndex}-${compIndex}`}
             className="absolute border border-gray-400 rounded flex items-center justify-center"
             style={{
-              left: ((comp.position?.x_coordinate ?? comp.position?.x_position) || 0) / 4,
-              top: ((comp.position?.y_coordinate ?? comp.position?.y_position) || 0) / 4,
-              width: comp.size.width / 4,
-              height: comp.size.height / 4,
+              left: ((comp.position?.x_coordinate ?? comp.position?.x_position) || 0) / 5,
+              top: ((comp.position?.y_coordinate ?? comp.position?.y_position) || 0) / 5,
+              width: comp.size.width / 5,
+              height: comp.size.height / 5,
               backgroundColor: comp.type === 'photo' ? '#a3bffa' : '#e0e0e0',
               backgroundImage: comp.type === 'photo' && comp.image_url ? `url(${comp.image_url})` : 'none',
               backgroundSize: 'cover',
-              boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)', // 3D effect for thumbnails
+              boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)',
             }}
           >
             {comp.type === 'photo' && !comp.image_url && (
-              <div className="text-white text-lg">+</div> // Plus button in thumbnail
+              <div className="text-white text-sm">+</div>
             )}
           </div>
         ))}
       </div>
     );
   };
-
-  // const handleSave = async () => {
-  //   try {
-  //     await savePage(pages[currentPageIndex]);
-  //     alert('Layout saved!');
-  //   } catch {
-  //     alert('Failed to save layout.');
-  //   }
-  // };
- 
   const handleDeletePage = (index: number) => {
     if (pages.length <= 1) return;
     const updatedPages = pages.filter((_, i) => i !== index);
@@ -302,32 +266,33 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   };
 
   return (
-    <div>
-      <div className="relative w-[800px] h-[700px] border border-gray-300 bg-gray-100 mx-auto rounded-lg">
-        {pages[currentPageIndex]?.components.map((comp, index) => renderComponent(comp, index))}
-        {pages.length > 1 && (
-          <button
-            onClick={() => handleDeletePage(currentPageIndex)}
-            className="absolute top-2 right-2 text-gray-500 hover:text-red-700"
-          >
-            🗑️
+    <div className="flex flex-row gap-4 mx-auto max-w-[1000px]">
+      {/* Main Layout Area */}
+      <div className="flex-1">
+        <div className="relative w-[800px] h-[700px] border border-gray-300 bg-gray-100 rounded-lg">
+          {pages[currentPageIndex]?.components.map((comp, index) => renderComponent(comp, index))}
+          {pages.length > 1 && (
+            <button
+              onClick={() => handleDeletePage(currentPageIndex)}
+              className="absolute top-2 right-2 text-gray-500 hover:text-red-700"
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+        <div className="flex justify-between mt-4">
+          <button onClick={handleViewLayouts} className="text-purple-600 hover:underline text-sm">
+            View other layouts
           </button>
-        )}
-      </div>
-      <div className="flex justify-between mt-4">
-        <button onClick={handleViewLayouts} className="text-purple-600 hover:underline text-sm">
-          View other layouts
-        </button>
-        {/* <button onClick={handleAddPage} className="text-purple-600 hover:underline text-sm">
-          Add another page
-        </button> */}
+        </div>
       </div>
 
+      {/* Thumbnail Sidebar */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="pages" isCombineEnabled={false} isDropDisabled={false}>
           {(provided) => (
             <div
-              className="w-55 max-h-[600px] overflow-y-auto mx-auto mt-4"
+              className="w-[160px] max-h-[700px] overflow-y-auto"
               {...provided.droppableProps}
               ref={provided.innerRef}
             >
@@ -338,9 +303,8 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`cursor-pointer border-2 ${
-                        index === currentPageIndex ? 'border-purple-600' : 'border-transparent'
-                      } mb-2 rounded`}
+                      className={`cursor-pointer border-2 ${index === currentPageIndex ? 'border-purple-600' : 'border-transparent'
+                        } mb-2 rounded`}
                       onClick={() => setCurrentPageIndex(index)}
                     >
                       {renderThumbnail(page, index)}
@@ -468,47 +432,56 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                 ✕
               </button>
             </div>
-            {selectedComponent.image_url && (
+
+            {selectedComponent.image_url ? (
               <div className="mb-4">
                 <Image
                   src={selectedComponent.image_url}
-                  alt="Current Photo"
-                  className="w-full h-40 object-cover rounded"
-                  width={160}
-                  height={160}
+                  alt="Uploaded photo"
+                  width={300}
+                  height={200}
+                  className="object-cover rounded border border-gray-300"
                 />
               </div>
+            ) : (
+              <p className="text-gray-500 text-sm mb-4">No photo added yet.</p>
             )}
-            {error && <div className="text-red-500 text-xs mb-4">{error}</div>}
-            <input
-              type="file"
-              onChange={(e) => {
-                const slotIndex = pages[currentPageIndex].components.indexOf(selectedComponent);
-                handleFileUpload(e, currentPageIndex, slotIndex);
-                setEditPhotoModalOpen(false);
-                setSelectedComponent(null);
-              }}
-              disabled={uploading}
-              className="w-full p-2 border border-gray-300 rounded text-sm mb-4"
-            />
-            {uploading && <span className="text-gray-500 text-sm">Uploading...</span>}
-            <div className="flex justify-end gap-2">
+
+            <div className="flex justify-between items-center mt-4 gap-2">
+              <label className="px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded cursor-pointer hover:bg-gray-300">
+                Replace Photo
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (selectedComponent) {
+                      const slotIndex = pages[currentPageIndex].components.indexOf(selectedComponent);
+                      handleFileUpload(e, currentPageIndex, slotIndex);
+                    }
+                    setEditPhotoModalOpen(false);
+                  }}
+                />
+              </label>
+
               {selectedComponent.image_url && (
                 <button
+                  className="px-4 py-2 text-red-600 hover:text-red-800 text-sm"
                   onClick={() => {
-                    const slotIndex = pages[currentPageIndex].components.indexOf(selectedComponent);
-                    handleRemoveImage(currentPageIndex, slotIndex);
+                    if (selectedComponent) {
+                      const slotIndex = pages[currentPageIndex].components.indexOf(selectedComponent);
+                      handleRemoveImage(currentPageIndex, slotIndex);
+                    }
                     setEditPhotoModalOpen(false);
-                    setSelectedComponent(null);
                   }}
-                  className="px-4 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700"
                 >
-                  Remove
+                  Remove Photo
                 </button>
               )}
+
               <button
                 onClick={handleCancelPhotoEdit}
-                className="px-4 py-2 text-gray-600 text-sm hover:text-gray-800"
+                className="ml-auto px-4 py-2 text-gray-600 text-sm hover:text-gray-800"
               >
                 Cancel
               </button>
