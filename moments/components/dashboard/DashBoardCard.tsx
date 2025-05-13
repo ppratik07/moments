@@ -2,7 +2,7 @@ interface DashboardProps {
   title: string;
   value: string;
   description: string;
-  buttonText: string;
+  buttonText?: string;
   className?: string;
   titleClassName? : string
   onButtonClick?: () => void;

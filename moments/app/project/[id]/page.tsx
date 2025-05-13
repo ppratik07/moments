@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { RotatingLines } from 'react-loader-spinner';
 
 export default function ProjectIdDashboard() {
   const params: Record<string, string | string[]> | null = useParams();
@@ -167,7 +168,14 @@ export default function ProjectIdDashboard() {
   const isPrintingState = projectStatus?.status === 'printing';
 
   if (loading) {
-    return <div className="p-8">Loading project data...</div>;
+    <RotatingLines
+      visible={true}
+      strokeColor="gray"
+      strokeWidth="5"
+      animationDuration="0.75"
+      width="96"
+      ariaLabel="rotating-lines-loading"
+    />
   }
   if (error) {
     return <div className="text-red-500 p-8">Error: {error}</div>;
@@ -319,9 +327,7 @@ export default function ProjectIdDashboard() {
                     isDeadlineApproaching && lastContributionDate
                       ? `Last contribution on ${format(new Date(lastContributionDate), 'MM/dd/yyyy', { locale: enUS })}`
                       : 'View your completed contributions.'
-                  }
-                  buttonText="View Contributions"
-                  onButtonClick={() => router.push(`project/${projectId}/contributions`)}
+                  }   
                 />
                 <DashboardCard
                   title="Days Left to Contribute"
