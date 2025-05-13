@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import LayoutEditorPage from '@/components/LayoutEditorPage';
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
+import { RotatingLines } from "react-loader-spinner";
 //fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4
 // Type definitions (unchanged)
 interface Position {
@@ -96,7 +97,7 @@ export default function ContributionPage() {
   const handleNextClick = async () => {
     setUploading(true);
     setError(null);
-  
+
     try {
       const contributionData = {
         projectId,
@@ -118,13 +119,13 @@ export default function ContributionPage() {
           })),
         })),
       };
-  
+
       const response = await axios.post(`${HTTP_BACKEND}/api/save-contribution`, contributionData);
-  
+
       if (response.status !== 200) {
         throw new Error('Failed to save contribution');
       }
-  
+
       router.push(`/contribution/${projectId}/fill-information`);
     } catch (error) {
       console.error('Error saving contribution:', error);
@@ -286,7 +287,16 @@ export default function ContributionPage() {
     return 4; // Default to 4 slots if layout not found
   };
 
-  if (!projectData) return <p className="p-10">Loading project...</p>;
+  if (!projectData) {
+    return <RotatingLines
+      visible={true}
+      strokeColor="gray"
+      strokeWidth="5"
+      animationDuration="0.75"
+      width="96"
+      ariaLabel="rotating-lines-loading"
+    />
+  }
 
   const mapLayoutIdToLayout = (layoutId: number): Layout => {
     const categoryIndex = Math.floor(layoutId / 10);
@@ -331,7 +341,7 @@ export default function ContributionPage() {
                   alt="Event"
                   width={600}
                   height={400}
-                  
+
                 />
               )}
             </div>
