@@ -1,6 +1,6 @@
 'use client';
 
-// import { PageLayout } from "@/components/contribution/PageLayout";
+// Imports remain unchanged
 import { PageNavigation } from "@/components/contribution/PageNavigation";
 import { Page, ProjectData, SignatureEditModal } from "@/components/contribution/SignatureEditModal";
 import StepIndicator from "@/components/contribution/StepIndicator";
@@ -18,8 +18,8 @@ import LayoutEditorPage from '@/components/LayoutEditorPage';
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
 import { RotatingLines } from "react-loader-spinner";
-//fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4
-// Type definitions (unchanged)
+
+// Type definitions remain unchanged
 interface Position {
   x_position?: number;
   y_position?: number;
@@ -78,7 +78,6 @@ interface ExtendedPage extends Page {
   components?: Component[];
 }
 
-
 export default function ContributionPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signature, setSignature] = useState('Your Name Here');
@@ -94,6 +93,7 @@ export default function ContributionPage() {
   const { projectId } = useParams() as { projectId: string };
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
 
+  // Functions remain unchanged
   const handleNextClick = async () => {
     setUploading(true);
     setError(null);
@@ -104,8 +104,8 @@ export default function ContributionPage() {
         signature,
         pages: pages.map((page) => ({
           guid: page.guid || `page-${Math.random().toString(36).substr(2, 9)}`,
-          layoutId: page.layout >= 0 ? page.layout : 0, // Ensure layoutId is non-negative, default to 0 if invalid
-          images: page.images.filter((image): image is string => image !== null), // Filter out null values
+          layoutId: page.layout >= 0 ? page.layout : 0,
+          images: page.images.filter((image): image is string => image !== null),
           message: page.components?.find((comp) => comp.type === 'paragraph')?.value || '',
           components: (page.components ?? []).map((component) => ({
             type: component.type,
@@ -284,27 +284,32 @@ export default function ContributionPage() {
         return category.layouts[layoutIndex]();
       }
     }
-    return 4; // Default to 4 slots if layout not found
+    return 4;
   };
 
   if (!projectData) {
-    return <RotatingLines
-      visible={true}
-      strokeColor="gray"
-      strokeWidth="5"
-      animationDuration="0.75"
-      width="96"
-      ariaLabel="rotating-lines-loading"
-    />
+    return (
+      <div className="flex justify-center items-center h-screen bg-white">
+        <RotatingLines
+          visible={true}
+          strokeColor="gray"
+          strokeWidth="5"
+          animationDuration="0.75"
+          width="48" // Further reduced for small screens
+          ariaLabel="rotating-lines-loading"
+        />
+      </div>
+    );
   }
 
   const mapLayoutIdToLayout = (layoutId: number): Layout => {
     const categoryIndex = Math.floor(layoutId / 10);
     const layoutIndex = layoutId % 10;
-    console.log(layoutIndex);
+    console.log('Layoutindex', layoutIndex);
     const layoutPosition = categoryIndex >= 0 && categoryIndex < availableLayouts.length ? categoryIndex : 0;
     return availableLayouts[layoutPosition] || availableLayouts[0];
   };
+
   //@ts-expect-error : Not sure of the types
   const mappedPages: Page[] = pages.map((page, index) => ({
     guid: page.guid || `page-${index + 1}`,
@@ -313,43 +318,49 @@ export default function ContributionPage() {
   }));
 
   return (
-    <div>
+    <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       <Header isSignedIn={false} />
-      <div className="bg-gradient-to-b from-white to-purple-50 min-h-screen pb-20">
-        <div className="max-w-6xl mx-auto px-4">
-          <section className="py-12 grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+      <main className="bg-gradient-to-b from-white to-purple-50 flex-grow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="py-6 sm:py-8 md:py-12 flex flex-col md:grid md:grid-cols-2 gap-4 sm:gap-8 md:gap-12">
+            <div className="space-y-3 sm:space-y-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight">
                 {projectData.projectName}
               </h1>
-              <p className="text-gray-700 text-lg mb-4">
+              <p className="text-gray-700 text-sm sm:text-base md:text-lg">
                 {projectData.eventDescription}
               </p>
-                <div className="mt-6 space-x-4">
-                <button className="bg-white border text-purple-600 rounded-xs px-4 py-2 hover:shadow">
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                <button
+                  className="bg-white border border-purple-600 text-purple-600 rounded-sm px-4 py-2.5 text-sm sm:text-base hover:shadow min-h-[44px] w-full sm:w-auto"
+                  aria-label="Learn how it works"
+                >
                   How it Works
                 </button>
                 <button
-                  className="bg-purple-600 text-white px-4 py-2 rounded-xs hover:bg-purple-700"
+                  className="bg-purple-600 text-white rounded-sm px-4 py-2.5 text-sm sm:text-base hover:bg-purple-700 min-h-[44px] w-full sm:w-auto"
                   onClick={() => {
-                  const layoutEditorSection = document.querySelector("#layout-editor-section");
-                  if (layoutEditorSection) {
-                    layoutEditorSection.scrollIntoView({ behavior: "smooth" });
-                  }
+                    const layoutEditorSection = document.querySelector("#layout-editor-section");
+                    if (layoutEditorSection) {
+                      layoutEditorSection.scrollIntoView({ behavior: "smooth" });
+                    }
                   }}
+                  aria-label="Contribute to the project"
                 >
                   Contribute
                 </button>
-                </div>
+              </div>
             </div>
-            <div className="overflow-hidden shadow-lg">
+            <div className="w-full">
               {projectData.imageKey && (
                 <Image
                   src={getImageUrl(projectData.imageKey) ?? ''}
-                  alt="Event"
+                  alt="Event image"
                   width={600}
                   height={400}
-
+                  className="w-full h-auto rounded-lg shadow-md object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
                 />
               )}
             </div>
@@ -357,12 +368,13 @@ export default function ContributionPage() {
 
           <StepIndicator currentStep={1} />
 
-          <section className="mb-16 mt-6" id="layout-editor-section">
-            <h2 className="text-4xl font-bold mb-7">Contribute</h2>
-            <ol className="text-gray-700 list-decimal list-inside mb-6">
+          <section className="my-6 sm:my-8 md:my-16" id="layout-editor-section">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">
+              Contribute
+            </h2>
+            <ol className="text-gray-700 text-xs sm:text-sm md:text-base list-decimal list-inside mb-4 sm:mb-6">
               <li>
-                Click <strong>Add Text</strong> in the layout below to add a
-                memory you have of John.
+                Click <strong>Add Text</strong> to add a memory you have of John.
               </li>
               <li>
                 Click <strong>Add a Photo</strong> to add a photo of you and John.
@@ -377,12 +389,10 @@ export default function ContributionPage() {
               handleDeletePage={handleDeletePage}
             />
 
-            <div className="space-y-6">
-
+            <div className="space-y-4 sm:space-y-6">
               <LayoutEditorPage
                 //@ts-expect-error : Not sure of the types
                 pages={mappedPages}
-            
                 //@ts-expect-error : Not sure of the types
                 setPages={(newPages: Page[]) => {
                   const updatedPages = newPages.map((page, index) => ({
@@ -403,9 +413,10 @@ export default function ContributionPage() {
               />
             </div>
           </section>
+
           <TipsBox onNextClick={handleNextClick} />
         </div>
-      </div>
+      </main>
       <Footer />
       <LayoutPickerModal
         open={showLayoutModal}

@@ -56,9 +56,9 @@ export default function NewEventPage() {
   const { isSignedIn } = useCurrentUser() as CurrentUser;
   const router = useRouter();
   const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
-  const {getToken} = useAuth();
+  const { getToken } = useAuth();
 
-  
+
   const handleDashboardClick = () => {
     if (isSignedIn) {
       router.push('/dashboard');
@@ -212,7 +212,7 @@ export default function NewEventPage() {
       setLayouts(layouts);
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
       const token = await getToken();
-      if(!token){
+      if (!token) {
         toast.error('Failed to get token');
         router.push('/');
       }
@@ -235,7 +235,7 @@ export default function NewEventPage() {
     };
 
     loadAndGenerateLayouts();
-  }, [projectId, setLayouts,getToken,router,storedImageKey, projectName, projectDescription,projectImageKey]);
+  }, [projectId, setLayouts, getToken, router, storedImageKey, projectName, projectDescription, projectImageKey]);
 
   // Update layouts when project details change
   const debouncedUpdateLayouts = useDebounce(async () => {
@@ -270,7 +270,7 @@ export default function NewEventPage() {
       setLayouts(updatedLayouts);
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
       const token = await getToken();
-      if(!token){
+      if (!token) {
         toast.error('Failed to get token');
         router.push('/');
       }
@@ -311,7 +311,7 @@ export default function NewEventPage() {
       return;
     }
     const token = await getToken();
-    if(!token){
+    if (!token) {
       toast.error('Failed to get token');
       router.push('/');
     }
@@ -386,7 +386,7 @@ export default function NewEventPage() {
       // Save to localStorage
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
       const token = await getToken();
-      if(!token){
+      if (!token) {
         toast.error('Failed to get token');
         router.push('/');
       }
@@ -422,20 +422,31 @@ export default function NewEventPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-6">
-        <div className="flex items-center gap-2">
+      <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-4 md:px-6">
+        {/* Top section with avatar and title */}
+        <div className="flex items-center gap-2 mb-4 md:mb-0">
           <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xl font-bold">N</div>
           <span className="font-semibold">Invite Your Friends</span>
         </div>
 
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
-          <input type="text" value={shareLink} readOnly className="bg-white text-black px-4 py-2 rounded" />
-          <Button className="bg-primary text-white px-4 py-2 rounded cursor-pointer" onClick={handleCopy}>
+        {/* Middle section: share link and copy button */}
+        <div className="flex flex-col items-stretch gap-2 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:flex-row md:items-center">
+          <input
+            type="text"
+            value={shareLink}
+            readOnly
+            className="bg-white text-black px-4 py-2 rounded w-full md:w-auto"
+          />
+          <Button
+            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
+            onClick={handleCopy}
+          >
             {copied ? 'Copied!' : 'Copy Link'}
           </Button>
         </div>
 
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4">
+        {/* Right section: dashboard and edit buttons */}
+        <div className="flex gap-2 mt-4 md:mt-0 md:absolute md:right-6 md:top-1/2 md:-translate-y-1/2">
           <Button
             className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
             onClick={handleDashboardClick}
@@ -450,6 +461,7 @@ export default function NewEventPage() {
           </Button>
         </div>
       </div>
+
 
       <Header isSignedIn={isSignedIn ?? false} />
 
@@ -489,22 +501,17 @@ export default function NewEventPage() {
           {frontCoverLayout ? (
             <div className="flex justify-center">
               <div
-                className={`relative bg-white ${frontCoverLayout.config.containerStyle?.shadow ?? ''} ${
-                  frontCoverLayout.config.containerStyle?.border ?? ''
-                } w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${
-                  frontCoverLayout.config.hoverEffects?.rotate ?? ''
-                } ${frontCoverLayout.config.hoverEffects?.scale ?? ''} ${
-                  frontCoverLayout.config.hoverEffects?.shadow ?? ''
-                }`}
+                className={`relative bg-white ${frontCoverLayout.config.containerStyle?.shadow ?? ''} ${frontCoverLayout.config.containerStyle?.border ?? ''
+                  } w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${frontCoverLayout.config.hoverEffects?.rotate ?? ''
+                  } ${frontCoverLayout.config.hoverEffects?.scale ?? ''} ${frontCoverLayout.config.hoverEffects?.shadow ?? ''
+                  }`}
               >
                 <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
                 <div className="relative flex flex-col items-center w-full">
                   <h1
-                    className={`${frontCoverLayout.config.titleStyle?.fontSize ?? ''} ${
-                      frontCoverLayout.config.titleStyle?.fontWeight ?? ''
-                    } ${frontCoverLayout.config.titleStyle?.marginBottom ?? ''} ${
-                      frontCoverLayout.config.titleStyle?.textAlign ?? ''
-                    } ${frontCoverLayout.config.titleStyle?.marginTop ?? ''} break-words`}
+                    className={`${frontCoverLayout.config.titleStyle?.fontSize ?? ''} ${frontCoverLayout.config.titleStyle?.fontWeight ?? ''
+                      } ${frontCoverLayout.config.titleStyle?.marginBottom ?? ''} ${frontCoverLayout.config.titleStyle?.textAlign ?? ''
+                      } ${frontCoverLayout.config.titleStyle?.marginTop ?? ''} break-words`}
                   >
                     {frontCoverLayout.config.title || 'No Title'}
                   </h1>
@@ -513,31 +520,27 @@ export default function NewEventPage() {
                       <Image
                         src={
                           typeof frontCoverLayout.config.imageKey === 'string' &&
-                          frontCoverLayout.config.imageKey.startsWith('data:')
+                            frontCoverLayout.config.imageKey.startsWith('data:')
                             ? frontCoverLayout.config.imageKey
                             : getImageUrl(frontCoverLayout.config.imageKey) || ''
                         }
                         alt="Celebration"
                         width={frontCoverLayout.config.imageStyle?.width ?? 280}
                         height={frontCoverLayout.config.imageStyle?.height ?? 200}
-                        className={`${frontCoverLayout.config.imageStyle?.objectFit ?? ''} ${
-                          frontCoverLayout.config.imageStyle?.shadow ?? ''
-                        }`}
+                        className={`${frontCoverLayout.config.imageStyle?.objectFit ?? ''} ${frontCoverLayout.config.imageStyle?.shadow ?? ''
+                          }`}
                       />
                     </div>
                   )}
                   {frontCoverLayout.config.description && (
                     <div
-                      className={`${frontCoverLayout.config.descriptionStyle?.maxWidth ?? ''} ${
-                        frontCoverLayout.config.descriptionStyle?.color ?? ''
-                      } ${frontCoverLayout.config.descriptionStyle?.fontSize ?? ''} ${
-                        frontCoverLayout.config.descriptionStyle?.textAlign ?? ''
-                      } ${frontCoverLayout.config.descriptionStyle?.marginTop ?? ''}`}
+                      className={`${frontCoverLayout.config.descriptionStyle?.maxWidth ?? ''} ${frontCoverLayout.config.descriptionStyle?.color ?? ''
+                        } ${frontCoverLayout.config.descriptionStyle?.fontSize ?? ''} ${frontCoverLayout.config.descriptionStyle?.textAlign ?? ''
+                        } ${frontCoverLayout.config.descriptionStyle?.marginTop ?? ''}`}
                     >
                       <p
-                        className={`${frontCoverLayout.config.descriptionStyle?.fontStyle ?? ''} ${
-                          frontCoverLayout.config.descriptionStyle?.lineHeight ?? ''
-                        } break-words`}
+                        className={`${frontCoverLayout.config.descriptionStyle?.fontStyle ?? ''} ${frontCoverLayout.config.descriptionStyle?.lineHeight ?? ''
+                          } break-words`}
                       >
                         {frontCoverLayout.config.description}
                       </p>
