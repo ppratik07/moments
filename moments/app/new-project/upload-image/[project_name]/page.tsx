@@ -16,6 +16,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { CurrentUser, Layout } from '@/types/frontlayout.types';
+import { useAuth } from '@clerk/nextjs';
 
 
 // Custom debounce hook
@@ -55,7 +56,9 @@ export default function NewEventPage() {
   const { isSignedIn } = useCurrentUser() as CurrentUser;
   const router = useRouter();
   const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
+  const {getToken} = useAuth();
 
+  
   const handleDashboardClick = () => {
     if (isSignedIn) {
       router.push('/dashboard');
@@ -208,7 +211,11 @@ export default function NewEventPage() {
 
       setLayouts(layouts);
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(layouts));
-
+      const token = await getToken();
+      if(!token){
+        toast.error('Failed to get token');
+        router.push('/');
+      }
       try {
         await axios.post(
           `${HTTP_BACKEND}/api/layouts`,
@@ -216,7 +223,7 @@ export default function NewEventPage() {
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -228,7 +235,7 @@ export default function NewEventPage() {
     };
 
     loadAndGenerateLayouts();
-  }, [projectId, setLayouts]);
+  }, [projectId, setLayouts,getToken,router,storedImageKey, projectName, projectDescription,projectImageKey]);
 
   // Update layouts when project details change
   const debouncedUpdateLayouts = useDebounce(async () => {
@@ -262,7 +269,11 @@ export default function NewEventPage() {
 
       setLayouts(updatedLayouts);
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
-
+      const token = await getToken();
+      if(!token){
+        toast.error('Failed to get token');
+        router.push('/');
+      }
       try {
         await axios.post(
           `${HTTP_BACKEND}/api/layouts`,
@@ -270,7 +281,7 @@ export default function NewEventPage() {
           {
             headers: {
               'Content-Type': 'application/json',
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -299,12 +310,16 @@ export default function NewEventPage() {
       setShowResetConfirm(false);
       return;
     }
-
+    const token = await getToken();
+    if(!token){
+      toast.error('Failed to get token');
+      router.push('/');
+    }
     try {
       const response = await axios.get<{ description: string }>(`${HTTP_BACKEND}/event-type`, {
         params: { name: eventTypes },
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setProjectDescription(response.data.description);
@@ -370,7 +385,11 @@ export default function NewEventPage() {
 
       // Save to localStorage
       localStorage.setItem(`layouts-${projectId}`, JSON.stringify(updatedLayouts));
-
+      const token = await getToken();
+      if(!token){
+        toast.error('Failed to get token');
+        router.push('/');
+      }
       // Save to backend
       await axios.post(
         `${HTTP_BACKEND}/api/layouts`,
@@ -378,7 +397,7 @@ export default function NewEventPage() {
         {
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );

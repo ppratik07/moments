@@ -32,10 +32,10 @@ export default function ImageUploader({
   return (
     <label
   htmlFor="photo"
-  className="w-full h-[400px] border border-dashed border-gray-300 flex items-center justify-center text-gray-500 cursor-pointer rounded-lg mb-6 hover:border-blue-500 transition relative"
+  className="w-full h-[400px] border border-dashed border-gray-300 flex items-center justify-center text-gray-500 cursor-pointer mb-6 hover:border-blue-500 transition relative"
 >
       {preview ? (
-        <Image src={preview} alt="Preview" fill className="object-cover rounded-lg" />
+        <Image src={preview} alt="Preview" fill className="object-cover" />
       ) : (
         <div className="flex flex-col items-center gap-2">
           <PlusCircle className="w-8 h-8 text-gray-400" />
