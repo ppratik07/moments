@@ -46,23 +46,6 @@ export default function ContributionsPage() {
       setCurrentPageIndex(currentPageIndex + 1);
     }
   };
-
-  // // Function to update exclusion setting (simulated database call)
-  // const updateExclusionSetting = async (contributionId: string, excluded: boolean) => {
-  //   try {
-  //     // Simulate API call to update the excludedFromBook field
-  //     console.log(`Updating exclusion for contribution ${contributionId}: excluded=${excluded}`);
-  //     // Update local state (in a real app, this would be handled by re-fetching or updating the state via a mutation)
-  //     const updatedContributions = contributionsData?.contributions.map((contrib: any) =>
-  //       contrib.id === contributionId ? { ...contrib, excludedFromBook: excluded } : contrib
-  //     );
-  //     // Note: In a real app, you would update the database and refresh the data
-  //     console.log('Updated contributions:', updatedContributions);
-  //   } catch (error) {
-  //     console.error('Error updating exclusion setting:', error);
-  //   }
-  // };
-
   return (
     <div>
       <Header isSignedIn={true} />
