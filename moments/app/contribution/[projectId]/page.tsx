@@ -18,6 +18,7 @@ import LayoutEditorPage from '@/components/LayoutEditorPage';
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
 import { RotatingLines } from "react-loader-spinner";
+import VideoModal from "@/components/VideoModal";
 
 // Type definitions remain unchanged
 interface Position {
@@ -88,11 +89,12 @@ export default function ContributionPage() {
   const [showLayoutModal, setShowLayoutModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
   const router = useRouter();
 
   const { projectId } = useParams() as { projectId: string };
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
-
+  const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
   // Functions remain unchanged
   const handleNextClick = async () => {
     setUploading(true);
@@ -331,7 +333,7 @@ export default function ContributionPage() {
                 {projectData.eventDescription}
               </p>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                <button
+                <button onClick={() => setShowVideoModal(true)}
                   className="bg-white border border-purple-600 text-purple-600 rounded-sm px-4 py-2.5 text-sm sm:text-base hover:shadow min-h-[44px] w-full sm:w-auto"
                   aria-label="Learn how it works"
                 >
@@ -358,7 +360,7 @@ export default function ContributionPage() {
                   alt="Event image"
                   width={600}
                   height={400}
-                  className="w-full h-auto rounded-lg shadow-md object-cover"
+                  className="w-full h-auto shadow-md object-cover"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
@@ -367,7 +369,7 @@ export default function ContributionPage() {
           </section>
 
           <StepIndicator currentStep={1} />
-
+          <VideoModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} videoSrc={videoSrc} />
           <section className="my-6 sm:my-8 md:my-16" id="layout-editor-section">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">
               Contribute
