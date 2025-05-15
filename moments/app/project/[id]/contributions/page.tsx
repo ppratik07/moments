@@ -185,19 +185,6 @@ export default function ContributionsPage() {
               Total Pages: {selectedContribution.pages.length}
             </p>
 
-            {/* Exclusion Toggle
-            <div className="mb-4">
-              <label className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={selectedContribution.excludedFromBook || false}
-                  onChange={(e) => updateExclusionSetting(selectedContribution.id, e.target.checked)}
-                  className="mr-2"
-                />
-                <span className="text-gray-600">Exclude from Book</span>
-              </label>
-            </div> */}
-
             {/* Current Page */}
             {selectedContribution.pages.length > 0 && (
               <div>
