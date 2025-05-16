@@ -239,9 +239,17 @@ app.post("/api/user-information", (req, res) => __awaiter(void 0, void 0, void 0
 }));
 app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { projectId, signature, pages } = req.body;
+        const { projectId, signature, pages, fillYourDetailsId } = req.body;
         if (!projectId || !signature || !pages) {
             return res.status(400).json({ error: "Missing required fields" });
+        }
+        if (fillYourDetailsId) {
+            const fillYourDetails = yield prisma.fillYourDetails.findUnique({
+                where: { id: fillYourDetailsId },
+            });
+            if (!fillYourDetails) {
+                return res.status(400).json({ error: "FillYourDetails record not found" });
+            }
         }
         for (const page of pages) {
             if (page.layoutId < 0) {
@@ -257,6 +265,7 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
             data: {
                 projectId,
                 signature,
+                fillYourDetailsId, // Optional, may be null
                 pages: {
                     create: pages.map((page) => ({
                         guid: page.guid,
@@ -487,6 +496,16 @@ app.get('/api/contributions/:projectId', (req, res) => __awaiter(void 0, void 0,
                         },
                     },
                 },
+                fillYourDetails: {
+                    select: {
+                        first_name: true,
+                        last_name: true,
+                        email: true,
+                        relationship: true,
+                        ExcludeFromOnlineVersion: true,
+                        ExcludeFromPromotion: true,
+                    },
+                }
             },
         });
         if (!contributions) {
@@ -1188,6 +1207,53 @@ app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, re
     catch (error) {
         console.error('Error updating project deadline:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+}));
+app.patch("/api/update-contribution/:contributionId", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { contributionId } = req.params;
+        const { fillYourDetailsId } = req.body;
+        if (!contributionId || !fillYourDetailsId) {
+            return res.status(400).json({ error: "Missing contributionId or fillYourDetailsId" });
+        }
+        // Validate Contribution exists
+        const contribution = yield prisma.contribution.findUnique({
+            where: { id: contributionId },
+        });
+        if (!contribution) {
+            return res.status(404).json({ error: "Contribution not found" });
+        }
+        // Prevent updating if fillYourDetailsId is already set
+        if (contribution.fillYourDetailsId) {
+            return res.status(400).json({ error: "Contribution already linked to FillYourDetails" });
+        }
+        // Validate FillYourDetails exists
+        const fillYourDetails = yield prisma.fillYourDetails.findUnique({
+            where: { id: fillYourDetailsId },
+        });
+        if (!fillYourDetails) {
+            return res.status(400).json({ error: "FillYourDetails record not found" });
+        }
+        // Update Contribution with fillYourDetailsId
+        const updatedContribution = yield prisma.contribution.update({
+            where: { id: contributionId },
+            data: {
+                fillYourDetails: {
+                    connect: { id: fillYourDetailsId },
+                },
+            },
+        });
+        res.status(200).json({
+            message: "Contribution updated successfully",
+            contributionId: updatedContribution.id,
+        });
+    }
+    catch (error) {
+        console.error("Error updating contribution:", error);
+        res.status(500).json({ error: "Failed to update contribution" });
+    }
+    finally {
+        yield prisma.$disconnect();
     }
 }));
 // Listening to the server

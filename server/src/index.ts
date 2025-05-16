@@ -257,11 +257,21 @@ app.post("/api/user-information", async (req: Request, res: Response): Promise<a
 
 app.post("/api/save-contribution", async (req, res): Promise<any> => {
   try {
-    const { projectId, signature, pages } = req.body;
+    const { projectId, signature, pages,fillYourDetailsId } = req.body;
 
     if (!projectId || !signature || !pages) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+
+    if (fillYourDetailsId) {
+      const fillYourDetails = await prisma.fillYourDetails.findUnique({
+        where: { id: fillYourDetailsId },
+      });
+      if (!fillYourDetails) {
+        return res.status(400).json({ error: "FillYourDetails record not found" });
+      }
+    }
+
     for (const page of pages) {
       if (page.layoutId < 0) {
         return res.status(400).json({ error: "Invalid layoutId" });
@@ -280,6 +290,7 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
       data: {
         projectId,
         signature,
+        fillYourDetailsId, // Optional, may be null
         pages: {
           create: pages.map(
             (page: {
@@ -558,6 +569,16 @@ app.get('/api/contributions/:projectId', async (req: Request, res: Response): Pr
             },
           },
         },
+        fillYourDetails:{
+          select: {
+            first_name: true,
+            last_name: true,
+            email: true,
+            relationship: true,
+            ExcludeFromOnlineVersion: true,
+            ExcludeFromPromotion: true,
+          },
+        }
       },
     });
 
@@ -1325,6 +1346,56 @@ app.patch('/api/user-projects/:projectId', authMiddleware, async (req: Request, 
   } catch (error) {
     console.error('Error updating project deadline:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+app.patch("/api/update-contribution/:contributionId", async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { contributionId } = req.params;
+    const { fillYourDetailsId } = req.body;
+
+    if (!contributionId || !fillYourDetailsId) {
+      return res.status(400).json({ error: "Missing contributionId or fillYourDetailsId" });
+    }
+
+    // Validate Contribution exists
+    const contribution = await prisma.contribution.findUnique({
+      where: { id: contributionId },
+    });
+    if (!contribution) {
+      return res.status(404).json({ error: "Contribution not found" });
+    }
+    
+    // Prevent updating if fillYourDetailsId is already set
+    if (contribution.fillYourDetailsId) {
+      return res.status(400).json({ error: "Contribution already linked to FillYourDetails" });
+    }
+    // Validate FillYourDetails exists
+    const fillYourDetails = await prisma.fillYourDetails.findUnique({
+      where: { id: fillYourDetailsId },
+    });
+    if (!fillYourDetails) {
+      return res.status(400).json({ error: "FillYourDetails record not found" });
+    }
+
+    // Update Contribution with fillYourDetailsId
+    const updatedContribution = await prisma.contribution.update({
+      where: { id: contributionId },
+      data: {
+        fillYourDetails: {
+          connect: { id: fillYourDetailsId },
+        },
+      },
+    });
+
+    res.status(200).json({
+      message: "Contribution updated successfully",
+      contributionId: updatedContribution.id,
+    });
+  } catch (error) {
+    console.error("Error updating contribution:", error);
+    res.status(500).json({ error: "Failed to update contribution" });
+  } finally {
+    await prisma.$disconnect();
   }
 });
 

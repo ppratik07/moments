@@ -8,13 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ChatSupportButton from "@/components/ChatSupportButton";
 import { Stepper } from "@/components/Stepper";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { toast } from "sonner";
 import { HTTP_BACKEND } from "@/utils/config";
 
 export default function YourInformationPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const contributionId = searchParams ? searchParams.get('contributionId') : null;
+    console.log("contribution ID from searchParams", contributionId)
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
@@ -28,7 +31,7 @@ export default function YourInformationPage() {
         const parts = pathname?.split('/');
         const idIndex = (parts?.indexOf('contribution') ?? -1) + 1;
         return parts?.[idIndex] ?? null;
-      }, [pathname]);
+    }, [pathname]);
 
     const [showDialog, setShowDialog] = useState(false);
 
@@ -55,12 +58,12 @@ export default function YourInformationPage() {
         }
         return true;
     };
-    
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-    
+
         if (!validate()) return;
-    
+
         try {
             const response = await axios.post(`${HTTP_BACKEND}/api/submit-information`, {
                 ...form,
@@ -71,8 +74,17 @@ export default function YourInformationPage() {
                 return;
             }
             toast.success("Information submitted successfully!");
-            setShowDialog(true); 
-        } catch(e) {
+            const fillYourDetailsId = response.data.user.id;
+            const updateResponse = await axios.patch(`${HTTP_BACKEND}/api/update-contribution/${contributionId}`, {
+                fillYourDetailsId,
+            });
+
+            if (updateResponse.status !== 200) {
+                throw new Error(updateResponse.data.error || 'Failed to update contribution');
+            }
+
+            setShowDialog(true);
+        } catch (e) {
             console.log(e);
             toast.error("Something went wrong while submitting.");
         }

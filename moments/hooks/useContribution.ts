@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -15,12 +15,25 @@ interface PageData {
   components: ComponentData[];
 }
 
+export interface FillYourDetails {
+  first_name: string;
+  last_name: string;
+  email: string;
+  relationship: string;
+  ExcludeFromOnlineVersion: boolean;
+  ExcludeFromPromotion: boolean;
+}
+
 export interface Contribution {
   id: string;
   signature: string;
   pages: PageData[];
-  contributorName: string;
+  fillYourDetails: FillYourDetails | null;
+  contributorName: string; // Added contributorName
   createdAt: string;
+  updatedAt?: string;
+  projectId?: string;
+  fillYourDetailsId?: string | null;
 }
 
 interface ContributionsData {
@@ -70,8 +83,12 @@ export const useContributions = (projectId: string | undefined): ContributionsRe
           contributions: data.contributions.map((contrib: Contribution) => ({
             id: contrib.id,
             signature: contrib.signature,
-            contributorName: contrib.signature, // Assuming signature is the contributor's name
+            contributorName: contrib.fillYourDetails?.first_name || contrib.signature, // Compute contributorName
+            fillYourDetails: contrib.fillYourDetails || null,
             createdAt: contrib.createdAt,
+            updatedAt: contrib.updatedAt,
+            projectId: contrib.projectId,
+            fillYourDetailsId: contrib.fillYourDetailsId,
             pages: contrib.pages.map((page) => ({
               components: page.components.map((comp) => ({
                 type: comp.type,

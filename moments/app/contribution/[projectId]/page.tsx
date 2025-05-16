@@ -90,6 +90,7 @@ export default function ContributionPage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
+  const [, setContributionId] = useState<string | null>(null);
   const router = useRouter();
 
   const { projectId } = useParams() as { projectId: string };
@@ -127,8 +128,9 @@ export default function ContributionPage() {
       if (response.status !== 200) {
         throw new Error('Failed to save contribution');
       }
-
-      router.push(`/contribution/${projectId}/fill-information`);
+      setContributionId(response.data.contributionId);
+      console.log('Contribution ID frontend:', response.data.contributionId);
+      router.push(`/contribution/${projectId}/fill-information?contributionId=${response.data.contributionId}`);
     } catch (error) {
       console.error('Error saving contribution:', error);
       setError('Failed to save your contribution. Please try again.');
@@ -353,7 +355,7 @@ export default function ContributionPage() {
                 </button>
               </div>
             </div>
-            <div className="w-full">
+            <div className="w-full mt-16">
               {projectData.imageKey && (
                 <Image
                   src={getImageUrl(projectData.imageKey) ?? ''}
