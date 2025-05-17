@@ -14,6 +14,8 @@ import { Request, Response } from "express";
 import { authMiddleware } from "./middleware/middleware";
 import request from "request";
 import Stripe from 'stripe';
+import axios from "axios";
+import { Courier } from "../types/types";
 
 dotenv.config();
 
@@ -1399,6 +1401,57 @@ app.patch("/api/update-contribution/:contributionId", async (req: Request, res: 
   }
 });
 
+app.post('/api/shipping-options', async (req : Request, res : Response): Promise<any> => {
+  const { shipping_address } = req.body;
+
+  try {
+    // Validate shipping address
+    if (!shipping_address || !shipping_address.postal_code) {
+      return res.status(400).json({ error: 'Shipping address with postal code is required' });
+    }
+
+    // Prepare query parameters for Shiprocket GET request
+    const queryParams = {
+      pickup_postcode: process.env.WAREHOUSE_POSTCODE, // Your warehouse postcode
+      delivery_postcode: shipping_address.postal_code,
+      weight: 0.5, // Example: 500g for a book (adjust as needed)
+      cod: 0, // Prepaid order
+      // Optional: Add more parameters for filtering (e.g., length, breadth, height)
+    };
+
+    // Call Shiprocket's serviceability API (GET request)
+    const shiprocketResponse = await axios.get(
+      'https://apiv2.shiprocket.in/v1/external/courier/serviceability/',
+      {
+        params: queryParams,
+        headers: {
+          Authorization: `Bearer ${process.env.SHIPROCKET_API_TOKEN}`,
+        },
+      }
+    );
+
+    if (shiprocketResponse.data.status !== 200) {
+      return res.status(400).json({ error: 'No shipping options available' });
+    }
+
+    // Map Shiprocket response to frontend format
+    const shippingOptions = shiprocketResponse.data.data.available_courier_companies.map((courier : Courier) => ({
+      id: courier.courier_company_id,
+      name: courier.courier_name,
+      amount: Math.round(courier.freight_charge * 100), // Convert to paise
+      estimated_days: courier.estimated_delivery_days || '3-5', // Fallback if not provided
+    }));
+    console.log('Shipping options:', shippingOptions);
+    res.json({ shipping_options: shippingOptions });
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Error fetching shipping options:', error.response?.data || error.message);
+    } else {
+      console.error('Error fetching shipping options:', error);
+    }
+    res.status(400).json({ error: 'Unable to fetch shipping options' });
+  }
+});
 // Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);

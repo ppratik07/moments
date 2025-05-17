@@ -22,6 +22,7 @@ const client_1 = require("@prisma/client");
 const middleware_1 = require("./middleware/middleware");
 const request_1 = __importDefault(require("request"));
 const stripe_1 = __importDefault(require("stripe"));
+const axios_1 = __importDefault(require("axios"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
@@ -1254,6 +1255,52 @@ app.patch("/api/update-contribution/:contributionId", (req, res) => __awaiter(vo
     }
     finally {
         yield prisma.$disconnect();
+    }
+}));
+app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _s;
+    const { shipping_address } = req.body;
+    try {
+        // Validate shipping address
+        if (!shipping_address || !shipping_address.postal_code) {
+            return res.status(400).json({ error: 'Shipping address with postal code is required' });
+        }
+        // Prepare query parameters for Shiprocket GET request
+        const queryParams = {
+            pickup_postcode: process.env.WAREHOUSE_POSTCODE, // Your warehouse postcode
+            delivery_postcode: shipping_address.postal_code,
+            weight: 0.5, // Example: 500g for a book (adjust as needed)
+            cod: 0, // Prepaid order
+            // Optional: Add more parameters for filtering (e.g., length, breadth, height)
+        };
+        // Call Shiprocket's serviceability API (GET request)
+        const shiprocketResponse = yield axios_1.default.get('https://apiv2.shiprocket.in/v1/external/courier/serviceability/', {
+            params: queryParams,
+            headers: {
+                Authorization: `Bearer ${process.env.SHIPROCKET_API_TOKEN}`,
+            },
+        });
+        if (shiprocketResponse.data.status !== 200) {
+            return res.status(400).json({ error: 'No shipping options available' });
+        }
+        // Map Shiprocket response to frontend format
+        const shippingOptions = shiprocketResponse.data.data.available_courier_companies.map((courier) => ({
+            id: courier.courier_company_id,
+            name: courier.courier_name,
+            amount: Math.round(courier.freight_charge * 100), // Convert to paise
+            estimated_days: courier.estimated_delivery_days || '3-5', // Fallback if not provided
+        }));
+        console.log('Shipping options:', shippingOptions);
+        res.json({ shipping_options: shippingOptions });
+    }
+    catch (error) {
+        if (axios_1.default.isAxiosError(error)) {
+            console.error('Error fetching shipping options:', ((_s = error.response) === null || _s === void 0 ? void 0 : _s.data) || error.message);
+        }
+        else {
+            console.error('Error fetching shipping options:', error);
+        }
+        res.status(400).json({ error: 'Unable to fetch shipping options' });
     }
 }));
 // Listening to the server
