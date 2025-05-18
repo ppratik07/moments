@@ -16,6 +16,8 @@ import request from "request";
 import Stripe from 'stripe';
 import axios from "axios";
 import { Courier } from "../types/types";
+import Razorpay from "razorpay";
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -47,11 +49,18 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+
 // Utility function to strip query parameters from a URL
 function stripQueryParams(url: string): string {
   const index = url.indexOf('?');
   return index !== -1 ? url.substring(0, index) : url;
 }
+
 
 // Existing Endpoints (unchanged)
 app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
@@ -1452,6 +1461,76 @@ app.post('/api/shipping-options', async (req : Request, res : Response): Promise
     res.status(400).json({ error: 'Unable to fetch shipping options' });
   }
 });
+
+app.post('/api/create-order', async (req : Request, res : Response) : Promise<any> => {
+  const { project_id, shipping_address, shipping_option, amount } = req.body;
+  console.log('requestBody',req.body);
+  try {
+    // Validate inputs
+    if (!project_id || !shipping_address || !shipping_option || !amount) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Create Razorpay order
+    console.log(`amount : ${amount}, receipt : order_${project_id}_${Date.now()}, notes : {${project_id},${shipping_option} }`)
+    const order = await razorpay.orders.create({
+      amount: amount, // Amount in paise (e.g., 5000 paise = ₹50)
+      currency: 'INR',
+      receipt: `od_${project_id}`,
+      notes: {
+        project_id,
+        shipping_option,
+      },
+    });
+    console.log('GET Order',order);
+    const orderResponse = res.json({
+      order_id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
+    console.log('orderResponse',orderResponse);
+  } catch (error) {
+    console.error('Error creating Razorpay order:', error);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+app.post('/api/verify-payment', async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  try {
+    const body = razorpay_order_id + '|' + razorpay_payment_id;
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || (() => { throw new Error("RAZORPAY_KEY_SECRET is not defined in the environment variables"); })())
+      .update(body)
+      .digest('hex');
+
+    const isSignatureValid = expectedSignature === razorpay_signature;
+    const paymentDetails = await prisma.payment.create({
+      data: {
+        orderId : razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        signature : razorpay_signature,
+        verified: isSignatureValid
+      },
+    })
+    if(isSignatureValid){
+      res.json({ success: true });
+    }else {
+      res.status(400).json({ success: false, error: 'Invalid signature' });
+    }
+  } catch (error) {
+    console.error('Error verifying payment:', error);
+    res.status(500).json({ success: false, error: 'Payment verification failed' });
+  }
+});
+
+
+// Health check endpoint
+app.get('/api/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 // Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
