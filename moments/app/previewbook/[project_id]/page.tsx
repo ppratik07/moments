@@ -10,10 +10,8 @@ import Sidebar from '@/components/dashboard/SideBar';
 import { Header } from '@/components/landing/Header';
 import { Button } from '@/components/ui/button';
 import { getImageUrl } from '@/helpers/getImageUrl';
-import { loadStripe } from '@stripe/stripe-js';
 import { FlipBookRef, Layout, PageCoverProps, PageData, PageProps } from '@/types/previewbook.types';
 import axios from 'axios';
-
 
 const PageCover = forwardRef((props: PageCoverProps, ref: ForwardedRef<HTMLDivElement>) => {
   const { layout, children } = props;
@@ -109,6 +107,22 @@ const PreviewBookPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shippingAddress, setShippingAddress] = useState({
+    line1: '',
+    city: '',
+    state: '',
+    postal_code: '',
+    country: 'IN',
+  });
+  interface ShippingOption {
+    id: string;
+    name: string;
+    amount: number;
+    estimated_days: number;
+  }
+
+  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
   const flipBookRef = useRef<FlipBookRef | null>(null);
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
@@ -176,6 +190,103 @@ const PreviewBookPage = () => {
     }
   }, [pages, frontCover]);
 
+  const fetchShippingOptions = async () => {
+    try {
+      const token = await getToken();
+      const response = await axios.post(
+        `${HTTP_BACKEND}/api/shipping-options`,
+        { shipping_address: shippingAddress },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log('Shipping options',response.data);
+      setShippingOptions(response.data.shipping_options || []);
+    } catch (error) {
+      console.error('Error fetching shipping options:', error);
+      setError('Failed to fetch shipping options');
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!selectedShipping) {
+      alert('Please select a shipping option');
+      return;
+    }
+
+    try {
+      const token = await getToken();
+      // Create Razorpay order
+      const orderResponse = await axios.post(
+        `${HTTP_BACKEND}/api/create-order`,
+        {
+          project_id,
+          shipping_address: shippingAddress,
+          shipping_option: selectedShipping,
+          amount: 5000 + (shippingOptions.find(opt => opt.id === selectedShipping)?.amount || 0), // Example: $50 + shipping
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { order_id, amount, currency } = orderResponse.data;
+      console.log('Order response frontend:', orderResponse.data);
+      // Load Razorpay Checkout
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_OFIWhJovnPg6hZ',
+          amount: amount,
+          currency: currency,
+          name: 'Memory Lane',
+          description: `Order for project ${project_id}`,
+          order_id: order_id,
+          handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+            try {
+              // Verify payment
+              const verifyResponse = await axios.post(
+                `${HTTP_BACKEND}/api/verify-payment`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (verifyResponse.data.success) {
+                router.push(`/success?order_id=${orderResponse.data.order_id}`);
+              } else {
+                setError('Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Payment verification error:', error);
+              setError('Payment verification failed');
+            }
+          },
+          prefill: {
+            name: '',
+            email: '',
+            contact: '',
+          },
+          theme: {
+            color: '#F59E0B',
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      };
+
+      script.onerror = () => {
+        setError('Failed to load Razorpay Checkout');
+      };
+    } catch (error) {
+      console.error('Error initiating checkout:', error);
+      setError('Failed to initiate checkout');
+    }
+  };
+
   const nextButtonClick = () => flipBookRef.current?.pageFlip().flipNext();
   const prevButtonClick = () => flipBookRef.current?.pageFlip().flipPrev();
   const onPage = (e: { data: number }) => setCurrentPage(e.data);
@@ -191,21 +302,7 @@ const PreviewBookPage = () => {
   if (error) {
     return <div className="text-red-600 text-center mt-10">{error}</div>;
   }
-  //Stripe Checkout
-  const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
-  const handleCheckout = async()=>{
-    const stripe  = await stripePromise;
-    if(!stripe){
-      console.error('Stripe.js has not loader');
-      return;
-    }
-    const response = await axios.post(`${HTTP_BACKEND}/api/create-checkout-session`)
-    const {id} = await response.data;
-    const result = await stripe.redirectToCheckout({ sessionId: id });
-    if(result.error){
-      console.error(result.error.message);
-    }
-  }
+
   return (
     <>
       <Head>
@@ -396,8 +493,75 @@ const PreviewBookPage = () => {
                     Next page
                   </Button>
                 </div>
+
+                <div className="mt-6">
+                  <h2 className="text-xl font-bold mb-4">Shipping Address</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Address Line 1"
+                      value={shippingAddress.line1}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, line1: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={shippingAddress.city}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, city: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="State"
+                      value={shippingAddress.state}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, state: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Postal Code"
+                      value={shippingAddress.postal_code}
+                      onChange={(e) => setShippingAddress({ ...shippingAddress, postal_code: e.target.value })}
+                      className="p-2 border rounded"
+                    />
+                  </div>
+                  <Button
+                    onClick={fetchShippingOptions}
+                    className="mt-4 px-4 py-2 text-white rounded hover:bg-blue-700"
+                  >
+                    Get Shipping Options
+                  </Button>
+                </div>
+
+                {shippingOptions.length > 0 && (
+                  <div className="mt-6">
+                    <h2 className="text-xl font-bold mb-4">Select Shipping Option</h2>
+                    <div className="flex flex-col gap-2">
+                      {shippingOptions.map((option) => (
+                        <div key={option.id} className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="shipping_option"
+                            value={option.id}
+                            checked={selectedShipping === option.id}
+                            onChange={(e) => setSelectedShipping(e.target.value)}
+                          />
+                          <label>
+                            {option.name} - ₹{option.amount / 100} ({option.estimated_days} days)
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-6 flex justify-end">
-                  <Button onClick={handleCheckout} className='hover:bg-amber-600 cursor-pointer'>
+                  <Button
+                    onClick={handleCheckout}
+                    className="hover:bg-amber-600 cursor-pointer"
+                    disabled={!selectedShipping}
+                  >
                     Order Book
                   </Button>
                 </div>
