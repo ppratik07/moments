@@ -1342,7 +1342,7 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 }));
 app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id } = req.body;
     try {
         const body = razorpay_order_id + '|' + razorpay_payment_id;
         const expectedSignature = crypto_1.default
@@ -1355,6 +1355,7 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 orderId: razorpay_order_id,
                 paymentId: razorpay_payment_id,
                 signature: razorpay_signature,
+                project_id,
                 verified: isSignatureValid
             },
         });
