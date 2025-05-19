@@ -256,7 +256,7 @@ const PreviewBookPage = () => {
                 { headers: { Authorization: `Bearer ${token}` } }
               );
               if (verifyResponse.data.success) {
-                router.push(`/success?order_id=${orderResponse.data.order_id}`);
+                router.push(`/success?order_id=${orderResponse.data.order_id}&project_id=${project_id}`);
               } else {
                 setError('Payment verification failed');
               }
