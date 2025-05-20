@@ -1496,7 +1496,7 @@ app.post('/api/create-order', async (req : Request, res : Response) : Promise<an
 });
 
 app.post('/api/verify-payment', async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature,project_id } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature,project_id,amount } = req.body;
 
   try {
     const body = razorpay_order_id + '|' + razorpay_payment_id;
@@ -1512,6 +1512,7 @@ app.post('/api/verify-payment', async (req, res) => {
         paymentId: razorpay_payment_id,
         signature : razorpay_signature,
         project_id,
+        amount,
         verified: isSignatureValid
       },
     })

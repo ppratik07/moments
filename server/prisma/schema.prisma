@@ -141,6 +141,7 @@ model Payment {
   paymentId  String   @map("razorpay_payment_id")
   signature  String   @map("razorpay_signature")
   project_id String
+  amount     Float
   verified   Boolean  @default(false)
   createdAt  DateTime @default(now())
 }
