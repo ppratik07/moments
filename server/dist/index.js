@@ -1357,7 +1357,8 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 signature: razorpay_signature,
                 project_id,
                 amount,
-                verified: isSignatureValid
+                verified: isSignatureValid,
+                error_message: isSignatureValid ? null : 'Invalid signature',
             },
         });
         if (isSignatureValid) {
@@ -1369,6 +1370,17 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
     }
     catch (error) {
         console.error('Error verifying payment:', error);
+        yield prisma.payment.create({
+            data: {
+                orderId: razorpay_order_id || 'unknown',
+                paymentId: razorpay_payment_id || 'unknown',
+                signature: razorpay_signature || 'unknown',
+                project_id: project_id || 'unknown',
+                amount: amount || 0,
+                verified: false,
+                error_message: error instanceof Error ? error.message : 'Payment verification failed',
+            },
+        });
         res.status(500).json({ success: false, error: 'Payment verification failed' });
     }
 }));
@@ -1387,6 +1399,7 @@ app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 signature: true,
                 project_id: true,
                 amount: true,
+                error_message: true,
                 verified: true,
             },
         });
@@ -1398,7 +1411,8 @@ app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
             order_id: order.orderId,
             project_id: order.project_id,
             amount: order.amount || 0,
-            status: order.verified ? 'confirmed' : 'pending',
+            status: order.verified ? 'confirmed' : 'failed',
+            error_message: order.error_message || null,
         });
     }
     catch (error) {

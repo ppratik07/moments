@@ -136,14 +136,15 @@ model Order {
 }
 
 model Payment {
-  id         String   @id @default(uuid())
-  orderId    String   @map("razorpay_order_id")
-  paymentId  String   @map("razorpay_payment_id")
-  signature  String   @map("razorpay_signature")
-  project_id String
-  amount     Float
-  verified   Boolean  @default(false)
-  createdAt  DateTime @default(now())
+  id            String   @id @default(uuid())
+  orderId       String   @map("razorpay_order_id")
+  paymentId     String   @map("razorpay_payment_id")
+  signature     String   @map("razorpay_signature")
+  project_id    String
+  amount        Float
+  error_message String?
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
 }
 
 model Layout {
