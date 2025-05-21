@@ -1527,7 +1527,40 @@ app.post('/api/verify-payment', async (req, res) => {
   }
 });
 
+app.get('/api/order', async (req: Request, res: Response) : Promise<any> => {
+  const { order_id } = req.query;
+  console.log('order_id',order_id);
+  if(!order_id){
+    return res.status(400).json({ error: 'Missing order_id' });
+  }
+  try {
+    const order = await prisma.payment.findFirst({
+      where: { orderId: order_id as string },
+      select: {
+        orderId: true,
+        paymentId: true,
+        signature: true,
+        project_id: true,
+        amount: true,
+        verified: true,
+      },
+    });
+    console.log('Find Order',order);
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
 
+    res.json({
+      order_id: order.orderId,
+      project_id: order.project_id,
+      amount: order.amount || 0,
+      status: order.verified ? 'confirmed' : 'pending',
+    });
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ error: 'Failed to fetch order' });
+  }
+});
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
