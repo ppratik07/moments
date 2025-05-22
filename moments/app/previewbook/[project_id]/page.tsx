@@ -252,10 +252,12 @@ const PreviewBookPage = () => {
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
                   amount,
-                  project_id
+                  project_id,
+                  shipping_address: shippingAddress,
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
               );
+              console.log("verified response",verifyResponse.data);
               if (verifyResponse.data.success) {
                 router.push(`/success?order_id=${orderResponse.data.order_id}&project_id=${project_id}`);
               } else {

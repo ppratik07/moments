@@ -1342,7 +1342,7 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
     }
 }));
 app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id, amount } = req.body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id, amount, shipping_address } = req.body;
     try {
         const body = razorpay_order_id + '|' + razorpay_payment_id;
         const expectedSignature = crypto_1.default
@@ -1359,6 +1359,7 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 amount,
                 verified: isSignatureValid,
                 error_message: isSignatureValid ? null : 'Invalid signature',
+                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
             },
         });
         if (isSignatureValid) {
@@ -1379,6 +1380,7 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 amount: amount || 0,
                 verified: false,
                 error_message: error instanceof Error ? error.message : 'Payment verification failed',
+                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
             },
         });
         res.status(500).json({ success: false, error: 'Payment verification failed' });
