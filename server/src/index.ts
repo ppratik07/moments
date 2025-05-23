@@ -1557,7 +1557,8 @@ app.get('/api/order', async (req: Request, res: Response) : Promise<any> => {
         project_id: true,
         amount: true,
         error_message : true,
-        verified: true,   
+        verified: true, 
+        shipping_address: true  
       },
     });
     console.log('Find Order',order);
@@ -1571,6 +1572,7 @@ app.get('/api/order', async (req: Request, res: Response) : Promise<any> => {
       amount: order.amount || 0,
       status: order.verified ? 'confirmed' : 'failed',
       error_message: order.error_message || null,
+      shipping_address: order.shipping_address ? JSON.parse(order.shipping_address) : null,
     });
   } catch (error) {
     console.error('Error fetching order:', error);
