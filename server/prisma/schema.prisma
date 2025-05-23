@@ -46,6 +46,7 @@ model LoginUser {
   deadlines        ContributionDeadlines[]
   Order            Order[]
   Layouts          Layout[]
+  PrintJob         PrintJob[]
 }
 
 model FillYourDetails {
@@ -136,16 +137,17 @@ model Order {
 }
 
 model Payment {
-  id               String   @id @default(uuid())
-  orderId          String   @map("razorpay_order_id")
-  paymentId        String   @map("razorpay_payment_id")
-  signature        String   @map("razorpay_signature")
+  id               String     @id @default(uuid())
+  orderId          String     @map("razorpay_order_id")
+  paymentId        String     @map("razorpay_payment_id")
+  signature        String     @map("razorpay_signature")
   project_id       String
   amount           Float
   error_message    String?
   shipping_address String?
-  verified         Boolean  @default(false)
-  createdAt        DateTime @default(now())
+  verified         Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  printJobs        PrintJob[]
 }
 
 model Layout {
@@ -159,4 +161,15 @@ model Layout {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   loginUser LoginUser @relation(fields: [projectId], references: [id])
+}
+
+model PrintJob {
+  id          String    @id @default(uuid())
+  lulu_job_id String // Lulu print job ID
+  paymentId   String // Links to Payment
+  payment     Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  projectId   String // Links to LoginUser
+  project     LoginUser @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
