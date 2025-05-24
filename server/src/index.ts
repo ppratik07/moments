@@ -18,6 +18,7 @@ import axios from "axios";
 import { Courier } from "../types/types";
 import Razorpay from "razorpay";
 import crypto from 'crypto';
+import { generateBookHtml } from "./services/generateBookHtml";
 
 dotenv.config();
 
@@ -54,14 +55,10 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-
-// Utility function to strip query parameters from a URL
-function stripQueryParams(url: string): string {
+function stripQueryParams(url: string) {
   const index = url.indexOf('?');
   return index !== -1 ? url.substring(0, index) : url;
 }
-
-
 // Existing Endpoints (unchanged)
 app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
   const { name } = req.query;
@@ -89,7 +86,6 @@ app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
 
 app.post("/api/users", authMiddleware, async (req: Request, res: Response): Promise<any> => {
   const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
-  console.log("Received req.userId in /api/users:", req.userId);
   try {
     const userDetails = await prisma.loginUser.create({
       data: {
@@ -144,7 +140,6 @@ process.on("unhandledRejection", (reason, promise) => {
 
 app.delete("/api/delete-image", async (req, res) => {
   const { key } = req.query;
-  console.log("Key:", key);
   if (!key || typeof key !== "string") {
     res.status(400).json({ error: "Missing or invalid key parameter" });
   }
@@ -225,7 +220,6 @@ app.get('/api/user-projects/:projectId', async (req: Request, res: Response): Pr
 app.patch("/api/users/:projectId/upload-image", async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
   const { imageKey, uploadUrl } = req.body;
-  console.log(projectId, imageKey, uploadUrl);
   if (!imageKey || !uploadUrl) {
     return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
   }
@@ -238,7 +232,6 @@ app.patch("/api/users/:projectId/upload-image", async (req: Request, res: Respon
         uploadUrl,
       },
     });
-    console.log("Updated project:", updatedProject);
     res.json({
       message: "Image updated successfully",
       project: updatedProject,
@@ -296,7 +289,6 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
         return res.status(400).json({ error: "Invalid images array" });
       }
     }
-    console.log('Received contribution pages:', JSON.stringify(pages, null, 2));
     const contribution = await prisma.contribution.create({
       data: {
         projectId,
@@ -327,7 +319,6 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
               components: {
                 create: page.components.map((component) => {
                   const cleanedImageUrl = component.image_url ? stripQueryParams(component.image_url) : component.image_url;
-                  console.log('Saving component with imageUrl:', cleanedImageUrl);
                   return {
                     type: component.type,
                     position: component.position || null,
@@ -651,12 +642,8 @@ app.post("/api/layouts", authMiddleware, async (req: Request, res: Response): Pr
 });
 app.get('/api/layouts/:projectId', async (req: Request, res: Response): Promise<void> => {
   const { projectId } = req.params;
-  // const userId = req.userId as string;
-
-  console.log('GET /api/layouts called with:', { projectId });
 
   if (!projectId || typeof projectId !== 'string') {
-    console.log('Invalid projectId');
     res.status(400).json({ error: 'Missing or invalid projectId' });
     return;
   }
@@ -668,7 +655,6 @@ app.get('/api/layouts/:projectId', async (req: Request, res: Response): Promise<
     });
 
     if (!project) {
-      console.log('Project not found or unauthorized');
       res.status(404).json({ error: 'Project not found or unauthorized' });
       return;
     }
@@ -683,7 +669,6 @@ app.get('/api/layouts/:projectId', async (req: Request, res: Response): Promise<
     });
 
     if (!frontCover) {
-      console.log('No front cover found');
       res.status(200).json(null); // Return null instead of empty array
     } else {
       res.status(200).json(frontCover);
@@ -696,9 +681,6 @@ app.get('/api/layouts/:projectId', async (req: Request, res: Response): Promise<
 // Updated /api/preview/:projectId to return JSON
 app.get('/api/preview/:projectId', async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
-  // const userId = req.userId;
-  console.log('Project ID', projectId);
-  // console.log('UID', userId);
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
   }
@@ -752,17 +734,14 @@ app.get('/api/preview/:projectId', async (req: Request, res: Response): Promise<
         const components = await Promise.all(page.components.map(async (comp) => {
           if (comp.type === 'photo' && comp.imageUrl) {
             const cleanedImageUrl = stripQueryParams(comp.imageUrl);
-            console.log('Cleaned imageUrl:', cleanedImageUrl);
             try {
               const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
               const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-              console.log('Generating signed URL for key:', key);
               const command = new GetObjectCommand({
                 Bucket: process.env.R2_BUCKET_NAME!,
                 Key: key,
               });
               const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-              console.log('Signed URL:', signedUrl);
               return { ...comp, imageUrl: signedUrl };
             } catch (error) {
               console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
@@ -795,7 +774,6 @@ app.get('/api/preview/:projectId', async (req: Request, res: Response): Promise<
 // Updated /api/pdf/:projectId
 app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
-  console.log('ProjectID', projectId);
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
   }
@@ -805,7 +783,6 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
       where: { id: projectId },
       select: { projectName: true },
     });
-    console.log('Project:', project);
     if (!project) {
       return res.status(404).json({ message: 'Project not found or unauthorized' });
     }
@@ -819,8 +796,6 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
       },
     });
 
-    console.log('Front Cover:', JSON.stringify(frontCover, null, 2));
-
     // Generate signed URL for front cover image (if exists)
     let frontCoverImageUrl = '';
     if (frontCover?.config && typeof frontCover.config === 'object' && 'imageKey' in frontCover.config) {
@@ -828,13 +803,11 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
       try {
         const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
         const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-        console.log('Generating signed URL for front cover key:', key);
         const command = new GetObjectCommand({
           Bucket: process.env.R2_BUCKET_NAME!,
           Key: key,
         });
         frontCoverImageUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-        console.log('Signed URL for front cover:', frontCoverImageUrl);
       } catch (error) {
         console.error('Error generating signed URL for front cover:', error);
         frontCoverImageUrl = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
@@ -864,24 +837,21 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
       },
     });
 
-    console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
+    //console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
 
     const contributions = await Promise.all(contributionsData.map(async (contrib) => {
       const pages = await Promise.all(contrib.pages.map(async (page) => {
         const components = await Promise.all(page.components.map(async (comp) => {
           if (comp.type === 'photo' && comp.imageUrl) {
             const cleanedImageUrl = stripQueryParams(comp.imageUrl);
-            console.log('Cleaned imageUrl for PDF:', cleanedImageUrl);
             try {
               const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
               const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-              console.log('Generating signed URL for PDF key:', key);
               const command = new GetObjectCommand({
                 Bucket: process.env.R2_BUCKET_NAME!,
                 Key: key,
               });
               const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-              console.log('Signed URL for PDF:', signedUrl);
               return { ...comp, imageUrl: signedUrl };
             } catch (error) {
               console.error('Error generating signed URL for', cleanedImageUrl, ':', error);
@@ -936,7 +906,6 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
         },
       },
     };
-    console.log('DocRaptor config:', JSON.stringify(config, null, 2));
 
     request.post(config, (err, response, body) => {
       if (err) {
@@ -1251,7 +1220,6 @@ app.post('/api/shipping-options', async (req : Request, res : Response): Promise
       amount: Math.round(courier.freight_charge * 100), // Convert to paise
       estimated_days: courier.estimated_delivery_days || '3-5', // Fallback if not provided
     }));
-    console.log('Shipping options:', shippingOptions);
     res.json({ shipping_options: shippingOptions });
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -1265,7 +1233,6 @@ app.post('/api/shipping-options', async (req : Request, res : Response): Promise
 
 app.post('/api/create-order', async (req : Request, res : Response) : Promise<any> => {
   const { project_id, shipping_address, shipping_option, amount } = req.body;
-  console.log('requestBody',req.body);
   try {
     // Validate inputs
     if (!project_id || !shipping_address || !shipping_option || !amount) {
@@ -1273,7 +1240,6 @@ app.post('/api/create-order', async (req : Request, res : Response) : Promise<an
     }
 
     // Create Razorpay order
-    console.log(`amount : ${amount}, receipt : order_${project_id}_${Date.now()}, notes : {${project_id},${shipping_option} }`)
     const order = await razorpay.orders.create({
       amount: amount, // Amount in paise (e.g., 5000 paise = ₹50)
       currency: 'INR',
@@ -1283,13 +1249,11 @@ app.post('/api/create-order', async (req : Request, res : Response) : Promise<an
         shipping_option,
       },
     });
-    console.log('GET Order',order);
     const orderResponse = res.json({
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
     });
-    console.log('orderResponse',orderResponse);
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
     res.status(500).json({ error: 'Failed to create order' });
@@ -1344,7 +1308,6 @@ app.post('/api/verify-payment', async (req, res) => {
 
 app.get('/api/order', async (req: Request, res: Response) : Promise<any> => {
   const { order_id } = req.query;
-  console.log('order_id',order_id);
   if(!order_id){
     return res.status(400).json({ error: 'Missing order_id' });
   }
@@ -1362,7 +1325,6 @@ app.get('/api/order', async (req: Request, res: Response) : Promise<any> => {
         shipping_address: true  
       },
     });
-    console.log('Find Order',order);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
@@ -1395,13 +1357,13 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
       where: { orderId: order_id, project_id: projectId },
       select: { shipping_address: true },
     });
-
+    console.log('Order Details:', order);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
     const shipping_address = order.shipping_address ? JSON.parse(order.shipping_address) : null;
-
+    console.log('Shipping Address:', shipping_address);
     // Step 2: Fetch project details to get totalPages
     const project = await prisma.loginUser.findUnique({
       where: { id: projectId },
@@ -1416,15 +1378,16 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
     const pdfResponse = await axios.get(`${process.env.INTERNAL_BACKEND_URL || 'http://localhost:8080'}/api/pdf/${projectId}`, {
       responseType: 'arraybuffer',
     });
-
+    console.log('PDF Response Status:', pdfResponse.status);
     // Step 4: Authenticate with Lulu API
     const luluTokenResponse = await axios.post('https://api.lulu.com/auth/v1/token', {
       grant_type: 'client_credentials',
       client_id: process.env.LULU_API_KEY,
       client_secret: process.env.LULU_API_SECRET,
     });
+    console.log('Lulu Token Response:', luluTokenResponse.data);
     const luluAccessToken = luluTokenResponse.data.access_token;
-
+    console.log('Lulu Access Token:', luluAccessToken);
     // Step 5: Upload PDF to Lulu
     const formData = new FormData();
     formData.append('file', new Blob([Buffer.from(pdfResponse.data)]), `book-${projectId}.pdf`);
@@ -1435,8 +1398,9 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         'Content-Type': 'multipart/form-data',
       },
     });
+    console.log('File Upload Response:', uploadResponse.data);
     const fileId = uploadResponse.data.id;
-
+    console.log('File uploaded to Lulu:', fileId);
     // Step 6: Create print job
     const printJobResponse = await axios.post(
       'https://api.lulu.com/print-jobs/',
@@ -1465,7 +1429,7 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         },
       }
     );
-
+    console.log('Print Job Response:', printJobResponse.data);
     // Step 7: Store print job in PrintJob model
     const printJob = await prisma.printJob.create({
       data: {
@@ -1474,7 +1438,7 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         projectId
       },
     });
-
+    console.log('Print Job stored in database:', printJob);
     res.json({ success: true, print_job_id: printJobResponse.data.id });
   } catch (error) {
     console.error('Error creating print job:', error);

@@ -25,6 +25,7 @@ const stripe_1 = __importDefault(require("stripe"));
 const axios_1 = __importDefault(require("axios"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
+const generateBookHtml_1 = require("./services/generateBookHtml");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 8080;
@@ -52,7 +53,6 @@ const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
-// Utility function to strip query parameters from a URL
 function stripQueryParams(url) {
     const index = url.indexOf('?');
     return index !== -1 ? url.substring(0, index) : url;
@@ -81,7 +81,6 @@ app.get("/event-type", (req, res) => __awaiter(void 0, void 0, void 0, function*
 }));
 app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectName, bookName, dueDate, eventType, eventDescription } = req.body;
-    console.log("Received req.userId in /api/users:", req.userId);
     try {
         const userDetails = yield prisma.loginUser.create({
             data: {
@@ -130,7 +129,6 @@ process.on("unhandledRejection", (reason, promise) => {
 });
 app.delete("/api/delete-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { key } = req.query;
-    console.log("Key:", key);
     if (!key || typeof key !== "string") {
         res.status(400).json({ error: "Missing or invalid key parameter" });
     }
@@ -205,7 +203,6 @@ app.get('/api/user-projects/:projectId', (req, res) => __awaiter(void 0, void 0,
 app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
     const { imageKey, uploadUrl } = req.body;
-    console.log(projectId, imageKey, uploadUrl);
     if (!imageKey || !uploadUrl) {
         return res.status(400).json({ error: "Missing imageKey or uploadUrl" });
     }
@@ -217,7 +214,6 @@ app.patch("/api/users/:projectId/upload-image", (req, res) => __awaiter(void 0, 
                 uploadUrl,
             },
         });
-        console.log("Updated project:", updatedProject);
         res.json({
             message: "Image updated successfully",
             project: updatedProject,
@@ -267,7 +263,6 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
                 return res.status(400).json({ error: "Invalid images array" });
             }
         }
-        console.log('Received contribution pages:', JSON.stringify(pages, null, 2));
         const contribution = yield prisma.contribution.create({
             data: {
                 projectId,
@@ -282,7 +277,6 @@ app.post("/api/save-contribution", (req, res) => __awaiter(void 0, void 0, void 
                         components: {
                             create: page.components.map((component) => {
                                 const cleanedImageUrl = component.image_url ? stripQueryParams(component.image_url) : component.image_url;
-                                console.log('Saving component with imageUrl:', cleanedImageUrl);
                                 return {
                                     type: component.type,
                                     position: component.position || null,
@@ -567,10 +561,7 @@ app.post("/api/layouts", middleware_1.authMiddleware, (req, res) => __awaiter(vo
 }));
 app.get('/api/layouts/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
-    // const userId = req.userId as string;
-    console.log('GET /api/layouts called with:', { projectId });
     if (!projectId || typeof projectId !== 'string') {
-        console.log('Invalid projectId');
         res.status(400).json({ error: 'Missing or invalid projectId' });
         return;
     }
@@ -580,7 +571,6 @@ app.get('/api/layouts/:projectId', (req, res) => __awaiter(void 0, void 0, void 
             where: { id: projectId },
         });
         if (!project) {
-            console.log('Project not found or unauthorized');
             res.status(404).json({ error: 'Project not found or unauthorized' });
             return;
         }
@@ -593,7 +583,6 @@ app.get('/api/layouts/:projectId', (req, res) => __awaiter(void 0, void 0, void 
             },
         });
         if (!frontCover) {
-            console.log('No front cover found');
             res.status(200).json(null); // Return null instead of empty array
         }
         else {
@@ -608,9 +597,6 @@ app.get('/api/layouts/:projectId', (req, res) => __awaiter(void 0, void 0, void 
 // Updated /api/preview/:projectId to return JSON
 app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId } = req.params;
-    // const userId = req.userId;
-    console.log('Project ID', projectId);
-    // console.log('UID', userId);
     if (!projectId || typeof projectId !== 'string') {
         return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
     }
@@ -661,17 +647,14 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
                 const components = yield Promise.all(page.components.map((comp) => __awaiter(void 0, void 0, void 0, function* () {
                     if (comp.type === 'photo' && comp.imageUrl) {
                         const cleanedImageUrl = stripQueryParams(comp.imageUrl);
-                        console.log('Cleaned imageUrl:', cleanedImageUrl);
                         try {
                             const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
                             const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-                            console.log('Generating signed URL for key:', key);
                             const command = new client_s3_1.GetObjectCommand({
                                 Bucket: process.env.R2_BUCKET_NAME,
                                 Key: key,
                             });
                             const signedUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
-                            console.log('Signed URL:', signedUrl);
                             return Object.assign(Object.assign({}, comp), { imageUrl: signedUrl });
                         }
                         catch (error) {
@@ -703,7 +686,6 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
 app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _c, _d, _e, _f, _g, _h, _j;
     const { projectId } = req.params;
-    console.log('ProjectID', projectId);
     if (!projectId || typeof projectId !== 'string') {
         return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
     }
@@ -712,7 +694,6 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
             where: { id: projectId },
             select: { projectName: true },
         });
-        console.log('Project:', project);
         if (!project) {
             return res.status(404).json({ message: 'Project not found or unauthorized' });
         }
@@ -724,7 +705,6 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                 isPreview: true,
             },
         });
-        console.log('Front Cover:', JSON.stringify(frontCover, null, 2));
         // Generate signed URL for front cover image (if exists)
         let frontCoverImageUrl = '';
         if ((frontCover === null || frontCover === void 0 ? void 0 : frontCover.config) && typeof frontCover.config === 'object' && 'imageKey' in frontCover.config) {
@@ -732,13 +712,11 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
             try {
                 const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
                 const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-                console.log('Generating signed URL for front cover key:', key);
                 const command = new client_s3_1.GetObjectCommand({
                     Bucket: process.env.R2_BUCKET_NAME,
                     Key: key,
                 });
                 frontCoverImageUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
-                console.log('Signed URL for front cover:', frontCoverImageUrl);
             }
             catch (error) {
                 console.error('Error generating signed URL for front cover:', error);
@@ -767,24 +745,21 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                 }
             },
         });
-        console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
+        //console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
         const contributions = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
             var _k;
             const pages = yield Promise.all(contrib.pages.map((page) => __awaiter(void 0, void 0, void 0, function* () {
                 const components = yield Promise.all(page.components.map((comp) => __awaiter(void 0, void 0, void 0, function* () {
                     if (comp.type === 'photo' && comp.imageUrl) {
                         const cleanedImageUrl = stripQueryParams(comp.imageUrl);
-                        console.log('Cleaned imageUrl for PDF:', cleanedImageUrl);
                         try {
                             const keyMatch = cleanedImageUrl.match(/memorylane\/(.+)$/);
                             const key = keyMatch ? keyMatch[1] : cleanedImageUrl;
-                            console.log('Generating signed URL for PDF key:', key);
                             const command = new client_s3_1.GetObjectCommand({
                                 Bucket: process.env.R2_BUCKET_NAME,
                                 Key: key,
                             });
                             const signedUrl = yield (0, s3_request_presigner_1.getSignedUrl)(s3, command, { expiresIn: 3600 });
-                            console.log('Signed URL for PDF:', signedUrl);
                             return Object.assign(Object.assign({}, comp), { imageUrl: signedUrl });
                         }
                         catch (error) {
@@ -803,7 +778,7 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                 pages,
             };
         })));
-        const html = generateBookHtml({
+        const html = (0, generateBookHtml_1.generateBookHtml)({
             projectName: project.projectName,
             contributions,
             frontCover: frontCover
@@ -838,7 +813,6 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                 },
             },
         };
-        console.log('DocRaptor config:', JSON.stringify(config, null, 2));
         request_1.default.post(config, (err, response, body) => {
             if (err) {
                 console.error('Error generating PDF:', err);
@@ -861,198 +835,6 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 }));
 // Updated generateBookHtml to include front cover
-function generateBookHtml(data) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
-    const { projectName, contributions, frontCover } = data;
-    let pageContent = '';
-    // Add front cover as the first page
-    pageContent += '<div class="page front-cover">';
-    if (frontCover) {
-        pageContent += `
-      <div class="front-cover-container">
-        <h1 class="front-cover-title">${frontCover.title}</h1>
-        ${frontCover.imageUrl
-            ? `<img 
-                 src="${frontCover.imageUrl}" 
-                 alt="Front Cover" 
-                 class="front-cover-image" 
-                 onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Front cover image failed to load:', '${frontCover.imageUrl}')"
-               >`
-            : ''}
-        ${frontCover.description
-            ? `<p class="front-cover-description">${frontCover.description}</p>`
-            : ''}
-      </div>
-    `;
-    }
-    else {
-        pageContent += `
-      <div class="front-cover-container">
-        <h1 class="front-cover-title">Memory Lane Book</h1>
-      </div>
-    `;
-    }
-    pageContent += '</div>';
-    // Add contribution pages
-    let pageCount = 0; // Start after front cover
-    contributions.forEach((contribution) => {
-        if (contribution.excludedFromBook)
-            return;
-        contribution.pages.forEach((page) => {
-            if (pageCount % 2 === 0 && pageCount > 0) {
-                pageContent += '</div>';
-            }
-            if (pageCount % 2 === 0) {
-                pageContent += '<div class="page">';
-            }
-            pageContent += `
-        <div class="contribution">
-          <h2 class="contributor-name">${contribution.contributorName}</h2>
-      `;
-            const photos = page.components.filter((comp) => comp.type === 'photo' && comp.imageUrl);
-            photos.forEach((photo) => {
-                pageContent += `
-          <img 
-            src="${photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}" 
-            alt="Contribution photo" 
-            class="photo" 
-            onerror="this.src='https://via.placeholder.com/300x200?text=Image+Failed+to+Load'; console.error('Image failed to load:', '${photo.imageUrl}')"
-          >
-        `;
-            });
-            const paragraphs = page.components.filter((comp) => comp.type === 'paragraph' && comp.value);
-            paragraphs.forEach((paragraph) => {
-                pageContent += `<p class="paragraph">${paragraph.value}</p>`;
-            });
-            if (photos.length === 0 && paragraphs.length === 0) {
-                pageContent += `<p class="no-content">No content available</p>`;
-            }
-            pageContent += '</div>';
-            pageCount++;
-        });
-    });
-    if (pageCount % 2 !== 0 || pageCount === 0) {
-        pageContent += '</div>';
-    }
-    return `
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${projectName} - Book Preview</title>
-      <style>
-        body {
-          font-family: Arial, sans-serif;
-          margin: 0;
-          padding: 0;
-          background: #fff;
-        }
-        .book-container {
-          max-width: 210mm;
-          margin: 0 auto;
-          background: #fff;
-        }
-        .page {
-          width: 210mm;
-          min-height: 297mm;
-          padding: 10mm;
-          box-sizing: border-box;
-          background: #fff;
-          page-break-after: always;
-        }
-        .front-cover {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          padding: 20mm;
-          background: #fff;
-        }
-        .front-cover-container {
-          position: relative;
-          width: 100%;
-          max-width: 180mm;
-          text-align: center;
-          border: 2px dashed #9ca3af;
-          padding: 10mm;
-          box-sizing: border-box;
-        }
-        .front-cover-title {
-          font-size: ${((_a = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _a === void 0 ? void 0 : _a.fontSize) || '30pt'};
-          font-weight: ${((_b = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _b === void 0 ? void 0 : _b.fontWeight) || 'bold'};
-          margin-bottom: ${((_c = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _c === void 0 ? void 0 : _c.marginBottom) || '15mm'};
-          margin-top: ${((_d = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _d === void 0 ? void 0 : _d.marginTop) || '10mm'};
-          text-align: ${((_e = frontCover === null || frontCover === void 0 ? void 0 : frontCover.titleStyle) === null || _e === void 0 ? void 0 : _e.textAlign) || 'center'};
-          color: #000;
-          word-break: break-word;
-        }
-        .front-cover-image {
-          width: ${((_f = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _f === void 0 ? void 0 : _f.width) ? `${frontCover.imageStyle.width}px` : '280px'};
-          height: ${((_g = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _g === void 0 ? void 0 : _g.height) ? `${frontCover.imageStyle.height}px` : '200px'};
-          object-fit: ${((_h = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _h === void 0 ? void 0 : _h.objectFit) || 'contain'};
-          box-shadow: ${((_j = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _j === void 0 ? void 0 : _j.shadow) || '0 4px 6px rgba(0, 0, 0, 0.1)'};
-          margin-bottom: ${((_k = frontCover === null || frontCover === void 0 ? void 0 : frontCover.imageStyle) === null || _k === void 0 ? void 0 : _k.marginBottom) || '15mm'};
-          display: block;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .front-cover-description {
-          max-width: ${((_l = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _l === void 0 ? void 0 : _l.maxWidth) || '80%'};
-          color: ${((_m = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _m === void 0 ? void 0 : _m.color) || '#4b5563'};
-          font-size: ${((_o = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _o === void 0 ? void 0 : _o.fontSize) || '13pt'};
-          text-align: ${((_p = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _p === void 0 ? void 0 : _p.textAlign) || 'center'};
-          margin-top: ${((_q = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _q === void 0 ? void 0 : _q.marginTop) || '10mm'};
-          font-style: ${((_r = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _r === void 0 ? void 0 : _r.fontStyle) || 'italic'};
-          line-height: ${((_s = frontCover === null || frontCover === void 0 ? void 0 : frontCover.descriptionStyle) === null || _s === void 0 ? void 0 : _s.lineHeight) || '1.5'};
-          word-break: break-word;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        .contribution {
-          margin-bottom: 10mm;
-          border-bottom: 1px solid #eee;
-          padding-bottom: 5mm;
-        }
-        .contributor-name {
-          font-size: 16pt;
-          font-weight: bold;
-          margin-bottom: 5mm;
-          color: #333;
-        }
-        .photo {
-          max-width: 100%;
-          height: auto;
-          margin-bottom: 5mm;
-          border-radius: 4px;
-          display: block;
-        }
-        .paragraph {
-          font-size: 12pt;
-          line-height: 1.5;
-          color: #555;
-          margin-bottom: 5mm;
-        }
-        .no-content {
-          font-size: 12pt;
-          color: #999;
-          text-align: center;
-        }
-        @page {
-          size: A4;
-          margin: 0;
-        }
-      </style>
-    </head>
-    <body>
-      <div id="book-container" class="book-container">
-        ${pageContent}
-      </div>
-    </body>
-    </html>
-  `;
-}
 app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const session = yield stripe.checkout.sessions.create({
@@ -1314,7 +1096,6 @@ app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0
             amount: Math.round(courier.freight_charge * 100), // Convert to paise
             estimated_days: courier.estimated_delivery_days || '3-5', // Fallback if not provided
         }));
-        console.log('Shipping options:', shippingOptions);
         res.json({ shipping_options: shippingOptions });
     }
     catch (error) {
@@ -1329,14 +1110,12 @@ app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0
 }));
 app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { project_id, shipping_address, shipping_option, amount } = req.body;
-    console.log('requestBody', req.body);
     try {
         // Validate inputs
         if (!project_id || !shipping_address || !shipping_option || !amount) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
         // Create Razorpay order
-        console.log(`amount : ${amount}, receipt : order_${project_id}_${Date.now()}, notes : {${project_id},${shipping_option} }`);
         const order = yield razorpay.orders.create({
             amount: amount, // Amount in paise (e.g., 5000 paise = ₹50)
             currency: 'INR',
@@ -1346,13 +1125,11 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
                 shipping_option,
             },
         });
-        console.log('GET Order', order);
         const orderResponse = res.json({
             order_id: order.id,
             amount: order.amount,
             currency: order.currency,
         });
-        console.log('orderResponse', orderResponse);
     }
     catch (error) {
         console.error('Error creating Razorpay order:', error);
@@ -1406,7 +1183,6 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
 }));
 app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { order_id } = req.query;
-    console.log('order_id', order_id);
     if (!order_id) {
         return res.status(400).json({ error: 'Missing order_id' });
     }
@@ -1424,7 +1200,6 @@ app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 shipping_address: true
             },
         });
-        console.log('Find Order', order);
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
@@ -1454,10 +1229,12 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
             where: { orderId: order_id, project_id: projectId },
             select: { shipping_address: true },
         });
+        console.log('Order Details:', order);
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
         const shipping_address = order.shipping_address ? JSON.parse(order.shipping_address) : null;
+        console.log('Shipping Address:', shipping_address);
         // Step 2: Fetch project details to get totalPages
         const project = yield prisma.loginUser.findUnique({
             where: { id: projectId },
@@ -1470,13 +1247,16 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
         const pdfResponse = yield axios_1.default.get(`${process.env.INTERNAL_BACKEND_URL || 'http://localhost:8080'}/api/pdf/${projectId}`, {
             responseType: 'arraybuffer',
         });
+        console.log('PDF Response Status:', pdfResponse.status);
         // Step 4: Authenticate with Lulu API
         const luluTokenResponse = yield axios_1.default.post('https://api.lulu.com/auth/v1/token', {
             grant_type: 'client_credentials',
             client_id: process.env.LULU_API_KEY,
             client_secret: process.env.LULU_API_SECRET,
         });
+        console.log('Lulu Token Response:', luluTokenResponse.data);
         const luluAccessToken = luluTokenResponse.data.access_token;
+        console.log('Lulu Access Token:', luluAccessToken);
         // Step 5: Upload PDF to Lulu
         const formData = new FormData();
         formData.append('file', new Blob([Buffer.from(pdfResponse.data)]), `book-${projectId}.pdf`);
@@ -1486,7 +1266,9 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 'Content-Type': 'multipart/form-data',
             },
         });
+        console.log('File Upload Response:', uploadResponse.data);
         const fileId = uploadResponse.data.id;
+        console.log('File uploaded to Lulu:', fileId);
         // Step 6: Create print job
         const printJobResponse = yield axios_1.default.post('https://api.lulu.com/print-jobs/', {
             line_items: [
@@ -1511,6 +1293,7 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 'Content-Type': 'application/json',
             },
         });
+        console.log('Print Job Response:', printJobResponse.data);
         // Step 7: Store print job in PrintJob model
         const printJob = yield prisma.printJob.create({
             data: {
@@ -1519,6 +1302,7 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 projectId
             },
         });
+        console.log('Print Job stored in database:', printJob);
         res.json({ success: true, print_job_id: printJobResponse.data.id });
     }
     catch (error) {
