@@ -1,4 +1,4 @@
-function generateBookHtml(data: {
+export function generateBookHtml(data: {
     projectName: string;
     contributions: any[];
     frontCover: {
