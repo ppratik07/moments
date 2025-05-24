@@ -8,23 +8,32 @@ import { HTTP_BACKEND } from '@/utils/config';
 import axios from 'axios';
 import { Header } from '@/components/landing/Header';
 
+interface orderDetails {
+    order_id: string;
+    project_id: string;
+    amount: number;
+    status: string;
+    shipping_address?: {
+        name: string;
+        line1: string;
+        city: string;
+        state: string;
+        postal_code: string;
+        country: string;
+    };
+}
 export default function SuccessPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { isSignedIn, getToken } = useAuth();
-    const [orderDetails, setOrderDetails] = useState<{
-        order_id: string;
-        project_id: string;
-        amount: number;
-        status: string;
-    } | null>(null);
+    const [orderDetails, setOrderDetails] = useState<orderDetails | null>(null);
+    const [printStatus, setPrintStatus] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const order_id = searchParams?.get('order_id');
-    console.log('oderId',order_id)
     const project_id = searchParams?.get('project_id');
-    console.log('project_Id',project_id)
+
 
     useEffect(() => {
         const fetchOrderDetails = async () => {
@@ -44,8 +53,17 @@ export default function SuccessPage() {
                 const response = await axios.get(`${HTTP_BACKEND}/api/order?order_id=${order_id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                console.log('Backend Response',response);
+                console.log('Backend Response', response);
                 setOrderDetails(response.data);
+                // Step 2: Trigger print job via backend
+                const printResponse = await axios.post(
+                    `${HTTP_BACKEND}/api/print/${project_id}`,
+                    { order_id },
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                    }
+                );
+                setPrintStatus(`Print job created successfully! Job ID: ${printResponse.data.print_job_id}`);
             } catch (err) {
                 console.error('Error fetching order details:', err);
                 setError('Failed to load order details');
@@ -55,7 +73,7 @@ export default function SuccessPage() {
         };
 
         fetchOrderDetails();
-    }, [order_id, isSignedIn, getToken]);
+    }, [order_id, isSignedIn, getToken, project_id]);
 
     const handleReturnToDashboard = () => {
         router.push(project_id ? `/dashboard/${project_id}` : '/');
@@ -86,7 +104,7 @@ export default function SuccessPage() {
                     <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8 mt-10">
                         <h1 className="text-3xl font-bold text-gray-800 mb-4 text-center">Order Confirmed!</h1>
                         <p className="text-lg text-gray-600 mb-6 text-center">
-                            Thank you for your purchase. Your Memory Lane book has been successfully ordered.
+                            Thank you for your purchase. Your Memory Lane book has been successfully ordered and is being prepared for printing.
                         </p>
 
                         {orderDetails ? (
@@ -96,11 +114,9 @@ export default function SuccessPage() {
                                     <p>
                                         <span className="font-medium">Order ID:</span> {orderDetails.order_id}
                                     </p>
-                                    {orderDetails.project_id && (
-                                        <p>
-                                            <span className="font-medium">Project ID:</span> {orderDetails.project_id}
-                                        </p>
-                                    )}
+                                    <p>
+                                        <span className="font-medium">Project ID:</span> {orderDetails.project_id}
+                                    </p>
                                     <p>
                                         <span className="font-medium">Amount:</span> ₹{orderDetails.amount / 100}
                                     </p>
@@ -112,6 +128,12 @@ export default function SuccessPage() {
                             </div>
                         ) : (
                             <p className="text-gray-500 mb-8 text-center">Order details are being processed...</p>
+                        )}
+
+                        {printStatus ? (
+                            <p className="text-green-600 mb-8 text-center">{printStatus}</p>
+                        ) : (
+                            <p className="text-gray-500 mb-8 text-center">Initiating print job...</p>
                         )}
 
                         <div className="flex justify-center">
