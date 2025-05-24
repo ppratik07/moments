@@ -379,7 +379,7 @@ const PreviewBookPage = () => {
                       return (
                         <Page key={index} number={index + 1}>
                           <div className="contribution flex flex-col min-h-full">
-                            <h3 className="text-lg font-bold text-gray-800 mb-5 text-center">{page.contributorName}</h3>
+                            <h3 className="text-lg font-bold text-gray-800 mb-5 text-center">Contributed By: {page.contributorName}</h3>
                             <div className="flex flex-row flex-wrap justify-between gap-4">
                               {photos.map((photo, idx) => {
                                 const style: React.CSSProperties = {

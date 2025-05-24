@@ -639,10 +639,21 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
                         },
                     },
                 },
+                fillYourDetails: {
+                    select: {
+                        first_name: true,
+                        last_name: true,
+                        email: true,
+                        relationship: true,
+                        ExcludeFromOnlineVersion: true,
+                        ExcludeFromPromotion: true,
+                    },
+                }
             },
         });
         const pages = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
-            const contributorName = contrib.signature || 'Anonymous';
+            var _b;
+            const contributorName = ((_b = contrib.fillYourDetails) === null || _b === void 0 ? void 0 : _b.first_name) || 'Anonymous';
             const excludedFromBook = false;
             if (excludedFromBook)
                 return [];
@@ -690,7 +701,7 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
 }));
 // Updated /api/pdf/:projectId
 app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _b, _c, _d, _e, _f, _g, _h;
+    var _c, _d, _e, _f, _g, _h, _j;
     const { projectId } = req.params;
     console.log('ProjectID', projectId);
     if (!projectId || typeof projectId !== 'string') {
@@ -790,14 +801,14 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
             contributions,
             frontCover: frontCover
                 ? {
-                    title: ((_b = frontCover.config) === null || _b === void 0 ? void 0 : _b.title) || 'No Title',
+                    title: ((_c = frontCover.config) === null || _c === void 0 ? void 0 : _c.title) || 'No Title',
                     imageUrl: frontCoverImageUrl,
-                    description: ((_c = frontCover.config) === null || _c === void 0 ? void 0 : _c.description) || '',
-                    titleStyle: ((_d = frontCover.config) === null || _d === void 0 ? void 0 : _d.titleStyle) || {},
-                    imageStyle: ((_e = frontCover.config) === null || _e === void 0 ? void 0 : _e.imageStyle) || {},
-                    descriptionStyle: ((_f = frontCover.config) === null || _f === void 0 ? void 0 : _f.descriptionStyle) || {},
-                    containerStyle: ((_g = frontCover.config) === null || _g === void 0 ? void 0 : _g.containerStyle) || {},
-                    hoverEffects: ((_h = frontCover.config) === null || _h === void 0 ? void 0 : _h.hoverEffects) || {},
+                    description: ((_d = frontCover.config) === null || _d === void 0 ? void 0 : _d.description) || '',
+                    titleStyle: ((_e = frontCover.config) === null || _e === void 0 ? void 0 : _e.titleStyle) || {},
+                    imageStyle: ((_f = frontCover.config) === null || _f === void 0 ? void 0 : _f.imageStyle) || {},
+                    descriptionStyle: ((_g = frontCover.config) === null || _g === void 0 ? void 0 : _g.descriptionStyle) || {},
+                    containerStyle: ((_h = frontCover.config) === null || _h === void 0 ? void 0 : _h.containerStyle) || {},
+                    hoverEffects: ((_j = frontCover.config) === null || _j === void 0 ? void 0 : _j.hoverEffects) || {},
                 }
                 : null,
         });
@@ -1062,7 +1073,7 @@ app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0,
     }
 }));
 app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _j;
+    var _k;
     const { projectId } = req.params;
     const userId = req.userId;
     if (!projectId || typeof projectId !== 'string') {
@@ -1101,7 +1112,7 @@ app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res)
         }
         // Determine deadlineDate (prefer actual_deadline, fallback to calculate_date)
         const deadline = project.deadlines.length > 0
-            ? ((_j = project.deadlines[0].actual_deadline) !== null && _j !== void 0 ? _j : project.deadlines[0].calculate_date)
+            ? ((_k = project.deadlines[0].actual_deadline) !== null && _k !== void 0 ? _k : project.deadlines[0].calculate_date)
             : null;
         return res.status(200).json({
             project: {
@@ -1117,7 +1128,7 @@ app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res)
     }
 }));
 app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _k, _l, _m, _o, _p, _q, _r;
+    var _l, _m, _o, _p, _q, _r, _s;
     const { projectId } = req.params;
     const { deadlineDate } = req.body;
     const userId = req.userId;
@@ -1200,8 +1211,8 @@ app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, re
                 },
             },
         });
-        const deadline = ((_l = (_k = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _k === void 0 ? void 0 : _k.length) !== null && _l !== void 0 ? _l : 0) > 0
-            ? ((_p = (_o = (_m = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _m === void 0 ? void 0 : _m[0]) === null || _o === void 0 ? void 0 : _o.actual_deadline) !== null && _p !== void 0 ? _p : (_r = (_q = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _q === void 0 ? void 0 : _q[0]) === null || _r === void 0 ? void 0 : _r.calculate_date)
+        const deadline = ((_m = (_l = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _l === void 0 ? void 0 : _l.length) !== null && _m !== void 0 ? _m : 0) > 0
+            ? ((_q = (_p = (_o = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _o === void 0 ? void 0 : _o[0]) === null || _p === void 0 ? void 0 : _p.actual_deadline) !== null && _q !== void 0 ? _q : (_s = (_r = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _r === void 0 ? void 0 : _r[0]) === null || _s === void 0 ? void 0 : _s.calculate_date)
             : null;
         return res.status(200).json({
             project: {
@@ -1264,7 +1275,7 @@ app.patch("/api/update-contribution/:contributionId", (req, res) => __awaiter(vo
     }
 }));
 app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _s;
+    var _t;
     const { shipping_address } = req.body;
     try {
         // Validate shipping address
@@ -1301,7 +1312,7 @@ app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0
     }
     catch (error) {
         if (axios_1.default.isAxiosError(error)) {
-            console.error('Error fetching shipping options:', ((_s = error.response) === null || _s === void 0 ? void 0 : _s.data) || error.message);
+            console.error('Error fetching shipping options:', ((_t = error.response) === null || _t === void 0 ? void 0 : _t.data) || error.message);
         }
         else {
             console.error('Error fetching shipping options:', error);

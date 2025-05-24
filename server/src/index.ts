@@ -729,11 +729,21 @@ app.get('/api/preview/:projectId', async (req: Request, res: Response): Promise<
             },
           },
         },
+        fillYourDetails:{
+          select: {
+            first_name: true,
+            last_name: true,
+            email: true,
+            relationship: true,
+            ExcludeFromOnlineVersion: true,
+            ExcludeFromPromotion: true,
+          },
+        }
       },
     });
 
     const pages = await Promise.all(contributionsData.map(async (contrib) => {
-      const contributorName = contrib.signature || 'Anonymous';
+      const contributorName = contrib.fillYourDetails?.first_name || 'Anonymous';
       const excludedFromBook = false;
 
       if (excludedFromBook) return [];
