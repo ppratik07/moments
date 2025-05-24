@@ -25,18 +25,19 @@ export default function DashboardPage() {
     const { getToken } = useAuth();
     const { signOut } = useClerk();
     useEffect(() => {
-        if (!isSignedIn) {
-            router.push('/');
-            localStorage.removeItem('token')
-            return;
-        }
+        // if (!isSignedIn) {
+        //     console.log('Not signed in, redirecting...');
+        //     router.push('/');
+        //     localStorage.removeItem('token')
+        //     return;
+        // }
         const fetchProjects = async () => {
             try {
                 const token = await getToken();
                 if (!token) {
                     console.log('No token found, redirecting...');
-                    await signOut({ redirectUrl: '/' });
-                    return;
+                    // await signOut({ redirectUrl: '/' });
+                    // return;
                 }
                 const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
                     headers: {
@@ -51,6 +52,7 @@ export default function DashboardPage() {
                     return;
                 }
                 if (!response.ok) {
+                    console.log('Failed to fetch projects');
                     throw new Error('Failed to fetch projects');
                 }
 
@@ -72,7 +74,7 @@ export default function DashboardPage() {
     const baseImageUrl = process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
     return (
         <div>
-            <Header isSignedIn />
+            <Header isSignedIn={isSignedIn ?? false}  />
             <div className="min-h-screen bg-gray-100 p-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
                 {loading ? (

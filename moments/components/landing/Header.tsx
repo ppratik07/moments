@@ -3,7 +3,7 @@ import { BookOpen, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 interface HeaderProps {
     isSignedIn: boolean;
@@ -11,7 +11,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const pathname = usePathname();
+    const router = useRouter();
     const isLandingPage = pathname === '/';
+    const isDashboardPage = pathname?.startsWith('/dashboard');
 
     useEffect(() => {
         document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -29,7 +31,15 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                                 <span className="text-xl font-bold">MemoryLane</span>
                             </div>
                         </Link>
-
+                        {isDashboardPage && (
+                            <div className="flex justify-between items-center mb-2">
+                                <Button className="cursor-pointer"
+                                    onClick={() => router.push('/new-project')} 
+                                >
+                                    Create New Project
+                                </Button>
+                            </div>
+                        )}
                         {isLandingPage && (<button
                             className="md:hidden p-2"
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -46,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                                 <UserButton afterSignOutUrl="/" />
                             ) : (
                                 <>
-                                    <SignInButton mode="modal" forceRedirectUrl="/new-project">
+                                    <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                                         <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                                             Log In
                                         </Button>
