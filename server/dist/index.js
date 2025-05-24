@@ -1403,6 +1403,7 @@ app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 amount: true,
                 error_message: true,
                 verified: true,
+                shipping_address: true
             },
         });
         console.log('Find Order', order);
@@ -1415,11 +1416,96 @@ app.get('/api/order', (req, res) => __awaiter(void 0, void 0, void 0, function* 
             amount: order.amount || 0,
             status: order.verified ? 'confirmed' : 'failed',
             error_message: order.error_message || null,
+            shipping_address: order.shipping_address ? JSON.parse(order.shipping_address) : null,
         });
     }
     catch (error) {
         console.error('Error fetching order:', error);
         res.status(500).json({ error: 'Failed to fetch order' });
+    }
+}));
+app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { projectId } = req.params;
+    const { order_id } = req.body;
+    if (!projectId || typeof projectId !== 'string' || !order_id || typeof order_id !== 'string') {
+        return res.status(400).json({ error: 'Missing or invalid projectId or order_id' });
+    }
+    try {
+        // Step 1: Fetch order details to get shipping_address
+        const order = yield prisma.payment.findFirst({
+            where: { orderId: order_id, project_id: projectId },
+            select: { shipping_address: true },
+        });
+        if (!order) {
+            return res.status(404).json({ error: 'Order not found' });
+        }
+        const shipping_address = order.shipping_address ? JSON.parse(order.shipping_address) : null;
+        // Step 2: Fetch project details to get totalPages
+        const project = yield prisma.loginUser.findUnique({
+            where: { id: projectId },
+            select: { totalPages: true },
+        });
+        if (!project) {
+            return res.status(404).json({ error: 'Project not found' });
+        }
+        // Step 3: Fetch PDF from /api/pdf/:projectId (internal call)
+        const pdfResponse = yield axios_1.default.get(`${process.env.INTERNAL_BACKEND_URL || 'http://localhost:8080'}/api/pdf/${projectId}`, {
+            responseType: 'arraybuffer',
+        });
+        // Step 4: Authenticate with Lulu API
+        const luluTokenResponse = yield axios_1.default.post('https://api.lulu.com/auth/v1/token', {
+            grant_type: 'client_credentials',
+            client_id: process.env.LULU_API_KEY,
+            client_secret: process.env.LULU_API_SECRET,
+        });
+        const luluAccessToken = luluTokenResponse.data.access_token;
+        // Step 5: Upload PDF to Lulu
+        const formData = new FormData();
+        formData.append('file', new Blob([Buffer.from(pdfResponse.data)]), `book-${projectId}.pdf`);
+        const uploadResponse = yield axios_1.default.post('https://api.lulu.com/files/', formData, {
+            headers: {
+                Authorization: `Bearer ${luluAccessToken}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        const fileId = uploadResponse.data.id;
+        // Step 6: Create print job
+        const printJobResponse = yield axios_1.default.post('https://api.lulu.com/print-jobs/', {
+            line_items: [
+                {
+                    page_count: project.totalPages || 100, // Use totalPages or fallback
+                    product: 'PAPERBACK_60X90_40', // 6x9 paperback, adjust as needed
+                    file: fileId,
+                },
+            ],
+            shipping_address: {
+                name: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.name) || 'Customer Name',
+                street_line_1: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.line1) || '123 Main St',
+                city: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.city) || 'Anytown',
+                state_code: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.state) || 'NY',
+                country_code: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.country) || 'US',
+                postal_code: (shipping_address === null || shipping_address === void 0 ? void 0 : shipping_address.postal_code) || '12345',
+            },
+            shipping_level: 'EXPRESS', // Adjust as needed
+        }, {
+            headers: {
+                Authorization: `Bearer ${luluAccessToken}`,
+                'Content-Type': 'application/json',
+            },
+        });
+        // Step 7: Store print job in PrintJob model
+        const printJob = yield prisma.printJob.create({
+            data: {
+                lulu_job_id: printJobResponse.data.id,
+                paymentId: order_id,
+                projectId
+            },
+        });
+        res.json({ success: true, print_job_id: printJobResponse.data.id });
+    }
+    catch (error) {
+        console.error('Error creating print job:', error);
+        res.status(500).json({ error: 'Failed to create print job' });
     }
 }));
 // Health check endpoint
