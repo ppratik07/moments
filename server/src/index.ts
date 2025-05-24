@@ -855,6 +855,12 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
             },
           },
         },
+        fillYourDetails:{
+          select: {
+            first_name: true,
+            last_name: true,
+          },
+        }
       },
     });
 
@@ -888,7 +894,7 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
       }));
       return {
         id: contrib.id,
-        contributorName: contrib.signature || 'Anonymous',
+        contributorName: contrib.fillYourDetails?.first_name || 'Anonymous',
         excludedFromBook: false,
         pages,
       };
