@@ -1249,10 +1249,12 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
         });
         console.log('PDF Response Status:', pdfResponse.status);
         // Step 4: Authenticate with Lulu API
-        const luluTokenResponse = yield axios_1.default.post('https://api.lulu.com/auth/v1/token', {
-            grant_type: 'client_credentials',
-            client_id: process.env.LULU_API_KEY,
-            client_secret: process.env.LULU_API_SECRET,
+        const base64LuluKey = `${process.env.LULU_BASE_ENCODED_KEY}`;
+        const luluTokenResponse = yield axios_1.default.post('https://api.sandbox.lulu.com/auth/realms/glasstree/protocol/openid-connect/token', new URLSearchParams({ grant_type: 'client_credentials' }), {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                Authorization: base64LuluKey,
+            },
         });
         console.log('Lulu Token Response:', luluTokenResponse.data);
         const luluAccessToken = luluTokenResponse.data.access_token;
