@@ -930,9 +930,6 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
   }
 });
 
-// Updated generateBookHtml to include front cover
-
-
 app.post('/api/create-checkout-session', async (req: Request, res: Response): Promise<any> => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -1357,13 +1354,11 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
       where: { orderId: order_id, project_id: projectId },
       select: { shipping_address: true },
     });
-    console.log('Order Details:', order);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
 
     const shipping_address = order.shipping_address ? JSON.parse(order.shipping_address) : null;
-    console.log('Shipping Address:', shipping_address);
     // Step 2: Fetch project details to get totalPages
     const project = await prisma.loginUser.findUnique({
       where: { id: projectId },
@@ -1378,7 +1373,6 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
     const pdfResponse = await axios.get(`${process.env.INTERNAL_BACKEND_URL || 'http://localhost:8080'}/api/pdf/${projectId}`, {
       responseType: 'arraybuffer',
     });
-    console.log('PDF Response Status:', pdfResponse.status);
     // Step 4: Authenticate with Lulu API
     const base64LuluKey = `${process.env.LULU_BASE_ENCODED_KEY}`
     const luluTokenResponse = await axios.post('https://api.sandbox.lulu.com/auth/realms/glasstree/protocol/openid-connect/token',
@@ -1389,7 +1383,6 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         Authorization: base64LuluKey,
       },
     });
-    console.log('Lulu Token Response:', luluTokenResponse.data);
     const luluAccessToken = luluTokenResponse.data.access_token;
     console.log('Lulu Access Token:', luluAccessToken);
     // Step 5: Upload PDF to Lulu
@@ -1433,7 +1426,6 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         },
       }
     );
-    console.log('Print Job Response:', printJobResponse.data);
     // Step 7: Store print job in PrintJob model
     const printJob = await prisma.printJob.create({
       data: {
@@ -1442,7 +1434,6 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         projectId
       },
     });
-    console.log('Print Job stored in database:', printJob);
     res.json({ success: true, print_job_id: printJobResponse.data.id });
   } catch (error) {
     console.error('Error creating print job:', error);

@@ -1229,12 +1229,10 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
             where: { orderId: order_id, project_id: projectId },
             select: { shipping_address: true },
         });
-        console.log('Order Details:', order);
         if (!order) {
             return res.status(404).json({ error: 'Order not found' });
         }
         const shipping_address = order.shipping_address ? JSON.parse(order.shipping_address) : null;
-        console.log('Shipping Address:', shipping_address);
         // Step 2: Fetch project details to get totalPages
         const project = yield prisma.loginUser.findUnique({
             where: { id: projectId },
@@ -1247,7 +1245,6 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
         const pdfResponse = yield axios_1.default.get(`${process.env.INTERNAL_BACKEND_URL || 'http://localhost:8080'}/api/pdf/${projectId}`, {
             responseType: 'arraybuffer',
         });
-        console.log('PDF Response Status:', pdfResponse.status);
         // Step 4: Authenticate with Lulu API
         const base64LuluKey = `${process.env.LULU_BASE_ENCODED_KEY}`;
         const luluTokenResponse = yield axios_1.default.post('https://api.sandbox.lulu.com/auth/realms/glasstree/protocol/openid-connect/token', new URLSearchParams({ grant_type: 'client_credentials' }), {
@@ -1256,7 +1253,6 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 Authorization: base64LuluKey,
             },
         });
-        console.log('Lulu Token Response:', luluTokenResponse.data);
         const luluAccessToken = luluTokenResponse.data.access_token;
         console.log('Lulu Access Token:', luluAccessToken);
         // Step 5: Upload PDF to Lulu
@@ -1295,7 +1291,6 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 'Content-Type': 'application/json',
             },
         });
-        console.log('Print Job Response:', printJobResponse.data);
         // Step 7: Store print job in PrintJob model
         const printJob = yield prisma.printJob.create({
             data: {
@@ -1304,7 +1299,6 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
                 projectId
             },
         });
-        console.log('Print Job stored in database:', printJob);
         res.json({ success: true, print_job_id: printJobResponse.data.id });
     }
     catch (error) {
