@@ -41,18 +41,31 @@ export default function ProjectIdDashboard() {
   const [imageKeys, setImageKeys] = useState<string | null>(null);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [feedbackContent, setFeedbackContent] = useState('');
-  const[copied,setCopied] = useState<boolean>(false);
+  const [copied, setCopied] = useState<boolean>(false);
 
-  const currentUrl = new URL(window.location.href);
-  // Calculate days left based on current date and deadline
-  useEffect(() => {
-    if (deadlineDate) {
+  const currentUrl = typeof window !== 'undefined' ? new URL(window.location.href) : null;
+
+  // Function to calculate days left
+  const calculateDaysLeft = (deadline: Date | null) => {
+    if (deadline) {
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Normalize to midnight
-      const timeDiff = deadlineDate.getTime() - today.getTime();
+      const timeDiff = deadline.getTime() - today.getTime();
       const calculatedDaysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
       setDaysLeft(calculatedDaysLeft >= 0 ? calculatedDaysLeft : 0);
     }
+  };
+
+  // Calculate days left initially and on deadline change
+  useEffect(() => {
+    calculateDaysLeft(deadlineDate);
+    // Set up an interval to recalculate daysLeft every 24 hours
+    const interval = setInterval(() => {
+      calculateDaysLeft(deadlineDate);
+    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
+
+    // Clean up interval on component unmount
+    return () => clearInterval(interval);
   }, [deadlineDate]);
 
   // Fetch project details, including deadline if stored
@@ -165,40 +178,46 @@ export default function ProjectIdDashboard() {
       toast.error('Failed to submit feedback.');
     }
   };
-  const handleCopy = ()=>{
-    navigator.clipboard.writeText(`${currentUrl.origin}/contribution/${projectId}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-  //Stripe checkout
+
+  const handleCopy = () => {
+    if (currentUrl) {
+      navigator.clipboard.writeText(`${currentUrl.origin}/contribution/${projectId}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Stripe checkout
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
-  const handleCheckout = async()=>{
-    const stripe  = await stripePromise;
-    if(!stripe){
-      console.error('Stripe.js has not loader');
+  const handleCheckout = async () => {
+    const stripe = await stripePromise;
+    if (!stripe) {
+      console.error('Stripe.js has not loaded');
       return;
     }
-    const response = await axios.post(`${HTTP_BACKEND}/api/create-checkout-session`)
-    const {id} = await response.data;
+    const response = await axios.post(`${HTTP_BACKEND}/api/create-checkout-session`);
+    const { id } = await response.data;
     const result = await stripe.redirectToCheckout({ sessionId: id });
-    if(result.error){
+    if (result.error) {
       console.error(result.error.message);
     }
-  }
+  };
 
   const isDeadlineApproaching = daysLeft !== null && daysLeft <= 7;
   const isReviewingState = daysLeft === 0 && projectStatus?.status !== 'printing';
   const isPrintingState = projectStatus?.status === 'printing';
 
   if (loading) {
-    <RotatingLines
-      visible={true}
-      strokeColor="gray"
-      strokeWidth="5"
-      animationDuration="0.75"
-      width="96"
-      ariaLabel="rotating-lines-loading"
-    />
+    return (
+      <RotatingLines
+        visible={true}
+        strokeColor="gray"
+        strokeWidth="5"
+        animationDuration="0.75"
+        width="96"
+        ariaLabel="rotating-lines-loading"
+      />
+    );
   }
   if (error) {
     return <div className="text-red-500 p-8">Error: {error}</div>;
@@ -350,7 +369,7 @@ export default function ProjectIdDashboard() {
                     isDeadlineApproaching && lastContributionDate
                       ? `Last contribution on ${format(new Date(lastContributionDate), 'MM/dd/yyyy', { locale: enUS })}`
                       : 'View your completed contributions.'
-                  }   
+                  }
                 />
                 <DashboardCard
                   title="Days Left to Contribute"
@@ -371,7 +390,7 @@ export default function ProjectIdDashboard() {
                   <input
                     type="text"
                     className="w-full border rounded px-3 py-2"
-                    value={`${currentUrl.origin}/contribution/${projectId}`}
+                    value={currentUrl ? `${currentUrl.origin}/contribution/${projectId}` : ''}
                     readOnly
                   />
                   <Button className="px-10" onClick={handleCopy}>{copied ? 'Copied!' : 'Copy Link'}</Button>
