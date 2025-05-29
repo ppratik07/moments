@@ -129,7 +129,6 @@ export default function ContributionPage() {
         throw new Error('Failed to save contribution');
       }
       setContributionId(response.data.contributionId);
-      console.log('Contribution ID frontend:', response.data.contributionId);
       router.push(`/contribution/${projectId}/fill-information?contributionId=${response.data.contributionId}`);
     } catch (error) {
       console.error('Error saving contribution:', error);
