@@ -17,7 +17,6 @@ export default function YourInformationPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const contributionId = searchParams ? searchParams.get('contributionId') : null;
-    console.log("contribution ID from searchParams", contributionId)
     const [form, setForm] = useState({
         firstName: "",
         lastName: "",
