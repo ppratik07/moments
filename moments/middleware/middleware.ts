@@ -20,7 +20,6 @@ export default async function middleware(req: NextRequest) {
           name: `${sessionClaims.first_name} ${sessionClaims.last_name}`,
         }),
       });
-      console.log(response);
       if (!response.ok) {
         console.error('Failed to sync user:', await response.text());
       }

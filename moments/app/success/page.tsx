@@ -53,7 +53,6 @@ export default function SuccessPage() {
                 const response = await axios.get(`${HTTP_BACKEND}/api/order?order_id=${order_id}`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
-                console.log('Backend Response', response);
                 setOrderDetails(response.data);
                 // Step 2: Trigger print job via backend
                 const printResponse = await axios.post(

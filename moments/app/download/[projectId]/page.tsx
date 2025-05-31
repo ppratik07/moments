@@ -11,7 +11,6 @@ import { RotatingLines } from 'react-loader-spinner';
 const DownloadPage = () => {
   const params = useParams();
   const project_id = Array.isArray(params?.projectId) ? params.projectId[0] : params?.projectId;
-  console.log('Project ID:', project_id);
   const [pdfUrl, setPdfUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,7 +18,6 @@ const DownloadPage = () => {
   const { getToken } = useAuth();
 
   useEffect(() => {
-    console.log('Params:', params);
     if (!project_id || typeof project_id !== 'string') {
       setError('Invalid or missing project ID. Please select a valid project.');
       return;

@@ -25,12 +25,6 @@ export default function DashboardPage() {
     const { getToken } = useAuth();
     const { signOut } = useClerk();
     useEffect(() => {
-        // if (!isSignedIn) {
-        //     console.log('Not signed in, redirecting...');
-        //     router.push('/');
-        //     localStorage.removeItem('token')
-        //     return;
-        // }
         const fetchProjects = async () => {
             try {
                 const token = await getToken();
@@ -46,18 +40,15 @@ export default function DashboardPage() {
                 });
 
                 if (response.status === 401 || response.status === 403) {
-                    console.log('Unauthorized or token expired. Signing out...');
                     localStorage.removeItem('token');
                     await signOut({ redirectUrl: '/' });
                     return;
                 }
                 if (!response.ok) {
-                    console.log('Failed to fetch projects');
                     throw new Error('Failed to fetch projects');
                 }
 
                 const data = await response.json();
-                console.log('Fetched projects:', data.projects);
                 setProjects(data.projects);
             } catch (error) {
                 console.error('Error fetching projects:', error);

@@ -84,8 +84,7 @@ export default function YourInformationPage() {
 
             setShowDialog(true);
         } catch (e) {
-            console.log(e);
-            toast.error("Something went wrong while submitting.");
+            toast.error(`Something went wrong while submitting. ${e instanceof Error ? e.message : "Please try again later."}`);
         }
     };
 

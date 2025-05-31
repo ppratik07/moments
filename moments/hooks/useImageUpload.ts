@@ -35,22 +35,16 @@ export function useImageUpload({
       });
 
       const { uploadUrl, key } = res.data;
-      console.log("Upload URL:", uploadUrl);
-      console.log("Key:", key);
-      const response = await axios.put(uploadUrl, file, {
+      await axios.put(uploadUrl, file, {
         headers: {
           "Content-Type": file.type,
         },
       });
-      console.log("Response:", response);
-
-      const uploadResponse = await axios.patch(`${HTTP_BACKEND}/api/users/${projectId}/upload-image`, {
+       await axios.patch(`${HTTP_BACKEND}/api/users/${projectId}/upload-image`, {
         imageKey: key,
         uploadUrl: uploadUrl,
       });
-      console.log("Upload response:", uploadResponse);
       onSuccess(key, file);
-
       toast.success("Image uploaded successfully!");
     } catch (err) {
       console.error("Upload failed:", err);
