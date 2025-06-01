@@ -198,7 +198,7 @@ const PreviewBookPage = () => {
         { shipping_address: shippingAddress },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log('Shipping options',response.data);
+     
       setShippingOptions(response.data.shipping_options || []);
     } catch (error) {
       console.error('Error fetching shipping options:', error);
@@ -227,7 +227,6 @@ const PreviewBookPage = () => {
       );
 
       const { order_id, amount, currency } = orderResponse.data;
-      console.log('Order response frontend:', orderResponse.data);
       // Load Razorpay Checkout
       const script = document.createElement('script');
       script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -257,7 +256,6 @@ const PreviewBookPage = () => {
                 },
                 { headers: { Authorization: `Bearer ${token}` } }
               );
-              console.log("verified response",verifyResponse.data);
               if (verifyResponse.data.success) {
                 router.push(`/success?order_id=${orderResponse.data.order_id}&project_id=${project_id}`);
               } else {
