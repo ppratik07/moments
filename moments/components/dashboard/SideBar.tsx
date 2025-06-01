@@ -70,7 +70,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   };
 
   const navItems = [
-    { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: `/project/${projectId}` },
+    { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: `/dashboard` },
     { icon: <SlidersHorizontal size={18} />, label: "Contributions", href: `/project/${projectId}/contributions` },
     { icon: <UsersRound size={18} />, label: "Invite", onClick: handleInviteClick },
     {
