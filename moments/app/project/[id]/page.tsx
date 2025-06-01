@@ -30,9 +30,7 @@ export default function ProjectIdDashboard() {
   const { getToken } = useAuth();
 
   // State for deadline and calendar popup
-  const [deadlineDate, setDeadlineDate] = useState<Date | null>(
-    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default: 30 days from now
-  );
+  const [deadlineDate, setDeadlineDate] = useState<Date | null>(null); // Initialize as null
   const [daysLeft, setDaysLeft] = useState<number | null>(null);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,19 +54,7 @@ export default function ProjectIdDashboard() {
     }
   };
 
-  // Calculate days left initially and on deadline change
-  useEffect(() => {
-    calculateDaysLeft(deadlineDate);
-    // Set up an interval to recalculate daysLeft every 24 hours
-    const interval = setInterval(() => {
-      calculateDaysLeft(deadlineDate);
-    }, 24 * 60 * 60 * 1000); // 24 hours in milliseconds
-
-    // Clean up interval on component unmount
-    return () => clearInterval(interval);
-  }, [deadlineDate]);
-
-  // Fetch project details, including deadline if stored
+  // Fetch project details and set deadline
   useEffect(() => {
     const fetchProject = async () => {
       if (!projectId) {
@@ -83,9 +69,7 @@ export default function ProjectIdDashboard() {
         if (!token) throw new Error('No token available');
 
         const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const project = response.data.project;
@@ -95,13 +79,34 @@ export default function ProjectIdDashboard() {
 
         setProjectNames(project.projectName);
         setImageKeys(project.imageKey || null);
-        // Set deadline from backend if available
+
+        // Set deadline: Use backend deadline or set to 31 days from creation
+        let fetchedDeadline: Date | null = null;
         if (project.deadlineDate) {
-          const fetchedDeadline = new Date(project.deadlineDate);
-          if (!isNaN(fetchedDeadline.getTime())) {
-            setDeadlineDate(fetchedDeadline);
+          fetchedDeadline = new Date(project.deadlineDate);
+          if (isNaN(fetchedDeadline.getTime())) {
+            fetchedDeadline = null; // Invalid date
           }
         }
+
+        if (!fetchedDeadline) {
+          // If no deadline, set to 31 days from project creation or now
+          const creationDate = project.createdAt
+            ? new Date(project.createdAt)
+            : new Date();
+          if (!isNaN(creationDate.getTime())) {
+            fetchedDeadline = new Date(creationDate.getTime() + 31 * 24 * 60 * 60 * 1000);
+            // Save to backend
+            await axios.patch(
+              `${HTTP_BACKEND}/api/user-projects/${projectId}`,
+              { deadlineDate: fetchedDeadline.toISOString() },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+        }
+
+        setDeadlineDate(fetchedDeadline);
+        calculateDaysLeft(fetchedDeadline);
       } catch (err) {
         console.error('Error fetching project:', err);
         setError('Failed to load project details');
@@ -113,6 +118,16 @@ export default function ProjectIdDashboard() {
 
     fetchProject();
   }, [projectId, getToken]);
+
+  // Recalculate days left daily
+  useEffect(() => {
+    calculateDaysLeft(deadlineDate);
+    const interval = setInterval(() => {
+      calculateDaysLeft(deadlineDate);
+    }, 24 * 60 * 60 * 1000); // 24 hours
+
+    return () => clearInterval(interval);
+  }, [deadlineDate]);
 
   // Handle deadline change
   const handleChangeDeadline = () => {
@@ -130,10 +145,6 @@ export default function ProjectIdDashboard() {
       return;
     }
 
-    setDeadlineDate(date);
-    setIsCalendarOpen(false);
-
-    // Save the new deadline to the backend
     try {
       const token = await getToken();
       if (!token) throw new Error('No token available');
@@ -144,16 +155,18 @@ export default function ProjectIdDashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      setDeadlineDate(date);
+      calculateDaysLeft(date);
       toast.success('Deadline updated successfully!');
     } catch (error) {
       console.error('Error updating deadline:', error);
       toast.error('Failed to update deadline.');
-      // Revert to previous deadline or default
-      setDeadlineDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    } finally {
+      setIsCalendarOpen(false);
     }
   };
 
-  // Handle feedback submission
+  // Rest of your component remains unchanged...
   const handleFeedbackSubmit = async () => {
     if (!feedbackContent.trim()) {
       toast.error('Feedback cannot be empty.');
@@ -187,7 +200,6 @@ export default function ProjectIdDashboard() {
     }
   };
 
-  // Stripe checkout
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
   const handleCheckout = async () => {
     const stripe = await stripePromise;
@@ -238,6 +250,7 @@ export default function ProjectIdDashboard() {
           </div>
 
           {isPrintingState ? (
+            // Printing state UI (unchanged)
             <div className="mt-10 max-w-6xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                 <div>
