@@ -15,15 +15,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export default function Sidebar({ imageKey, projectId }: { imageKey?: string; projectId?: string }) {
   const baseUrl = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
   const imageUrl = imageKey ? `${baseUrl}/${imageKey}` : undefined;
   const [isMemoryBookOpen, setMemoryBookOpen] = useState(true);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { getToken } = useAuth();
   const router = useRouter();
 
-  // Function to handle preview click
+  const currentUrl = typeof window !== 'undefined' ? new URL(window.location.href) : null;
+  const shareLink = currentUrl ? `${currentUrl.origin}/contribution/${projectId}` : '';
+
   const handlePreviewClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     const token = await getToken();
@@ -37,7 +43,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
     }
     router.push(`/previewbook/${projectId}`);
   };
-  
+
   const handleDownloadPdf = async (e: React.MouseEvent) => {
     e.preventDefault();
     const token = await getToken();
@@ -49,10 +55,24 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
     window.open(url, '_blank');
   };
 
+  const handleInviteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsInviteModalOpen(true);
+  };
+
+  const handleCopyLink = () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      setCopied(true);
+      toast.success('Link copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   const navItems = [
     { icon: <LayoutDashboard size={18} />, label: "Dashboard", href: `/project/${projectId}` },
     { icon: <SlidersHorizontal size={18} />, label: "Contributions", href: `/project/${projectId}/contributions` },
-    { icon: <UsersRound size={18} />, label: "Invite", href: `/project/${projectId}/invite` },
+    { icon: <UsersRound size={18} />, label: "Invite", onClick: handleInviteClick },
     {
       icon: <Album size={18} />,
       label: "Memory Book",
@@ -63,8 +83,6 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
           href: `/previewbook/${projectId}`, 
           onClick: handlePreviewClick 
         },
-        // { label: "Customize Book", href: `/project/${projectId}/memory-book/customize` },
-        // { label: "Online Version", href: `/project/${projectId}/memory-book/online` },
         { 
           label: "Download PDF", 
           href: `/download/${projectId}`, 
@@ -123,6 +141,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
             <Link
               key={idx}
               href={item.href || "#"}
+              onClick={item.onClick}
               className="flex items-center gap-3 text-gray-700 hover:text-blue-700"
             >
               {item.icon}
@@ -131,6 +150,40 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
           );
         })}
       </nav>
+
+      {/* Invite Modal */}
+      {isInviteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Share Your Project</h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Share this link with everyone you would like to contribute to your project.
+            </p>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="w-full border rounded px-3 py-2"
+                value={shareLink}
+                readOnly
+              />
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                className="cursor-pointer"
+                onClick={() => setIsInviteModalOpen(false)}
+              >
+                Close
+              </Button>
+              <Button
+                className="cursor-pointer"
+                onClick={handleCopyLink}
+              >
+                {copied ? 'Copied!' : 'Copy Link'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
