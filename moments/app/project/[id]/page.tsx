@@ -410,7 +410,7 @@ export default function ProjectIdDashboard() {
                 </div>
               </div>
 
-              <div className="mt-15">
+              {/* <div className="mt-15">
                 <div className="flex justify-between items-center">
                   <h2 className="text-xl font-semibold">Edit Sharing Page</h2>
                   <Button className="px-2">View/Edit Sharing Page</Button>
@@ -418,7 +418,7 @@ export default function ProjectIdDashboard() {
                 <p className="text-sm text-gray-600 mt-1">
                   You can edit the page your friends will see when they click the link you share with them.
                 </p>
-              </div>
+              </div> */}
             </div>
           ) : (
             <div>
