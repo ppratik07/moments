@@ -1126,6 +1126,94 @@ app.patch('/api/user-projects/:projectId', authMiddleware, async (req: Request, 
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+// DELETE /api/user-projects/:projectId
+app.delete('/api/user-projects/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
+  const { projectId } = req.params;
+  const userId = req.userId;
+
+  // Validate projectId
+  if (!projectId || typeof projectId !== 'string') {
+    return res.status(400).json({ message: 'Invalid projectId' });
+  }
+
+  // Validate userId
+  if (!userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  const transaction = await prisma.$transaction(async (prisma) => {
+    // Verify project exists and belongs to the user
+    const project = await prisma.loginUser.findFirst({
+      where: {
+        id: projectId,
+        userId,
+      },
+      select: {
+        id: true, // Only need ID to confirm existence
+      },
+    });
+
+    if (!project) {
+      throw new Error('Project not found or unauthorized');
+    }
+
+    // Delete related PrintJob records
+    await prisma.printJob.deleteMany({
+      where: {
+        projectId,
+      },
+    });
+
+    // Delete related Order records
+    await prisma.order.deleteMany({
+      where: {
+        projectId,
+      },
+    });
+
+    // Delete related Contribution records (cascades to Page and Component due to onDelete: Cascade)
+    await prisma.contribution.deleteMany({
+      where: {
+        projectId,
+      },
+    });
+
+    // Delete related ContributionDeadlines records
+    await prisma.contributionDeadlines.deleteMany({
+      where: {
+        projectId,
+      },
+    });
+
+    // Delete related Layout records
+    await prisma.layout.deleteMany({
+      where: {
+        projectId,
+      },
+    });
+
+    // Delete the project
+    await prisma.loginUser.delete({
+      where: {
+        id: projectId,
+      },
+    });
+
+  });
+
+  try {
+    await transaction;
+    // Return 204 No Content for successful deletion
+    return res.status(204).send();
+  } catch (error: any) {
+    console.error('Error deleting project:', error);
+    if (error.message === 'Project not found or unauthorized') {
+      return res.status(404).json({ message: 'Project not found or unauthorized' });
+    }
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 app.patch("/api/update-contribution/:contributionId", async (req: Request, res: Response): Promise<any> => {
   try {
     const { contributionId } = req.params;

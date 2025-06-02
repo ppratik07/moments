@@ -9,141 +9,189 @@ import { format } from 'date-fns';
 import { HTTP_BACKEND } from '@/utils/config';
 import { Header } from '@/components/landing/Header';
 import { useAuth, useClerk } from '@clerk/nextjs';
+import { Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
-    interface Project {
-        id: string;
-        projectName: string;
-        createdAt: string;
-        imageKey?: string;
+  interface Project {
+    id: string;
+    projectName: string;
+    createdAt: string;
+    imageKey?: string;
+  }
+
+  const [projects, setProjects] = useState<Project[]>([]);
+  const { isSignedIn } = useCurrentUser();
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+  const { getToken } = useAuth();
+  const { signOut } = useClerk();
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const token = await getToken();
+        if (!token) {
+          console.log('No token found, redirecting...');
+          await signOut({ redirectUrl: '/' });
+          return;
+        }
+        const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          await signOut({ redirectUrl: '/' });
+          return;
+        }
+        if (!response.ok) {
+          throw new Error('Failed to fetch projects');
+        }
+
+        const data = await response.json();
+        setProjects(data.projects);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        localStorage.removeItem('token');
+        await signOut({ redirectUrl: '/' });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, [isSignedIn, router, getToken, signOut]);
+
+  // Function to handle project deletion
+  const handleDeleteProject = async (projectId: string) => {
+    // Show confirmation prompt
+    if (!confirm(`Are you sure you want to delete the project? This action cannot be undone.`)) {
+      return;
     }
 
-    const [projects, setProjects] = useState<Project[]>([]);
-    const { isSignedIn } = useCurrentUser();
-    const [loading, setLoading] = useState(true);
-    const router = useRouter();
-    const { getToken } = useAuth();
-    const { signOut } = useClerk();
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const token = await getToken();
-                if (!token) {
-                    console.log('No token found, redirecting...');
-                    // await signOut({ redirectUrl: '/' });
-                    // return;
-                }
-                const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                });
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error('No token available');
+      }
 
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    await signOut({ redirectUrl: '/' });
-                    return;
-                }
-                if (!response.ok) {
-                    throw new Error('Failed to fetch projects');
-                }
+      const response = await fetch(`${HTTP_BACKEND}/api/user-projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-                const data = await response.json();
-                setProjects(data.projects);
-            } catch (error) {
-                console.error('Error fetching projects:', error);
-                localStorage.removeItem('token');
-                await signOut({ redirectUrl: '/' });
-            } finally {
-                setLoading(false);
-            }
-        };
+      if (!response.ok) {
+        throw new Error('Failed to delete project');
+      }
 
-        fetchProjects();
-    }, [isSignedIn, router, getToken, signOut]);
+      // Remove the deleted project from state
+      setProjects(projects.filter((project) => project.id !== projectId));
+      toast.success('Project deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      toast.error('Failed to delete project. Please try again.');
+    }
+  };
 
-    const baseImageUrl = process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
-    return (
-        <div>
-            <Header isSignedIn={isSignedIn ?? false}  />
-            <div className="min-h-screen bg-gray-100 p-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
-                {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <RotatingLines
-                            visible={true}
-                            strokeColor="gray"
-                            strokeWidth="5"
-                            animationDuration="0.75"
-                            width="96"
-                            ariaLabel="rotating-lines-loading"
-                        />
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {projects.map((project) => {
-                            const createdDate = new Date(project.createdAt);
-                            const isClosed = new Date().getTime() - createdDate.getTime() > 365 * 24 * 60 * 60 * 1000;
-                            const tagLabel = isClosed ? 'Closed' : 'New';
+  const baseImageUrl =
+    process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
 
-                            return (
-                                <div
-                                    key={project.id}
-                                    className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
-                                >
-                                    {/* Background image */}
-                                    <div className="absolute inset-0">
-                                        <Image
-                                            src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
-                                            alt={project.projectName}
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </div>
+  return (
+    <div>
+      <Header isSignedIn={isSignedIn ?? false} />
+      <div className="min-h-screen bg-gray-100 p-6">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <RotatingLines
+              visible={true}
+              strokeColor="gray"
+              strokeWidth="5"
+              animationDuration="0.75"
+              width="96"
+              ariaLabel="rotating-lines-loading"
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {projects.map((project) => {
+              const createdDate = new Date(project.createdAt);
+              const isClosed = new Date().getTime() - createdDate.getTime() > 365 * 24 * 60 * 60 * 1000;
+              const tagLabel = isClosed ? 'Closed' : 'New';
 
-                                    {/* Dark overlay */}
-                                    <div className="absolute inset-0 bg-black/40" />
+              return (
+                <div
+                  key={project.id}
+                  className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
+                >
+                  {/* Background image */}
+                  <div className="absolute inset-0">
+                    <Image
+                      src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
+                      alt={project.projectName}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
 
-                                    {/* Tag badge */}
-                                    <div className="absolute top-3 right-3 z-20">
-                                        <span
-                                            className={`text-xs font-semibold px-2 py-1 rounded ${isClosed ? 'bg-red-600' : 'bg-green-500'
-                                                } text-white`}
-                                        >
-                                            {tagLabel}
-                                        </span>
-                                    </div>
+                  {/* Dark overlay */}
+                  <div className="absolute inset-0 bg-black/40" />
 
-                                    {/* Overlay content */}
-                                    <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
-                                        <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
-                                        <p className="text-sm mb-3">
-                                            Created on: {format(createdDate, 'MMMM dd, yyyy')}
-                                        </p>
-                                        <Button
-                                            className={`w-full ${isClosed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                                                } text-white`}
-                                            onClick={() => {
-                                                if (!isClosed) {
-                                                    router.push(`/project/${project.id}`);
-                                                }
-                                            }}
-                                            disabled={isClosed}
-                                        >
-                                            View Project
-                                        </Button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                  {/* Tag badge */}
+                  <div className="absolute top-3 right-3 z-20">
+                    <span
+                      className={`text-xs font-semibold px-2 py-1 rounded ${
+                        isClosed ? 'bg-red-600' : 'bg-green-500'
+                      } text-white`}
+                    >
+                      {tagLabel}
+                    </span>
+                  </div>
 
-                {!loading && projects.length === 0 && (
-                    <p className="text-center text-gray-500 mt-8">No projects found.</p>
-                )}
-            </div>
-        </div>
+                  {/* Delete icon */}
+                  <div className="absolute top-3 left-3 z-20">
+                    <button
+                      onClick={() => handleDeleteProject(project.id)}
+                      className="p-1 bg-red-600 rounded-full text-white hover:bg-red-700 focus:outline-none"
+                      aria-label="Delete project"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
 
-    );
+                  {/* Overlay content */}
+                  <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
+                    <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
+                    <p className="text-sm mb-3">
+                      Created on: {format(createdDate, 'MMMM dd, yyyy')}
+                    </p>
+                    <Button
+                      className={`w-full ${isClosed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
+                      onClick={() => {
+                        if (!isClosed) {
+                          router.push(`/project/${project.id}`);
+                        }
+                      }}
+                      disabled={isClosed}
+                    >
+                      View Project
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {!loading && projects.length === 0 && (
+          <p className="text-center text-gray-500 mt-8">No projects found.</p>
+        )}
+      </div>
+    </div>
+  );
 }
