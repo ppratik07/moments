@@ -733,6 +733,9 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
                                 type: true,
                                 imageUrl: true,
                                 value: true,
+                                size: true, // Include size
+                                position: true, // Include position
+                                styles: true, // Include styles
                             },
                         },
                     },

@@ -824,6 +824,9 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
                 type: true,
                 imageUrl: true,
                 value: true,
+                size: true,     // Include size
+                position: true, // Include position
+                styles: true,    // Include styles
               },
             },
           },
