@@ -221,14 +221,16 @@ export default function ProjectIdDashboard() {
 
   if (loading) {
     return (
-      <RotatingLines
-        visible={true}
-        strokeColor="gray"
-        strokeWidth="5"
-        animationDuration="0.75"
-        width="96"
-        ariaLabel="rotating-lines-loading"
-      />
+      <div className='flex items-center justify-center h-screen'>
+        <RotatingLines
+          visible={true}
+          strokeColor="gray"
+          strokeWidth="5"
+          animationDuration="0.75"
+          width="96"
+          ariaLabel="rotating-lines-loading"
+        />
+      </div>
     );
   }
   if (error) {
