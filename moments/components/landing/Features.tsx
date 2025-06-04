@@ -2,13 +2,13 @@
 import React, { useEffect, useRef } from 'react';
 import { animate, stagger } from 'animejs';
 import {
-  Check,
+  //Check,
   Layout,
   Users,
   // Image,
-  BookOpen,
+  //BookOpen,
   Calendar,
-  Settings,
+  // Settings,
   Shield
 } from 'lucide-react';
 
