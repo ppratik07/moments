@@ -5,7 +5,7 @@ import {
   Check,
   Layout,
   Users,
-  Image,
+  // Image,
   BookOpen,
   Calendar,
   Settings,
@@ -50,36 +50,36 @@ const Features = () => {
       title: "Unlimited Contributors",
       description: "Invite as many friends and family as you want to contribute to your memory book."
     },
-    {
-      icon: <Image className="h-5 w-5" />,
-      title: "Photo Enhancement",
-      description: "Automatic photo enhancement ensures all images look their best in print."
-    },
-    {
-      icon: <BookOpen className="h-5 w-5" />,
-      title: "Custom Cover Options",
-      description: "Personalize your book with custom cover designs, colors, and titles."
-    },
+    // {
+    //   icon: <Image className="h-5 w-5" />,
+    //   title: "Photo Enhancement",
+    //   description: "Automatic photo enhancement ensures all images look their best in print."
+    // },
+    // {
+    //   icon: <BookOpen className="h-5 w-5" />,
+    //   title: "Custom Cover Options",
+    //   description: "Personalize your book with custom cover designs, colors, and titles."
+    // },
     {
       icon: <Calendar className="h-5 w-5" />,
       title: "Occasion Templates",
       description: "Special templates designed for birthdays, weddings, retirements, and more."
     },
-    {
-      icon: <Settings className="h-5 w-5" />,
-      title: "Easy Editing Tools",
-      description: "Simple editing tools make it easy to perfect each page, even for beginners."
-    },
+    // {
+    //   icon: <Settings className="h-5 w-5" />,
+    //   title: "Easy Editing Tools",
+    //   description: "Simple editing tools make it easy to perfect each page, even for beginners."
+    // },
     {
       icon: <Shield className="h-5 w-5" />,
       title: "Private & Secure",
       description: "Your memories stay private and secure with our advanced protection."
     },
-    {
-      icon: <Check className="h-5 w-5" />,
-      title: "Premium Print Quality",
-      description: "Professional printing on high-quality paper for a keepsake that lasts."
-    }
+    // {
+    //   icon: <Check className="h-5 w-5" />,
+    //   title: "Premium Print Quality",
+    //   description: "Professional printing on high-quality paper for a keepsake that lasts."
+    // }
   ];
 
   return (
