@@ -52,6 +52,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
     });
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
+    router.push(`/download/${projectId}`);
     window.open(url, '_blank');
   };
 
