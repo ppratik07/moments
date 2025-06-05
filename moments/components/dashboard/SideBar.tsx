@@ -24,6 +24,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   const [isMemoryBookOpen, setMemoryBookOpen] = useState(true);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const { getToken } = useAuth();
   const router = useRouter();
 
@@ -46,14 +47,22 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
 
   const handleDownloadPdf = async (e: React.MouseEvent) => {
     e.preventDefault();
-    const token = await getToken();
-    const response = await fetch(`http://localhost:8080/api/pdf/${projectId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    router.push(`/download/${projectId}`);
-    window.open(url, '_blank');
+    setIsDownloading(true);
+    try {
+      const token = await getToken();
+      const response = await fetch(`http://localhost:8080/api/pdf/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      router.push(`/download/${projectId}`);
+      window.open(url, '_blank');
+    } catch (error) {
+      toast.error('Failed to download PDF');
+      console.error('Download failed:', error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleInviteClick = (e: React.MouseEvent) => {
@@ -79,15 +88,15 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
       label: "Memory Book",
       expandable: true,
       children: [
-        { 
-          label: "Preview Book", 
-          href: `/previewbook/${projectId}`, 
-          onClick: handlePreviewClick 
+        {
+          label: "Preview Book",
+          href: `/previewbook/${projectId}`,
+          onClick: handlePreviewClick
         },
-        { 
-          label: "Download PDF", 
-          href: `/download/${projectId}`, 
-          onClick: handleDownloadPdf 
+        {
+          label: "View PDF",
+          href: `/download/${projectId}`,
+          onClick: handleDownloadPdf
         },
       ],
     },
@@ -123,14 +132,15 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
                 {isMemoryBookOpen && (
                   <div className="ml-6 mt-1 space-y-2">
                     {item.children.map((child, i) => (
-                      <Link
+                      <button
                         key={i}
-                        href={child.href}
                         onClick={child.onClick}
-                        className="block text-sm text-gray-600 hover:text-blue-600"
+                        className="block text-left text-sm text-gray-600 hover:text-blue-600 w-full"
                       >
-                        {child.label}
-                      </Link>
+                        {isDownloading && child.label === "View PDF"
+                          ? "Please Wait.The pdf is processing.."
+                          : child.label}
+                      </button>
                     ))}
                   </div>
                 )}
