@@ -227,7 +227,7 @@ export default function NewEventPage() {
             },
           }
         );
-        toast.success('Layouts saved successfully');
+       // toast.success('Layouts saved successfully');
       } catch (error) {
         console.error('Error saving layouts:', error);
         toast.error('Failed to save layouts');
@@ -285,7 +285,7 @@ export default function NewEventPage() {
             },
           }
         );
-        toast.success('Layouts updated successfully');
+        // toast.success('Layouts updated successfully');
       } catch (error) {
         console.error('Error updating layouts:', error);
         toast.error('Failed to update layouts');
@@ -401,7 +401,7 @@ export default function NewEventPage() {
           },
         }
       );
-      toast.success('Layouts updated successfully');
+      // toast.success('Layouts updated successfully');
     } catch (error) {
       console.error('Error updating layouts:', error);
       toast.error('Failed to update layouts');
