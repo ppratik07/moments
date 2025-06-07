@@ -25,8 +25,8 @@ export default function VideoModal({ isOpen, onClose, videoSrc }: VideoModalProp
       <div
         className={`bg-white rounded-lg relative transition-transform transform ${isOpen ? 'translate-y-0' : 'translate-y-full'} duration-500 ease-in-out`}
         style={{
-          width: '800px', // Fixed width
-          height: '400px', // Fixed height 
+          width: '800px', 
+          height: '400px', 
         }}
       >
         <button
