@@ -130,8 +130,6 @@ function generateBookHtml(data) {
             ${rows
                     .map((row, rowIdx) => {
                     const rowY = rowPositions[rowIdx];
-                    // Track image URLs in this row to detect duplicates
-                    const imageUrls = new Set();
                     return `
                 <div class="image-row relative" style="height: ${rowHeights[rowIdx]}px;">
                   ${row
@@ -154,17 +152,6 @@ function generateBookHtml(data) {
                         const clampedY = position.y_coordinate
                             ? Math.min(Math.max(position.y_coordinate, 0), maxHeightForPosition)
                             : 0;
-                        // Debug image URL
-                        console.log(`Contribution ${contribIndex}, Page ${pageIndex}, Image ${idx} URL:`, photo.imageUrl);
-                        // Check for duplicate image URLs in the row
-                        let imageSrc = photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found';
-                        if (imageUrls.has(photo.imageUrl)) {
-                            console.log(`Duplicate image URL detected in Contribution ${contribIndex}, Page ${pageIndex}, Image ${idx}:`, photo.imageUrl);
-                            imageSrc = 'https://via.placeholder.com/300x200?text=Duplicate+Image';
-                        }
-                        else {
-                            imageUrls.add(photo.imageUrl);
-                        }
                         const inlineStyles = `
                         position: absolute;
                         left: ${clampedX}px;
@@ -178,7 +165,7 @@ function generateBookHtml(data) {
                       `;
                         return `
                       <img 
-                        src="${imageSrc}" 
+                        src="${photo.imageUrl || 'https://via.placeholder.com/300x200?text=Image+Not+Found'}" 
                         alt="Contribution photo" 
                         class="photo" 
                         style="${inlineStyles}"
