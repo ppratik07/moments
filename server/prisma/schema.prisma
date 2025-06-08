@@ -145,6 +145,7 @@ model Payment {
   amount           Float
   error_message    String?
   shipping_address String?
+  userId           String
   verified         Boolean    @default(false)
   createdAt        DateTime   @default(now())
   printJobs        PrintJob[]
