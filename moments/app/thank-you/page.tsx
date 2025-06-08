@@ -68,7 +68,7 @@ export default function DonePage() {
                   Learn More
                 </button>
               </Link>
-              <Link href='/dashboard'>
+              <Link href='/new-project'>
                 <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700">
                   Get Started
                 </button>
