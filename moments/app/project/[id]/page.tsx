@@ -201,6 +201,8 @@ export default function ProjectIdDashboard() {
   };
 
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCheckout = async () => {
     const stripe = await stripePromise;
     if (!stripe) {
@@ -246,9 +248,9 @@ export default function ProjectIdDashboard() {
         <main className="w-full max-w-7xl mx-auto p-8">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold">{projectNames}</h1>
-            <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-2 rounded-md cursor-pointer" onClick={handleCheckout}>
+            {/* <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-8 py-2 rounded-md cursor-pointer" onClick={handleCheckout}>
               Order Book
-            </button>
+            </button> */}
           </div>
 
           {isPrintingState ? (
