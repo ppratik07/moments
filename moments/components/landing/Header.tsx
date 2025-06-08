@@ -68,6 +68,9 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                                     </SignUpButton>
                                 </>
                             )}
+                            {isSignedIn && (
+                                <Button onClick={()=> router.push('/dashboard')} className="text-sm cursor-pointer font-medium">Go to Dashboard</Button>
+                            )}
                         </nav>)}
                     </div>
                 </div>
