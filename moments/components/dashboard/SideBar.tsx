@@ -244,7 +244,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
         },
       ],
     },
-    { icon: <BringToFront size={18} />, label: "Orders", href: `/project/${projectId}/orders` },
+    { icon: <BringToFront size={18} />, label: "Orders", href: `/orders` },
     { icon: <Settings size={18} />, label: "Settings", href: `/project/${projectId}/settings` },
   ];
 
