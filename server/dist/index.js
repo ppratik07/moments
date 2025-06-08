@@ -1389,6 +1389,30 @@ app.post('/api/print/:projectId', middleware_1.authMiddleware, (req, res) => __a
         res.status(500).json({ error: 'Failed to create print job' });
     }
 }));
+app.get('/api/check-payment-status', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { project_id } = req.query;
+    const userId = req.userId;
+    try {
+        if (!project_id || typeof project_id !== 'string') {
+            return res.status(400).json({ message: 'Invalid project_id' });
+        }
+        if (!userId) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const payment = yield prisma.payment.findFirst({
+            where: {
+                project_id,
+                userId,
+                verified: true
+            },
+        });
+        res.json({ hasPaid: !!payment });
+    }
+    catch (error) {
+        console.error('Error checking payment status:', error);
+        res.status(500).json({ error: 'Failed to check payment status' });
+    }
+}));
 // Health check endpoint
 app.get('/api/health', (req, res) => {
     res.status(200).json({ status: 'ok' });

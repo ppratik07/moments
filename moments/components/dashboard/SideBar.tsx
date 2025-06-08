@@ -1,3 +1,5 @@
+'use client';
+
 import { useAuth } from "@clerk/nextjs";
 import {
   Album,
@@ -33,6 +35,24 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   const currentUrl = typeof window !== 'undefined' ? new URL(window.location.href) : null;
   const shareLink = currentUrl ? `${currentUrl.origin}/contribution/${projectId}` : '';
 
+  const checkPaymentStatus = async () => {
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Failed to obtain authentication token');
+      }
+      const response = await axios.get(`${HTTP_BACKEND}/api/check-payment-status`, {
+        params: { project_id: projectId },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data.hasPaid;
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      toast.error('Failed to check payment status');
+      return false;
+    }
+  };
+
   const handlePreviewClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     const token = await getToken();
@@ -56,8 +76,10 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
       return;
     }
 
-    if (isPaymentSuccessful) {
-      // Proceed with PDF download if payment is already successful
+    // Check if user has already paid
+    const hasPaid = await checkPaymentStatus();
+    if (hasPaid || isPaymentSuccessful) {
+      // Proceed with PDF download
       setIsDownloading(true);
       try {
         const token = await getToken();
@@ -96,7 +118,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
         `${HTTP_BACKEND}/api/create-order`,
         {
           project_id: projectId,
-          amount: 10000, // 100 INR in paise
+          amount: 9900, // 100 INR in paise
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );

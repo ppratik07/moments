@@ -1548,6 +1548,30 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
   }
 });
 
+app.get('/api/check-payment-status',authMiddleware,async(req,res) : Promise<any>=>{
+    const {project_id} = req.query;
+    const userId = req.userId;
+    try {
+      if( !project_id || typeof project_id !== 'string') {
+        return res.status(400).json({ message: 'Invalid project_id' });
+      }
+      if(!userId){
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+      const payment = await prisma.payment.findFirst({
+        where:{
+          project_id,
+          userId,
+          verified : true
+        },
+      });
+      res.json({hasPaid : !!payment});
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+      res.status(500).json({ error: 'Failed to check payment status' });
+    }
+})
+
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
