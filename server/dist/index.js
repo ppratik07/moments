@@ -1186,24 +1186,21 @@ app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0
         res.status(400).json({ error: 'Unable to fetch shipping options' });
     }
 }));
-app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/create-order', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { project_id, shipping_address, shipping_option, amount } = req.body;
     try {
         // Validate inputs
-        if (!project_id || !shipping_address || !shipping_option || !amount) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        if (!project_id || !amount) {
+            return res.status(400).json({ error: 'Missing required fields: project_id and amount are required' });
         }
         // Create Razorpay order
         const order = yield razorpay.orders.create({
-            amount: amount, // Amount in paise (e.g., 5000 paise = ₹50)
+            amount: amount, // Amount in paise (e.g., 10000 paise = ₹100)
             currency: 'INR',
             receipt: `od_${project_id}`,
-            notes: {
-                project_id,
-                shipping_option,
-            },
+            notes: Object.assign({ project_id }, (shipping_option && { shipping_option })),
         });
-        const orderResponse = res.json({
+        res.json({
             order_id: order.id,
             amount: order.amount,
             currency: order.currency,
@@ -1214,16 +1211,22 @@ app.post('/api/create-order', (req, res) => __awaiter(void 0, void 0, void 0, fu
         res.status(500).json({ error: 'Failed to create order' });
     }
 }));
-app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.post('/api/verify-payment', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id, amount, shipping_address } = req.body;
     try {
+        // Validate required fields
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !project_id || !amount) {
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
+        }
+        // Verify signature
         const body = razorpay_order_id + '|' + razorpay_payment_id;
         const expectedSignature = crypto_1.default
-            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || (() => { throw new Error("RAZORPAY_KEY_SECRET is not defined in the environment variables"); })())
+            .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || (() => { throw new Error("RAZORPAY_KEY_SECRET is not defined"); })())
             .update(body)
             .digest('hex');
         const isSignatureValid = expectedSignature === razorpay_signature;
-        const paymentDetails = yield prisma.payment.create({
+        // Store payment details
+        yield prisma.payment.create({
             data: {
                 orderId: razorpay_order_id,
                 paymentId: razorpay_payment_id,
@@ -1232,7 +1235,8 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 amount,
                 verified: isSignatureValid,
                 error_message: isSignatureValid ? null : 'Invalid signature',
-                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
+                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
+                userId: req.userId || 'unknown', // Use 'unknown' if userId is not available
             },
         });
         if (isSignatureValid) {
@@ -1253,7 +1257,8 @@ app.post('/api/verify-payment', (req, res) => __awaiter(void 0, void 0, void 0, 
                 amount: amount || 0,
                 verified: false,
                 error_message: error instanceof Error ? error.message : 'Payment verification failed',
-                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
+                shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
+                userId: req.userId || 'unknown', // Consistent userId handling
             },
         });
         res.status(500).json({ success: false, error: 'Payment verification failed' });

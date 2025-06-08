@@ -36,6 +36,10 @@ app.use(express.json());
 
 const prisma = new PrismaClient();
 
+interface AuthRequest extends Request {
+  userId?: string;
+}
+
 // S3/R2 Client Configuration
 const s3 = new S3Client({
   region: "auto",
@@ -1319,25 +1323,26 @@ app.post('/api/shipping-options', async (req : Request, res : Response): Promise
   }
 });
 
-app.post('/api/create-order', async (req : Request, res : Response) : Promise<any> => {
+app.post('/api/create-order',authMiddleware, async (req : Request, res : Response) : Promise<any> => {
   const { project_id, shipping_address, shipping_option, amount } = req.body;
   try {
     // Validate inputs
-    if (!project_id || !shipping_address || !shipping_option || !amount) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    if (!project_id || !amount) {
+      return res.status(400).json({ error: 'Missing required fields: project_id and amount are required' });
     }
 
     // Create Razorpay order
     const order = await razorpay.orders.create({
-      amount: amount, // Amount in paise (e.g., 5000 paise = ₹50)
+      amount: amount, // Amount in paise (e.g., 10000 paise = ₹100)
       currency: 'INR',
       receipt: `od_${project_id}`,
       notes: {
         project_id,
-        shipping_option,
+        ...(shipping_option && { shipping_option }), // Include shipping_option only if provided
       },
     });
-    const orderResponse = res.json({
+
+    res.json({
       order_id: order.id,
       amount: order.amount,
       currency: order.currency,
@@ -1348,32 +1353,42 @@ app.post('/api/create-order', async (req : Request, res : Response) : Promise<an
   }
 });
 
-app.post('/api/verify-payment', async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature,project_id,amount,shipping_address } = req.body;
+app.post('/api/verify-payment',authMiddleware, async (req, res) : Promise<any> => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, project_id, amount, shipping_address } = req.body;
 
   try {
+    // Validate required fields
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !project_id || !amount) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    // Verify signature
     const body = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || (() => { throw new Error("RAZORPAY_KEY_SECRET is not defined in the environment variables"); })())
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || (() => { throw new Error("RAZORPAY_KEY_SECRET is not defined"); })())
       .update(body)
       .digest('hex');
 
     const isSignatureValid = expectedSignature === razorpay_signature;
-    const paymentDetails = await prisma.payment.create({
+
+    // Store payment details
+    await prisma.payment.create({
       data: {
-        orderId : razorpay_order_id,
+        orderId: razorpay_order_id,
         paymentId: razorpay_payment_id,
-        signature : razorpay_signature,
+        signature: razorpay_signature,
         project_id,
         amount,
         verified: isSignatureValid,
         error_message: isSignatureValid ? null : 'Invalid signature',
-        shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
+        shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
+        userId: req.userId || 'unknown', // Use 'unknown' if userId is not available
       },
-    })
-    if(isSignatureValid){
+    });
+
+    if (isSignatureValid) {
       res.json({ success: true });
-    }else {
+    } else {
       res.status(400).json({ success: false, error: 'Invalid signature' });
     }
   } catch (error) {
@@ -1387,7 +1402,8 @@ app.post('/api/verify-payment', async (req, res) => {
         amount: amount || 0,
         verified: false,
         error_message: error instanceof Error ? error.message : 'Payment verification failed',
-        shipping_address: shipping_address ? JSON.stringify(shipping_address) : null
+        shipping_address: shipping_address ? JSON.stringify(shipping_address) : null,
+        userId: req.userId || 'unknown', // Consistent userId handling
       },
     });
     res.status(500).json({ success: false, error: 'Payment verification failed' });
