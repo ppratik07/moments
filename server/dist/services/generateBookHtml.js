@@ -12,6 +12,7 @@ function generateBookHtml(data) {
         <div class="front-cover-container">
           <h1 class="front-cover-title">${frontCover.title}</h1>
           ${frontCover.imageUrl
+      <div class="front-cover-container">
             ? `<img 
                    src="${frontCover.imageUrl}" 
                    alt="Front Cover" 
