@@ -1,5 +1,3 @@
-'use client';
-
 import { useAuth } from "@clerk/nextjs";
 import {
   Album,
@@ -17,6 +15,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import axios from 'axios';
+import { HTTP_BACKEND } from '@/utils/config';
 
 export default function Sidebar({ imageKey, projectId }: { imageKey?: string; projectId?: string }) {
   const baseUrl = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
@@ -25,6 +25,8 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+  const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false);
   const { getToken } = useAuth();
   const router = useRouter();
 
@@ -34,12 +36,13 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   const handlePreviewClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     const token = await getToken();
-    const response = await fetch(`http://localhost:8080/api/preview/${projectId}`, {
+    const response = await fetch(`${HTTP_BACKEND}/api/preview/${projectId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const bookData = await response.json();
     if (!bookData.pages) {
       console.error("No pages found in book data");
+      toast.error('No pages available for preview');
       return;
     }
     router.push(`/previewbook/${projectId}`);
@@ -47,21 +50,140 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
 
   const handleDownloadPdf = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsDownloading(true);
+
+    if (!projectId) {
+      toast.error('Invalid project ID');
+      return;
+    }
+
+    if (isPaymentSuccessful) {
+      // Proceed with PDF download if payment is already successful
+      setIsDownloading(true);
+      try {
+        const token = await getToken();
+        if (!token) {
+          throw new Error('Failed to obtain authentication token');
+        }
+        const response = await fetch(`${HTTP_BACKEND}/api/pdf/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch PDF');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        router.push(`/download/${projectId}`);
+        window.open(url, '_blank');
+      } catch (error) {
+        toast.error('Failed to download PDF');
+        console.error('Download failed:', error);
+      } finally {
+        setIsDownloading(false);
+      }
+      return;
+    }
+
+    // Initiate payment process
+    setIsPaymentProcessing(true);
     try {
       const token = await getToken();
-      const response = await fetch(`http://localhost:8080/api/pdf/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      router.push(`/download/${projectId}`);
-      window.open(url, '_blank');
+      if (!token) {
+        throw new Error('Failed to obtain authentication token');
+      }
+
+      // Create Razorpay order
+      const orderResponse = await axios.post(
+        `${HTTP_BACKEND}/api/create-order`,
+        {
+          project_id: projectId,
+          amount: 10000, // 100 INR in paise
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { order_id, amount, currency } = orderResponse.data;
+
+      // Load Razorpay Checkout
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+
+      script.onload = () => {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_OFIWhJovnPg6hZ',
+          amount: amount,
+          currency: currency,
+          name: 'Memory Lane',
+          description: `Payment for PDF download of project ${projectId}`,
+          order_id: order_id,
+          handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
+            try {
+              // Verify payment
+              const verifyResponse = await axios.post(
+                `${HTTP_BACKEND}/api/verify-payment`,
+                {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  amount,
+                  project_id: projectId,
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              if (verifyResponse.data.success) {
+                setIsPaymentSuccessful(true);
+                toast.success('Payment successful! Initiating PDF download...');
+                // Trigger PDF download
+                setIsDownloading(true);
+                try {
+                  const pdfResponse = await fetch(`${HTTP_BACKEND}/api/pdf/${projectId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  if (!pdfResponse.ok) {
+                    throw new Error('Failed to fetch PDF');
+                  }
+                  const blob = await pdfResponse.blob();
+                  const url = window.URL.createObjectURL(blob);
+                  router.push(`/download/${projectId}`);
+                  window.open(url, '_blank');
+                } catch (error) {
+                  toast.error('Failed to download PDF');
+                  console.error('Download failed:', error);
+                } finally {
+                  setIsDownloading(false);
+                }
+              } else {
+                toast.error('Payment verification failed');
+              }
+            } catch (error) {
+              console.error('Payment verification error:', error);
+              toast.error('Payment verification failed');
+            }
+          },
+          prefill: {
+            name: '',
+            email: '',
+            contact: '',
+          },
+          theme: {
+            color: '#F59E0B',
+          },
+        };
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rzp = new (window as any).Razorpay(options);
+        rzp.open();
+      };
+
+      script.onerror = () => {
+        toast.error('Failed to load Razorpay Checkout');
+      };
     } catch (error) {
-      toast.error('Failed to download PDF');
-      console.error('Download failed:', error);
+      console.error('Error initiating payment:', error);
+      toast.error('Failed to initiate payment');
     } finally {
-      setIsDownloading(false);
+      setIsPaymentProcessing(false);
     }
   };
 
@@ -136,9 +258,12 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
                         key={i}
                         onClick={child.onClick}
                         className="block text-left text-sm text-gray-600 hover:text-blue-600 w-full"
+                        disabled={isPaymentProcessing || isDownloading}
                       >
-                        {isDownloading && child.label === "View PDF"
-                          ? "Please Wait.The pdf is processing.."
+                        {isPaymentProcessing && child.label === "View PDF"
+                          ? "Processing Payment..."
+                          : isDownloading && child.label === "View PDF"
+                          ? "Downloading PDF..."
                           : child.label}
                       </button>
                     ))}
