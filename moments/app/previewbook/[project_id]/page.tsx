@@ -107,22 +107,23 @@ const PreviewBookPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [shippingAddress, setShippingAddress] = useState({
+  const [shippingAddress, ] = useState({
     line1: '',
     city: '',
     state: '',
     postal_code: '',
     country: 'IN',
   });
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ShippingOption {
     id: string;
     name: string;
     amount: number;
     estimated_days: number;
   }
-
-  const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
-  const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
+  // const [shippingOptions, setShippingOptions] = useState<ShippingOption[]>([]);
+  // const [selectedShipping, setSelectedShipping] = useState<string | null>(null);
   const flipBookRef = useRef<FlipBookRef | null>(null);
   const router = useRouter();
   const { getToken, isSignedIn } = useAuth();
@@ -190,39 +191,40 @@ const PreviewBookPage = () => {
     }
   }, [pages, frontCover]);
 
-  const fetchShippingOptions = async () => {
-    try {
-      const token = await getToken();
-      const response = await axios.post(
-        `${HTTP_BACKEND}/api/shipping-options`,
-        { shipping_address: shippingAddress },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  // const fetchShippingOptions = async () => {
+  //   try {
+  //     const token = await getToken();
+  //     const response = await axios.post(
+  //       `${HTTP_BACKEND}/api/shipping-options`,
+  //       { shipping_address: shippingAddress },
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
      
-      setShippingOptions(response.data.shipping_options || []);
-    } catch (error) {
-      console.error('Error fetching shipping options:', error);
-      setError('Failed to fetch shipping options');
-    }
-  };
+  //     setShippingOptions(response.data.shipping_options || []);
+  //   } catch (error) {
+  //     console.error('Error fetching shipping options:', error);
+  //     setError('Failed to fetch shipping options');
+  //   }
+  // };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleCheckout = async () => {
-    if (!selectedShipping) {
-      alert('Please select a shipping option');
-      return;
-    }
+    // if (!selectedShipping) {
+    //   alert('Please select a shipping option');
+    //   return;
+    // }
 
     try {
       const token = await getToken();
       // Create Razorpay order
       const orderResponse = await axios.post(
         `${HTTP_BACKEND}/api/create-order`,
-        {
-          project_id,
-          shipping_address: shippingAddress,
-          shipping_option: selectedShipping,
-          amount: 5000 + (shippingOptions.find(opt => opt.id === selectedShipping)?.amount || 0), // Example: $50 + shipping
-        },
+        // {
+        //   project_id,
+        //   shipping_address: shippingAddress,
+        //   shipping_option: selectedShipping,
+        //   amount: 5000 + (shippingOptions.find(opt => opt.id === selectedShipping)?.amount || 0), // Example: $50 + shipping
+        // },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -497,7 +499,7 @@ const PreviewBookPage = () => {
                   </Button>
                 </div>
 
-                <div className="mt-6">
+                {/* <div className="mt-6">
                   <h2 className="text-xl font-bold mb-4">Shipping Address</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <input
@@ -535,9 +537,9 @@ const PreviewBookPage = () => {
                   >
                     Get Shipping Options
                   </Button>
-                </div>
+                </div> */}
 
-                {shippingOptions.length > 0 && (
+                {/* {shippingOptions.length > 0 && (
                   <div className="mt-6">
                     <h2 className="text-xl font-bold mb-4">Select Shipping Option</h2>
                     <div className="flex flex-col gap-2">
@@ -557,16 +559,16 @@ const PreviewBookPage = () => {
                       ))}
                     </div>
                   </div>
-                )}
+                )} */}
 
                 <div className="mt-6 flex justify-end">
-                  <Button
+                  {/* <Button
                     onClick={handleCheckout}
                     className="hover:bg-amber-600 cursor-pointer"
-                    disabled={!selectedShipping}
+                    // disabled={!selectedShipping}
                   >
                     Order Book
-                  </Button>
+                  </Button> */}
                 </div>
               </>
             ) : (
