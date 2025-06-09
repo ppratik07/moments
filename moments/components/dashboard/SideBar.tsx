@@ -244,7 +244,14 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
         },
       ],
     },
-    { icon: <BringToFront size={18} />, label: "Orders", href: `/orders` },
+    {
+      icon: <BringToFront size={18} />, label: "Orders", href: `/orders`, target: "_blank",
+      rel: "noopener noreferrer",
+      onClick: (e: React.MouseEvent) => {
+        e.preventDefault();
+        window.open('/orders', '_blank', 'noopener,noreferrer');
+      }
+    },
     { icon: <Settings size={18} />, label: "Settings", href: `/project/${projectId}/settings` },
   ];
 
@@ -285,8 +292,8 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
                         {isPaymentProcessing && child.label === "View PDF"
                           ? "Processing Payment..."
                           : isDownloading && child.label === "View PDF"
-                          ? "Downloading PDF..."
-                          : child.label}
+                            ? "Downloading PDF..."
+                            : child.label}
                       </button>
                     ))}
                   </div>
@@ -300,6 +307,8 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
               key={idx}
               href={item.href || "#"}
               onClick={item.onClick}
+              target={item.target}
+              rel={item.rel}
               className="flex items-center gap-3 text-gray-700 hover:text-blue-700"
             >
               {item.icon}
