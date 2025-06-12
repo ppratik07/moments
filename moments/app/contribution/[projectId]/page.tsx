@@ -307,8 +307,9 @@ export default function ContributionPage() {
 
   const mapLayoutIdToLayout = (layoutId: number): Layout => {
     const categoryIndex = Math.floor(layoutId / 10);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const layoutIndex = layoutId % 10;
-    console.log('Layoutindex', layoutIndex);
+    //console.log('Layoutindex', layoutIndex);
     const layoutPosition = categoryIndex >= 0 && categoryIndex < availableLayouts.length ? categoryIndex : 0;
     return availableLayouts[layoutPosition] || availableLayouts[0];
   };

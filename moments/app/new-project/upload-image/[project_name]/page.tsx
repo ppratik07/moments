@@ -125,7 +125,7 @@ export default function NewEventPage() {
       if (savedLayouts) {
         const parsedLayouts: Layout[] = JSON.parse(savedLayouts);
         setLayouts(parsedLayouts);
-        console.log('Loaded layouts from localStorage:', parsedLayouts);
+        //console.log('Loaded layouts from localStorage:', parsedLayouts);
         return;
       }
 
@@ -242,12 +242,12 @@ export default function NewEventPage() {
     if (isSaving.current || !projectId) return;
 
     isSaving.current = true;
-    console.log('Debounced updateLayouts called with:', {
-      projectId,
-      projectName,
-      projectImageKey,
-      projectDescription,
-    });
+    // console.log('Debounced updateLayouts called with:', {
+    //   projectId,
+    //   projectName,
+    //   projectImageKey,
+    //   projectDescription,
+    // });
 
     const savedLayouts = localStorage.getItem(`layouts-${projectId}`);
     if (savedLayouts) {
@@ -346,12 +346,12 @@ export default function NewEventPage() {
     if (isSaving.current || !projectId) return;
 
     isSaving.current = true;
-    console.log('saveUpdatedLayouts called with:', {
-      projectId,
-      projectName,
-      projectImageKey,
-      projectDescription,
-    });
+    // console.log('saveUpdatedLayouts called with:', {
+    //   projectId,
+    //   projectName,
+    //   projectImageKey,
+    //   projectDescription,
+    // });
 
     try {
       const savedLayouts = localStorage.getItem(`layouts-${projectId}`);

@@ -157,7 +157,7 @@ const PreviewBookPage = () => {
           throw new Error(`Failed to fetch book preview: ${bookResponse.statusText}`);
         }
         const bookData = await bookResponse.json();
-        console.log('Fetched pages:', JSON.stringify(bookData.pages, null, 2));
+        //console.log('Fetched pages:', JSON.stringify(bookData.pages, null, 2));
         setPages(bookData.pages || []);
 
         // Fetch front cover layout
@@ -168,7 +168,7 @@ const PreviewBookPage = () => {
           throw new Error(`Failed to fetch front cover: ${layoutResponse.statusText}`);
         }
         const frontCover: Layout | null = await layoutResponse.json();
-        console.log('Fetched front cover:', JSON.stringify(frontCover, null, 2));
+        //console.log('Fetched front cover:', JSON.stringify(frontCover, null, 2));
         setFrontCover(frontCover);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -354,7 +354,7 @@ const PreviewBookPage = () => {
                     const photos = page.components.filter((comp) => comp.type === 'photo' && comp.imageUrl);
                     const paragraphs = page.components.filter((comp) => comp.type === 'paragraph' && comp.value);
 
-                    console.log(`Page ${index + 1} - Photos: ${photos.length}, Paragraphs: ${paragraphs.length}`);
+                    //console.log(`Page ${index + 1} - Photos: ${photos.length}, Paragraphs: ${paragraphs.length}`);
 
                     if (photos.length === 0 && paragraphs.length > 0) {
                       return (
@@ -388,7 +388,7 @@ const PreviewBookPage = () => {
                                   zIndex: idx + 1,
                                   ...photo.styles,
                                 };
-                                console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, photo.imageUrl);
+                                //console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, photo.imageUrl);
                                 return (
                                   <Image
                                     key={idx}
@@ -448,7 +448,7 @@ const PreviewBookPage = () => {
                                     zIndex: idx + 1,
                                     ...component.styles,
                                   };
-                                  console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, component.imageUrl);
+                                  //console.log(`Rendering photo ${idx + 1} on page ${index + 1}:`, component.imageUrl);
                                   return (
                                     <Image
                                       key={idx}

@@ -32,7 +32,7 @@ export default function DashboardPage() {
       try {
         const token = await getToken();
         if (!token) {
-          console.log('No token found, redirecting...');
+          //console.log('No token found, redirecting...');
           await signOut({ redirectUrl: '/' });
           return;
         }
