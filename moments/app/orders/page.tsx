@@ -1,8 +1,10 @@
 import React from 'react';
 import { Header } from '../../components/landing/Header';
 import Image from 'next/image';
+import { useProjectStore } from '@/store/useProjectStore';
 export default function OrdersPage() {
-
+    const fallbackProjectName = useProjectStore.getState().projectName;
+    console.log('Fallback Project Name:', fallbackProjectName);
     return (
         <div>
             <Header isSignedIn />
