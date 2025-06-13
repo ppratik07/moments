@@ -36,7 +36,7 @@ const HeroSection = () => {
                 <span className="mx-2">•</span>
                 <span>✓ Easy to share</span>
                 <span className="mx-2">•</span>
-                <span>✓ Premium quality prints</span>
+                <span>✓ Download PDF at minimal cost</span>
               </p>
             </div>
           </div>
