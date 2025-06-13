@@ -1,8 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Gift } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const CTASection = () => {
+  const router  = useRouter();
   return (
     <section className="py-20 bg-gradient-to-r from-primary/20 to-secondary/20">
       <div className="container mx-auto px-4">
@@ -21,7 +23,7 @@ const CTASection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-primary hover:bg-primary/90">
+            <Button size="lg" className="bg-primary hover:bg-primary/90" onClick={()=> router.push('/new-project')}>
               <BookOpen className="mr-2 h-5 w-5" /> Start Your Memory Book
             </Button>
             <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
@@ -30,7 +32,7 @@ const CTASection = () => {
           </div>
           
           <p className="mt-6 text-sm text-muted-foreground">
-            No credit card required to start • Simple to use • Premium quality
+            No credit card required to start • Simple to use • Download PDF by minimal payment
           </p>
         </div>
       </div>
