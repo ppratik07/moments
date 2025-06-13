@@ -10,6 +10,7 @@ const HowItWorks = () => {
       highlight: "Easy sharing via email or link"
     },
     {
+      // eslint-disable-next-line jsx-a11y/alt-text
       icon: <Image className="text-primary h-10 w-10" />,
       title: "Collect Memories",
       description: "Everyone adds their special photos and messages to create a collaborative memory book.",
@@ -17,9 +18,9 @@ const HowItWorks = () => {
     },
     {
       icon: <Calendar className="text-primary h-10 w-10" />,
-      title: "Print & Deliver",
-      description: "Review the layout, arrange pages, and order your professionally printed memory book.",
-      highlight: "Premium quality and fast shipping"
+      title: "Download PDF & Print it",
+      description: "Review the layout, arrange pages, and download your professionally printed memory book.",
+      highlight: "Download at minimal cost"
     }
   ];
 
