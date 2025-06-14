@@ -296,7 +296,7 @@ export default function NewEventPage() {
 
   useEffect(() => {
     debouncedUpdateLayouts();
-  }, [projectId, projectName, projectImageKey, storedImageKey, projectDescription]);
+  }, [projectId, projectName, projectImageKey, storedImageKey,debouncedUpdateLayouts,projectDescription]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(shareLink);
