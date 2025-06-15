@@ -33,6 +33,9 @@ app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
 }));
 // app.options('*', (req, res) => {
 //   res.status(204).end();
