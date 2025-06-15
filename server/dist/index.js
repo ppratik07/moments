@@ -28,7 +28,7 @@ const crypto_1 = __importDefault(require("crypto"));
 const generateBookHtml_1 = require("./services/generateBookHtml");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT;
 app.use((0, cors_1.default)({
     origin: process.env.FRONTEND_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -638,8 +638,8 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
             },
         });
         const pages = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a;
-            const contributorName = ((_a = contrib.fillYourDetails) === null || _a === void 0 ? void 0 : _a.first_name) || 'Anonymous';
+            var _b;
+            const contributorName = ((_b = contrib.fillYourDetails) === null || _b === void 0 ? void 0 : _b.first_name) || 'Anonymous';
             const excludedFromBook = false;
             if (excludedFromBook)
                 return [];
@@ -684,7 +684,7 @@ app.get('/api/preview/:projectId', (req, res) => __awaiter(void 0, void 0, void 
 }));
 // Updated /api/pdf/:projectId
 app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _c, _d, _e, _f, _g, _h, _j;
     const { projectId } = req.params;
     if (!projectId || typeof projectId !== 'string') {
         return res.status(400).json({ message: 'Invalid projectId or unauthorized' });
@@ -750,7 +750,7 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
         });
         //console.log('Contributions Data for PDF:', JSON.stringify(contributionsData, null, 2));
         const contributions = yield Promise.all(contributionsData.map((contrib) => __awaiter(void 0, void 0, void 0, function* () {
-            var _a;
+            var _k;
             const pages = yield Promise.all(contrib.pages.map((page) => __awaiter(void 0, void 0, void 0, function* () {
                 const components = yield Promise.all(page.components.map((comp) => __awaiter(void 0, void 0, void 0, function* () {
                     if (comp.type === 'photo' && comp.imageUrl) {
@@ -776,7 +776,7 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
             })));
             return {
                 id: contrib.id,
-                contributorName: ((_a = contrib.fillYourDetails) === null || _a === void 0 ? void 0 : _a.first_name) || 'Anonymous',
+                contributorName: ((_k = contrib.fillYourDetails) === null || _k === void 0 ? void 0 : _k.first_name) || 'Anonymous',
                 excludedFromBook: false,
                 pages,
             };
@@ -786,14 +786,14 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
             contributions,
             frontCover: frontCover
                 ? {
-                    title: ((_a = frontCover.config) === null || _a === void 0 ? void 0 : _a.title) || 'No Title',
+                    title: ((_c = frontCover.config) === null || _c === void 0 ? void 0 : _c.title) || 'No Title',
                     imageUrl: frontCoverImageUrl,
-                    description: ((_b = frontCover.config) === null || _b === void 0 ? void 0 : _b.description) || '',
-                    titleStyle: ((_c = frontCover.config) === null || _c === void 0 ? void 0 : _c.titleStyle) || {},
-                    imageStyle: ((_d = frontCover.config) === null || _d === void 0 ? void 0 : _d.imageStyle) || {},
-                    descriptionStyle: ((_e = frontCover.config) === null || _e === void 0 ? void 0 : _e.descriptionStyle) || {},
-                    containerStyle: ((_f = frontCover.config) === null || _f === void 0 ? void 0 : _f.containerStyle) || {},
-                    hoverEffects: ((_g = frontCover.config) === null || _g === void 0 ? void 0 : _g.hoverEffects) || {},
+                    description: ((_d = frontCover.config) === null || _d === void 0 ? void 0 : _d.description) || '',
+                    titleStyle: ((_e = frontCover.config) === null || _e === void 0 ? void 0 : _e.titleStyle) || {},
+                    imageStyle: ((_f = frontCover.config) === null || _f === void 0 ? void 0 : _f.imageStyle) || {},
+                    descriptionStyle: ((_g = frontCover.config) === null || _g === void 0 ? void 0 : _g.descriptionStyle) || {},
+                    containerStyle: ((_h = frontCover.config) === null || _h === void 0 ? void 0 : _h.containerStyle) || {},
+                    hoverEffects: ((_j = frontCover.config) === null || _j === void 0 ? void 0 : _j.hoverEffects) || {},
                 }
                 : null,
         });
@@ -864,7 +864,7 @@ app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0,
     }
 }));
 app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _l;
     const { projectId } = req.params;
     const userId = req.userId;
     if (!projectId || typeof projectId !== 'string') {
@@ -903,7 +903,7 @@ app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res)
         }
         // Determine deadlineDate (prefer actual_deadline, fallback to calculate_date)
         const deadline = project.deadlines.length > 0
-            ? ((_a = project.deadlines[0].actual_deadline) !== null && _a !== void 0 ? _a : project.deadlines[0].calculate_date)
+            ? ((_l = project.deadlines[0].actual_deadline) !== null && _l !== void 0 ? _l : project.deadlines[0].calculate_date)
             : null;
         return res.status(200).json({
             project: {
@@ -919,7 +919,7 @@ app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res)
     }
 }));
 app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d, _e, _f, _g;
+    var _m, _o, _p, _q, _r, _s, _t;
     const { projectId } = req.params;
     const { deadlineDate } = req.body;
     const userId = req.userId;
@@ -1002,8 +1002,8 @@ app.patch('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, re
                 },
             },
         });
-        const deadline = ((_b = (_a = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _a === void 0 ? void 0 : _a.length) !== null && _b !== void 0 ? _b : 0) > 0
-            ? ((_e = (_d = (_c = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d.actual_deadline) !== null && _e !== void 0 ? _e : (_g = (_f = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _f === void 0 ? void 0 : _f[0]) === null || _g === void 0 ? void 0 : _g.calculate_date)
+        const deadline = ((_o = (_m = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _m === void 0 ? void 0 : _m.length) !== null && _o !== void 0 ? _o : 0) > 0
+            ? ((_r = (_q = (_p = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _p === void 0 ? void 0 : _p[0]) === null || _q === void 0 ? void 0 : _q.actual_deadline) !== null && _r !== void 0 ? _r : (_t = (_s = updatedProject === null || updatedProject === void 0 ? void 0 : updatedProject.deadlines) === null || _s === void 0 ? void 0 : _s[0]) === null || _t === void 0 ? void 0 : _t.calculate_date)
             : null;
         return res.status(200).json({
             project: {
@@ -1142,7 +1142,7 @@ app.patch("/api/update-contribution/:contributionId", (req, res) => __awaiter(vo
     }
 }));
 app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _u;
     const { shipping_address } = req.body;
     try {
         // Validate shipping address
@@ -1178,7 +1178,7 @@ app.post('/api/shipping-options', (req, res) => __awaiter(void 0, void 0, void 0
     }
     catch (error) {
         if (axios_1.default.isAxiosError(error)) {
-            console.error('Error fetching shipping options:', ((_a = error.response) === null || _a === void 0 ? void 0 : _a.data) || error.message);
+            console.error('Error fetching shipping options:', ((_u = error.response) === null || _u === void 0 ? void 0 : _u.data) || error.message);
         }
         else {
             console.error('Error fetching shipping options:', error);
