@@ -32,9 +32,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "token"],
   })
 );
-app.options('*', (req, res) => {
-  res.status(204).end();
-});
+// app.options('*', (req, res) => {
+//   res.status(204).end();
+// });
 app.use(express.json());
 
 const prisma = new PrismaClient();

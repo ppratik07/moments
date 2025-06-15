@@ -34,6 +34,9 @@ app.use((0, cors_1.default)({
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "token"],
 }));
+// app.options('*', (req, res) => {
+//   res.status(204).end();
+// });
 app.use(express_1.default.json());
 const prisma = new client_1.PrismaClient();
 // S3/R2 Client Configuration
