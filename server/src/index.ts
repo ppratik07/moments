@@ -973,7 +973,7 @@ app.post('/api/create-checkout-session', async (req: Request, res: Response): Pr
 app.get('/api/user-projects/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
   const userId = req.userId;
-
+  console.log('Fetching project for user:', userId, 'Project ID:', projectId);
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId' });
   }
@@ -991,6 +991,7 @@ app.get('/api/user-projects/:projectId', authMiddleware, async (req: Request, re
       select: {
         projectName: true,
         imageKey: true,
+        eventDescription : true,  
         deadlines: {
           where: {
             deadline_enabled: true, // Fetch only enabled deadlines
@@ -1021,6 +1022,7 @@ app.get('/api/user-projects/:projectId', authMiddleware, async (req: Request, re
       project: {
         projectName: project.projectName,
         imageKey: project.imageKey,
+        eventDescription: project.eventDescription || '',
         deadlineDate: deadline ? deadline.toISOString() : null,
       },
     });
