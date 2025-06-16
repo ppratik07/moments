@@ -19,6 +19,7 @@ import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
 import { RotatingLines } from "react-loader-spinner";
 import VideoModal from "@/components/VideoModal";
+import { Button } from "@/components/ui/button";
 
 // Type definitions remain unchanged
 interface Position {
@@ -95,8 +96,52 @@ export default function ContributionPage() {
 
   const { projectId } = useParams() as { projectId: string };
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
-  // Functions remain unchanged
+
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      try {
+        setIsLoading(true);
+        setLoadError(null);
+        
+        // First try to get from localStorage
+        const raw = localStorage.getItem(`project-${projectId}`);
+        if (raw) {
+          setProjectData(JSON.parse(raw));
+          setIsLoading(false);
+          return;
+        }
+
+        // If not in localStorage, try to fetch from backend
+        const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`);
+        if (response.data && response.data.project) {
+          const projectData = {
+            projectName: response.data.project.projectName,
+            imageKey: response.data.project.imageKey,
+            eventDescription: response.data.project.eventDescription || '',
+          };
+          setProjectData(projectData);
+          console.log('Project data loaded from backend:', projectData);
+          // Save to localStorage for future use
+          localStorage.setItem(`project-${projectId}`, JSON.stringify(projectData));
+        } else {
+          throw new Error('Project data not found');
+        }
+      } catch (error) {
+        console.error('Error loading project data:', error);
+        setLoadError('Failed to load project data. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (projectId) {
+      fetchProjectData();
+    }
+  }, [projectId]);
+
   const handleNextClick = async () => {
     setUploading(true);
     setError(null);
@@ -137,11 +182,6 @@ export default function ContributionPage() {
       setUploading(false);
     }
   };
-
-  useEffect(() => {
-    const raw = localStorage.getItem(`project-${projectId}`);
-    if (raw) setProjectData(JSON.parse(raw));
-  }, [projectId]);
 
   const extractKeyFromUrl = (url: string): string => {
     const prefix = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/';
@@ -290,7 +330,7 @@ export default function ContributionPage() {
     return 4;
   };
 
-  if (!projectData) {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-white">
         <RotatingLines
@@ -298,9 +338,31 @@ export default function ContributionPage() {
           strokeColor="gray"
           strokeWidth="5"
           animationDuration="0.75"
-          width="48" // Further reduced for small screens
+          width="48"
           ariaLabel="rotating-lines-loading"
         />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-white">
+        <p className="text-red-500 mb-4">{loadError}</p>
+        <Button onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
+  if (!projectData) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-white">
+        <p className="text-gray-500 mb-4">Project not found</p>
+        <Button onClick={() => window.location.href = '/'}>
+          Go to Home
+        </Button>
       </div>
     );
   }
