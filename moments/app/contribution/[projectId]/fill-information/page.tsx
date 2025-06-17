@@ -158,7 +158,7 @@ export default function YourInformationPage() {
             <Dialog open={showDialog} onOpenChange={(open) => {
                 setShowDialog(open);
                 if (!open) {
-                    router.push('/thank-you');
+                    router.push(`/thank-you/${projectId}`);
                 }
             }}>
                 <DialogContent className="max-w-md">
