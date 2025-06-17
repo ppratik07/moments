@@ -106,13 +106,13 @@ export default function ContributionPage() {
         setIsLoading(true);
         setLoadError(null);
         
-        // First try to get from localStorage
-        const raw = localStorage.getItem(`project-${projectId}`);
-        if (raw) {
-          setProjectData(JSON.parse(raw));
-          setIsLoading(false);
-          return;
-        }
+        // // First try to get from localStorage
+        // const raw = localStorage.getItem(`project-${projectId}`);
+        // if (raw) {
+        //   setProjectData(JSON.parse(raw));
+        //   setIsLoading(false);
+        //   return;
+        // }
 
         // If not in localStorage, try to fetch from backend
         const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`);
