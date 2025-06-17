@@ -1,9 +1,13 @@
 "use client";
 
+import { ProjectData } from "@/components/contribution/SignatureEditModal";
 import { getImageUrl } from "@/helpers/getImageUrl";
-import { useProjectStore } from "@/store/useProjectStore";
+//import { useProjectStore } from "@/store/useProjectStore";
+import { HTTP_BACKEND } from "@/utils/config";
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
@@ -12,15 +16,41 @@ export default function DonePage() {
   const { width, height } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(true);
   const [hasMounted, setHasMounted] = useState(false);
-
-  const projectName = useProjectStore.getState().projectName;
-  const imagePhoto = useProjectStore.getState().imageKey;
-
+  const [projectData, setProjectData] = useState<ProjectData | null>(null);
+  //const projectName = useProjectStore.getState().projectName;
+  //const imagePhoto = useProjectStore.getState().imageKey;
+  const projectId = useParams()?.projectId as string;
   useEffect(() => {
     setHasMounted(true);
     const timer = setTimeout(() => setShowConfetti(false), 5000);
     return () => clearTimeout(timer);
+    
   }, []);
+  useEffect(() => {
+    const fetchProjectData = async () => {
+      try {
+        const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`);
+        if (response.data && response.data.project) {
+          const projectData = {
+            projectName: response.data.project.projectName,
+            imageKey: response.data.project.imageKey,
+            eventDescription: response.data.project.eventDescription || '',
+          };
+          console.log('Project data loaded:', projectData);
+          setProjectData(projectData);
+        } else {
+          throw new Error('Project data not found');
+        }
+      } 
+     catch (error) {
+        console.error('Error loading project data:', error);
+      }
+    };
+
+    if (projectId) {
+      fetchProjectData();
+    }
+  }, [projectId]);
 
   if (!hasMounted) return null; // Avoid hydration mismatch
 
@@ -53,7 +83,7 @@ export default function DonePage() {
           <div>
             <h1 className="text-4xl font-bold text-gray-800 mb-9">Thank You!</h1>
             <p className="mt-2 text-gray-600">
-              Thank you for taking a moment to contribute to {projectName} book. It is a special and touching moment when someone receives one of these books. It will lift their spirit and help them know they are loved by so many. Thank you for contributing to this wonderful book.
+              Thank you for taking a moment to contribute to {projectData?.projectName} book. It is a special and touching moment when someone receives one of these books. It will lift their spirit and help them know they are loved by so many. Thank you for contributing to this wonderful book.
             </p>
           </div>
 
@@ -82,7 +112,7 @@ export default function DonePage() {
           <div className="w-full max-h-[500px] overflow-hidden  shadow-md">
             <Image
               src={
-                getImageUrl(imagePhoto) || ''
+                getImageUrl(projectData?.imageKey ?? null) || ''
               }
               alt="Crowd at concert"
               width={800}

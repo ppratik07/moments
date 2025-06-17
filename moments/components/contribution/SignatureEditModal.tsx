@@ -12,7 +12,7 @@ export interface Page {
 
 export interface ProjectData {
   projectName: string;
-  eventDescription: string;
+  eventDescription?: string;
   imageKey?: string;
 }
 
