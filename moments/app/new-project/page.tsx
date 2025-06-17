@@ -34,11 +34,13 @@ export default function StartProjectForm() {
     const [lastName, setLastName] = useState<string | null>(null);
     const [email, setEmail] = useState<string | null>(null);
     const [eventType, setEventType] = useState<string | null>(null);
+    const [eventsDescription, setEventsDescription] = useState<string | null>(null);
     const [progress, setProgress] = useState<number>(0);
     const [isLoading, setIsLoading] = useState(false);
     const { getToken } = useAuth();
-    const { setProjectName, setEventDescription,setEventTypes } = useProjectStore();
-    
+    //const { setProjectName, setEventDescription, setEventTypes } = useProjectStore();
+    const { setProjectName, setEventTypes } = useProjectStore();
+
     useEffect(() => {
         if (showHeadsUp) {
             setShowModal(true);
@@ -55,7 +57,8 @@ export default function StartProjectForm() {
             });
 
             if (res.data && res.data.description) {
-                setEventDescription(res.data.description); // Store event description in the state
+                //setEventDescription(res.data.description); // Store event description in the state
+                setEventsDescription(res.data.description);
                 useProjectStore.setState({ eventDescription: res.data.description });
             }
         } catch (error) {
@@ -92,7 +95,7 @@ export default function StartProjectForm() {
                     bookName,
                     dueDate: date,
                     eventType,
-                    eventDescription: eventType
+                    eventDescription: eventsDescription
                 }, {
                     headers: {
                         Authorization: `Bearer ${token}`,
