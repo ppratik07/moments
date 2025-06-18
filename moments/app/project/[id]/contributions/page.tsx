@@ -46,28 +46,29 @@ export default function ContributionsPage() {
       setCurrentPageIndex(currentPageIndex + 1);
     }
   };
+
   return (
     <div>
       <Header isSignedIn={true} />
-      <div className="flex min-h-screen bg-gray-50">
+      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-50">
         <Sidebar imageKey={imageKey || ''} projectId={projectId} />
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">{projectName || 'Loading...'}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{projectName || 'Loading...'}</h1>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase mb-2 text-center">Total Contributions</h2>
-              <p className="text-4xl font-bold text-purple-600 text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-10">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+              <h2 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase mb-2 text-center">Total Contributions</h2>
+              <p className="text-2xl sm:text-4xl font-bold text-purple-600 text-center">
                 {contributionsData ? contributionsData.totalContributions : '—'}
               </p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase mb-2 text-center">Total Pages</h2>
-              <p className="text-4xl font-bold text-purple-600 text-center">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+              <h2 className="text-xs sm:text-sm font-semibold text-gray-500 uppercase mb-2 text-center">Total Pages</h2>
+              <p className="text-2xl sm:text-4xl font-bold text-purple-600 text-center">
                 {contributionsData
                   ? contributionsData.contributions.reduce((total: number, contrib) => total + contrib.pages.length, 0)
                   : '—'}
@@ -77,11 +78,11 @@ export default function ContributionsPage() {
 
           {/* Contributions - Masonry Board */}
           {loading ? (
-            <p className="text-gray-600">Loading contributions...</p>
+            <p className="text-gray-600 text-sm sm:text-base">Loading contributions...</p>
           ) : error ? (
-            <p className="text-red-500">{error}</p>
+            <p className="text-red-500 text-sm sm:text-base">{error}</p>
           ) : contributionsData && contributionsData.contributions.length > 0 ? (
-            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-6">
+            <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4 sm:gap-6">
               {contributionsData.contributions.map((contribution: Contribution, contribIndex: number) => {
                 // Find the first photo from the contribution's pages
                 let firstPhoto = null;
@@ -106,10 +107,10 @@ export default function ContributionsPage() {
                 return (
                   <div
                     key={contribIndex}
-                    className="break-inside-avoid mb-6 bg-white shadow-lg transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] flex flex-col"
+                    className="break-inside-avoid mb-4 sm:mb-6 bg-white shadow-lg transition-transform transform hover:-translate-y-2 hover:shadow-2xl hover:scale-[1.02] flex flex-col"
                   >
-                    <div className="p-4">
-                      <p className="text-lg font-semibold text-gray-800 mb-3">
+                    <div className="p-3 sm:p-4">
+                      <p className="text-base sm:text-lg font-semibold text-gray-800 mb-3">
                         {contribution.contributorName}
                       </p>
 
@@ -125,7 +126,7 @@ export default function ContributionsPage() {
                         />
                       ) : !firstPhoto && firstParagraph ? (
                         // Only text, no photo
-                        <p className="text-gray-600 text-sm line-clamp-3">
+                        <p className="text-gray-600 text-xs sm:text-sm line-clamp-3">
                           {firstParagraph}
                         </p>
                       ) : firstPhoto && firstParagraph ? (
@@ -138,21 +139,21 @@ export default function ContributionsPage() {
                             width={400}
                             height={250}
                           />
-                          <p className="text-gray-600 text-sm line-clamp-3">
+                          <p className="text-gray-600 text-xs sm:text-sm line-clamp-3">
                             {firstParagraph}
                           </p>
                         </>
                       ) : (
                         // Neither photo nor text
-                        <p className="text-gray-500 text-sm">No content available</p>
+                        <p className="text-gray-500 text-xs sm:text-sm">No content available</p>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="p-4 border-t flex justify-between">
+                    <div className="p-3 sm:p-4 border-t flex justify-between">
                       <button
                         onClick={() => openDetailModal(contribution)}
-                        className="text-blue-500 hover:underline"
+                        className="text-blue-500 hover:underline text-sm sm:text-base"
                       >
                         View Details
                       </button>
@@ -162,7 +163,7 @@ export default function ContributionsPage() {
               })}
             </div>
           ) : (
-            <p className="text-gray-600">No contributions yet.</p>
+            <p className="text-gray-600 text-sm sm:text-base">No contributions yet.</p>
           )}
         </main>
       </div>
@@ -170,28 +171,28 @@ export default function ContributionsPage() {
       {/* Contribution Detail Modal */}
       {selectedContribution && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+          <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-lg sm:max-w-2xl max-h-[90vh] overflow-y-auto relative">
             {/* Close Button */}
             <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-gray-800"
+              className="absolute top-2 sm:top-4 right-2 sm:right-4 text-gray-600 hover:text-gray-800 text-lg sm:text-xl"
               onClick={closeDetailModal}
             >
               ✕
             </button>
 
             {/* Modal Header */}
-            <h2 className="text-2xl font-bold mb-4">{selectedContribution.contributorName}</h2>
-            <p className="text-gray-600 mb-4">
+            <h2 className="text-lg sm:text-2xl font-bold mb-4">{selectedContribution.contributorName}</h2>
+            <p className="text-gray-600 text-sm sm:text-base mb-4">
               Total Pages: {selectedContribution.pages.length}
             </p>
 
             {/* Current Page */}
             {selectedContribution.pages.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-2">
+                <h3 className="text-base sm:text-lg font-semibold mb-2">
                   Page {currentPageIndex + 1} of {selectedContribution.pages.length}
                 </h3>
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4 mb-4">
                   {/* Render the current page's content */}
                   {(() => {
                     const page = selectedContribution.pages[currentPageIndex];
@@ -200,8 +201,8 @@ export default function ContributionsPage() {
 
                     if (photos.length === 0 && paragraphs.length === 0) {
                       return (
-                        <div className="w-full h-40 bg-gray-100 rounded flex items-center justify-center">
-                          <p className="text-gray-500 text-sm">No content available</p>
+                        <div className="w-full h-32 sm:h-40 bg-gray-100 rounded flex items-center justify-center">
+                          <p className="text-gray-500 text-xs sm:text-sm">No content available</p>
                         </div>
                       );
                     }
@@ -209,20 +210,20 @@ export default function ContributionsPage() {
                     return (
                       <>
                         {photos.length > 0 && (
-                          <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
                             {photos.slice(0, 2).map((photo, photoIndex: number) => (
                               <Image
                                 key={photoIndex}
                                 src={photo.imageUrl!}
                                 alt={`Page photo ${photoIndex + 1}`}
                                 className="w-full h-auto object-cover rounded-lg"
-                                width={200}
-                                height={200}
+                                width={150}
+                                height={150}
                               />
                             ))}
                             {photos.length === 1 && (
-                              <div className="bg-blue-100 rounded-lg flex items-center justify-center h-48">
-                                <p className="text-gray-500 text-sm">Add a Photo</p>
+                              <div className="bg-blue-100 rounded-lg flex items-center justify-center h-32 sm:h-48">
+                                <p className="text-gray-500 text-xs sm:text-sm">Add a Photo</p>
                               </div>
                             )}
                           </div>
@@ -230,7 +231,7 @@ export default function ContributionsPage() {
 
                         {paragraphs.length > 0 && (
                           paragraphs.map((paragraph, paraIndex: number) => (
-                            <p key={paraIndex} className="text-gray-600 text-base leading-relaxed mb-4">
+                            <p key={paraIndex} className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
                               {paragraph.value}
                             </p>
                           ))
@@ -245,7 +246,7 @@ export default function ContributionsPage() {
                   <Button
                     onClick={goToPreviousPage}
                     disabled={currentPageIndex === 0}
-                    className={`px-4 py-2 rounded ${currentPageIndex === 0
+                    className={`px-3 sm:px-4 py-2 rounded text-sm sm:text-base w-full sm:w-auto ${currentPageIndex === 0
                         ? 'bg-gray-300 cursor-not-allowed'
                         : ''
                       }`}
@@ -255,7 +256,7 @@ export default function ContributionsPage() {
                   <Button
                     onClick={goToNextPage}
                     disabled={currentPageIndex === selectedContribution.pages.length - 1}
-                    className={`px-4 py-2 rounded ${currentPageIndex === selectedContribution.pages.length - 1
+                    className={`px-3 sm:px-4 py-2 rounded text-sm sm:text-base w-full sm:w-auto ${currentPageIndex === selectedContribution.pages.length - 1
                         ? 'bg-gray-300 cursor-not-allowed'
                         : 'text-white cursor-pointer'
                       }`}
