@@ -54,11 +54,11 @@ const DownloadPage = () => {
 
   if (error) {
     return (
-      <div className="text-red-600 text-center mt-10">
+      <div className="text-red-600 text-center mt-6 sm:mt-10 text-sm sm:text-base">
         {error}
         <button
           onClick={() => router.push('/dashboard')}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="mt-3 sm:mt-4 px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
         >
           Go to Dashboard
         </button>
@@ -68,8 +68,8 @@ const DownloadPage = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <p>
+      <div className="flex flex-col justify-center items-center h-48 sm:h-64">
+        <p className="text-sm sm:text-base mb-2 sm:mb-4">
           Loading PDF... Please wait.
         </p>
         <RotatingLines
@@ -77,7 +77,7 @@ const DownloadPage = () => {
           strokeColor="gray"
           strokeWidth="5"
           animationDuration="0.75"
-          width="96"
+          width="64"
           ariaLabel="rotating-lines-loading"
         />
       </div>
@@ -91,19 +91,19 @@ const DownloadPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       <Header isSignedIn />
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-100">
         <Sidebar projectId={project_id} />
-        <div className="flex-1 ml-0 md:ml-[2rem] p-6">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-4">PDF Preview</h1>
+        <div className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4">PDF Preview</h1>
             {pdfUrl ? (
               <iframe
                 src={pdfUrl}
-                className="w-full h-[80vh] border rounded"
+                className="w-full h-[60vh] sm:h-[80vh] border rounded"
                 title="PDF Preview"
               />
             ) : (
-              <p className="text-center text-gray-400">No PDF available</p>
+              <p className="text-center text-gray-400 text-sm sm:text-base">No PDF available</p>
             )}
           </div>
         </div>
