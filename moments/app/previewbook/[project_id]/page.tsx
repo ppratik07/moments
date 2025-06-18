@@ -237,7 +237,7 @@ const PreviewBookPage = () => {
 
       script.onload = () => {
         const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_OFIWhJovnPg6hZ',
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_05mRHLzebBqXHi',
           amount: amount,
           currency: currency,
           name: 'Memory Lane',
