@@ -4,6 +4,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { Toaster as Sonner } from "sonner";
+import TawkChat from "@/components/chatbot/TawkChat";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
           <Toaster />
           <Sonner />
           {children}
+          <TawkChat />
         </body>
       </html>
     </ClerkProvider>
