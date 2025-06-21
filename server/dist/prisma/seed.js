@@ -78,7 +78,7 @@ function main() {
             ],
             skipDuplicates: true,
         });
-        console.log("Seeding completed!");
+        //console.log("Seeding completed!");
     });
 }
 main()
