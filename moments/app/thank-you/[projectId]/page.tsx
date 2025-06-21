@@ -36,7 +36,7 @@ export default function DonePage() {
             imageKey: response.data.project.imageKey,
             eventDescription: response.data.project.eventDescription || '',
           };
-          console.log('Project data loaded:', projectData);
+          //console.log('Project data loaded:', projectData);
           setProjectData(projectData);
         } else {
           throw new Error('Project data not found');

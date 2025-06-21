@@ -48,7 +48,7 @@ export function generateBookHtml(data: {
   pageContent += '</div>';
 
   // Debug contributions data
-  console.log('Contributions:', JSON.stringify(contributions, null, 2));
+  //console.log('Contributions:', JSON.stringify(contributions, null, 2));
 
   // Filter contributions to exclude empty or invalid pages
   const filteredContributions = contributions
@@ -77,10 +77,10 @@ export function generateBookHtml(data: {
           return false;
         });
 
-        console.log(
-          `Contribution ${contribIndex}, Page ${pageIndex} has content: ${hasContent}`,
-          components
-        );
+        // console.log(
+        //   `Contribution ${contribIndex}, Page ${pageIndex} has content: ${hasContent}`,
+        //   components
+        // );
 
         return hasContent;
       });
@@ -94,13 +94,13 @@ export function generateBookHtml(data: {
     })
     .filter((contribution) => contribution !== null);
 
-  console.log('Filtered Contributions:', JSON.stringify(filteredContributions, null, 2));
+  //console.log('Filtered Contributions:', JSON.stringify(filteredContributions, null, 2));
 
   // Add contribution pages
   let pageCount = 0; // Start after front cover
   filteredContributions.forEach((contribution: any, contribIndex: number) => {
     contribution.pages.forEach((page: any, pageIndex: number) => {
-      console.log(`Processing page ${pageIndex} of contribution ${contribIndex}:`, page);
+      //console.log(`Processing page ${pageIndex} of contribution ${contribIndex}:`, page);
 
       if (pageCount % 2 === 0) {
         if (pageCount > 0) {
