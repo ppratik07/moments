@@ -12,7 +12,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDeliveryDate } from '@/hooks/useDeliveryDate';
 import { HeadsUpModal } from '@/components/ModalPopup';
 import Link from 'next/link';
-import ChatSupportButton from '@/components/ChatSupportButton';
+// import ChatSupportButton from '@/components/ChatSupportButton';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import axios from 'axios';
@@ -252,7 +252,7 @@ export default function StartProjectForm() {
                 </div>
 
                 <div className="flex flex-col md:flex-row items-center justify-between mt-12 gap-4">
-                    <ChatSupportButton title='Chat with Support' />
+                    {/* <ChatSupportButton title='Chat with Support' /> */}
                     <Link href='/new-project/upload-image'>
                         <Button onClick={handleSubmit} className="bg-primary hover:bg-primary/90 cursor-pointer">
                             Create Project

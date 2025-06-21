@@ -973,7 +973,7 @@ app.post('/api/create-checkout-session', async (req: Request, res: Response): Pr
 app.get('/api/user-projects/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;
   const userId = req.userId;
-  console.log('Fetching project for user:', userId, 'Project ID:', projectId);
+  //console.log('Fetching project for user:', userId, 'Project ID:', projectId);
   if (!projectId || typeof projectId !== 'string') {
     return res.status(400).json({ message: 'Invalid projectId' });
   }
@@ -1499,7 +1499,7 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
       },
     });
     const luluAccessToken = luluTokenResponse.data.access_token;
-    console.log('Lulu Access Token:', luluAccessToken);
+    //console.log('Lulu Access Token:', luluAccessToken);
     // Step 5: Upload PDF to Lulu
     const formData = new FormData();
     formData.append('file', new Blob([Buffer.from(pdfResponse.data)]), `book-${projectId}.pdf`);
@@ -1510,9 +1510,9 @@ app.post('/api/print/:projectId', authMiddleware, async (req: Request, res: Resp
         'Content-Type': 'multipart/form-data',
       },
     });
-    console.log('File Upload Response:', uploadResponse.data);
+    //console.log('File Upload Response:', uploadResponse.data);
     const fileId = uploadResponse.data.id;
-    console.log('File uploaded to Lulu:', fileId);
+    //console.log('File uploaded to Lulu:', fileId);
     // Step 6: Create print job
     const printJobResponse = await axios.post(
       'https://api.lulu.com/print-jobs/',

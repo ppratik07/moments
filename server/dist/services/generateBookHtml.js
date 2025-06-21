@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateBookHtml = void 0;
+exports.generateBookHtml = generateBookHtml;
 function generateBookHtml(data) {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s;
     const { projectName, contributions, frontCover } = data;
@@ -34,7 +34,7 @@ function generateBookHtml(data) {
     }
     pageContent += '</div>';
     // Debug contributions data
-    console.log('Contributions:', JSON.stringify(contributions, null, 2));
+    //console.log('Contributions:', JSON.stringify(contributions, null, 2));
     // Filter contributions to exclude empty or invalid pages
     const filteredContributions = contributions
         .map((contribution, contribIndex) => {
@@ -60,7 +60,10 @@ function generateBookHtml(data) {
                 }
                 return false;
             });
-            console.log(`Contribution ${contribIndex}, Page ${pageIndex} has content: ${hasContent}`, components);
+            // console.log(
+            //   `Contribution ${contribIndex}, Page ${pageIndex} has content: ${hasContent}`,
+            //   components
+            // );
             return hasContent;
         });
         if (validPages.length === 0)
@@ -68,12 +71,12 @@ function generateBookHtml(data) {
         return Object.assign(Object.assign({}, contribution), { pages: validPages });
     })
         .filter((contribution) => contribution !== null);
-    console.log('Filtered Contributions:', JSON.stringify(filteredContributions, null, 2));
+    //console.log('Filtered Contributions:', JSON.stringify(filteredContributions, null, 2));
     // Add contribution pages
     let pageCount = 0; // Start after front cover
     filteredContributions.forEach((contribution, contribIndex) => {
         contribution.pages.forEach((page, pageIndex) => {
-            console.log(`Processing page ${pageIndex} of contribution ${contribIndex}:`, page);
+            //console.log(`Processing page ${pageIndex} of contribution ${contribIndex}:`, page);
             if (pageCount % 2 === 0) {
                 if (pageCount > 0) {
                     pageContent += '</div>';
@@ -360,4 +363,3 @@ function generateBookHtml(data) {
     </html>
   `;
 }
-exports.generateBookHtml = generateBookHtml;
