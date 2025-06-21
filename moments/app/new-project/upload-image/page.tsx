@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/landing/Header';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import ChatSupportButton from '@/components/ChatSupportButton';
+// import ChatSupportButton from '@/components/ChatSupportButton';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import { toast } from 'sonner';
@@ -52,7 +52,7 @@ export default function AddPhoto() {
                     </div>
 
                     <div className="flex flex-col md:flex-row items-center justify-between mt-48 gap-4">
-                        <ChatSupportButton title="Chat with Support" />
+                        {/* <ChatSupportButton title="Chat with Support" /> */}
                     </div>
                 </div>
             </div>

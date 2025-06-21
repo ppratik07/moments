@@ -17,7 +17,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import ChatSupportButton from "@/components/ChatSupportButton";
+// import ChatSupportButton from "@/components/ChatSupportButton";
 import { Stepper } from "@/components/Stepper";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
@@ -191,7 +191,7 @@ export default function YourInformationPage() {
                     </div>
 
                     <div className="pt-6 flex flex-col sm:flex-row justify-between gap-4 sm:items-center w-full">
-                        <ChatSupportButton title="Chat with Support" />
+                        {/* <ChatSupportButton title="Chat with Support" /> */}
                         <Button
                             type="submit"
                             className="bg-gradient-to-r from-[#C879FF] to-[#A44EFF] text-white px-6 py-2 rounded-xs"

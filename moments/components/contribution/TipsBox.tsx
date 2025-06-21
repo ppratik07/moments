@@ -1,6 +1,6 @@
 // components/TipsBox.tsx
 import { Button } from "@/components/ui/button";
-import ChatSupportButton from "../ChatSupportButton";
+// import ChatSupportButton from "../ChatSupportButton";
 
 type TipsBoxProps = {
     onNextClick?: () => void; // Make onNextClick optional
@@ -9,7 +9,7 @@ type TipsBoxProps = {
 export default function TipsBox({ onNextClick }: TipsBoxProps) {
     return (
         <div className="flex justify-between items-center mt-6 w-full flex-wrap gap-4">
-            <ChatSupportButton title="Chat with Support" />
+            {/* <ChatSupportButton title="Chat with Support" /> */}
 
             <div className="border rounded-md px-4 py-3 text-sm text-gray-700 bg-white shadow-sm">
                 <p><strong>Tips:</strong></p>
