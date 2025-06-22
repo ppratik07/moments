@@ -21,7 +21,7 @@ const TawkChat = () => {
         onBeforeLoad={() => {}}
         onStatusChange={() => {}}
       />
-      <button onClick={handleMinimize}>Minimize Chat</button>
+      <button onClick={handleMinimize}></button>
     </div>
   );
 };
