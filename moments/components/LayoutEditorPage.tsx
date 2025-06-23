@@ -193,8 +193,8 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
             height: comp.size.height,
             backgroundImage: comp.image_url ? `url(${comp.image_url})` : 'none',
             backgroundSize: 'cover',
-            backgroundColor: comp.image_url ? 'transparent' : '#a3bffa', // Blue background for placeholders
-            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)', // 3D effect
+            backgroundColor: comp.image_url ? 'transparent' : '#a3bffa',
+            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)',
           }}
           onClick={() => handleComponentClick(index)}
         >
@@ -202,7 +202,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
           {!comp.image_url && !uploading && (
             <>
               <span className="text-gray-500 text-sm mb-2">Add a Photo</span>
-              <div className="text-white text-2xl">+</div> {/* Plus button */}
+              <div className="text-white text-2xl">+</div>
             </>
           )}
         </div>
@@ -220,7 +220,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
             fontFamily: comp.styles?.font_family,
             fontSize: comp.styles?.font_size,
             fontWeight: comp.styles?.font_weight,
-            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)', // 3D effect
+            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)',
           }}
           onClick={() => handleComponentClick(index)}
         >
@@ -258,6 +258,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
       </div>
     );
   };
+
   const handleDeletePage = (index: number) => {
     if (pages.length <= 1) return;
     const updatedPages = pages.filter((_, i) => i !== index);
@@ -267,7 +268,6 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
 
   return (
     <div className="flex flex-row gap-4 mx-auto max-w-[1000px]">
-      {/* Main Layout Area */}
       <div className="flex-1">
         <div className="relative w-[800px] h-[700px] border border-gray-300 bg-gray-100 rounded-lg">
           {pages[currentPageIndex]?.components.map((comp, index) => renderComponent(comp, index))}
@@ -287,7 +287,6 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
         </div>
       </div>
 
-      {/* Thumbnail Sidebar */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId="pages" isCombineEnabled={false} isDropDisabled={false}>
           {(provided) => (
@@ -303,8 +302,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`cursor-pointer border-2 ${index === currentPageIndex ? 'border-purple-600' : 'border-transparent'
-                        } mb-2 rounded`}
+                      className={`cursor-pointer border-2 ${index === currentPageIndex ? 'border-purple-600' : 'border-transparent'} mb-2 rounded`}
                       onClick={() => setCurrentPageIndex(index)}
                     >
                       {renderThumbnail(page, index)}
@@ -353,15 +351,15 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                             backgroundColor: comp.type === 'photo' ? '#a3bffa' : '#e0e0e0',
                             backgroundImage: comp.type === 'photo' && comp.image_url ? `url(${comp.image_url})` : 'none',
                             backgroundSize: 'cover',
-                            boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)', // 3D effect for preview
+                            boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)',
                           }}
                         >
                           {comp.type === 'photo' && !comp.image_url && (
-                            <div className="text-white text-lg">+</div> // Plus button in preview
+                            <div className="text-white text-lg">+</div>
                           )}
                           {comp.type !== 'photo' && (
                             <div className="w-full h-full flex items-center justify-center">
-                              <span className="text-gray-500 text-xs">Text</span>
+                              <span className="text;gray-500 text-xs">Text</span>
                             </div>
                           )}
                         </div>
@@ -398,13 +396,18 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                 ✕
               </button>
             </div>
-            <textarea
-              value={tempMessage}
-              onChange={(e) => setTempMessage(e.target.value)}
-              placeholder={selectedComponent.editor?.placeholder || 'Enter your message'}
-              maxLength={selectedComponent.editor?.max_characters}
-              className="w-full p-2 border border-gray-300 rounded text-sm mb-4 h-32 resize-none"
-            />
+            <div className="relative">
+              <textarea
+                value={tempMessage}
+                onChange={(e) => setTempMessage(e.target.value)}
+                placeholder={selectedComponent.editor?.placeholder || 'Enter your message'}
+                maxLength={507}
+                className="w-full p-2 border border-gray-300 rounded text-sm mb-2 h-32 resize-none"
+              />
+              <div className="text-right text-gray-500 text-xs">
+                {tempMessage.length}/507
+              </div>
+            </div>
             <div className="flex justify-end gap-2">
               <button
                 onClick={handleCancelMessageEdit}
