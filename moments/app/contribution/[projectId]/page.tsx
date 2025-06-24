@@ -123,7 +123,6 @@ export default function ContributionPage() {
             eventDescription: response.data.project.eventDescription || '',
           };
           setProjectData(projectData);
-          //console.log('Project data loaded from backend:', projectData);
           // Save to localStorage for future use
           localStorage.setItem(`project-${projectId}`, JSON.stringify(projectData));
         } else {
