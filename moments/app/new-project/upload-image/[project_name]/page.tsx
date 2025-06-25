@@ -55,7 +55,7 @@ export default function NewEventPage() {
   const [shareLink, setShareLink] = useState<string>('');
   const { isSignedIn } = useCurrentUser() as CurrentUser;
   const router = useRouter();
-  const videoSrc = 'https://youtu.be/embed/TyF3IumWiH8?si=sx4704VKu_sYQ-IC';
+  const videoSrc = 'https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4';
   const { getToken } = useAuth();
 
 
