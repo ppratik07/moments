@@ -126,7 +126,7 @@ export default function StartProjectForm() {
         router.push(`/new-project/upload-image`);
       }, 100);
     } catch (error) {
-      console.error(error);
+      console.error("Error Request",error);
       toast.error("Something went wrong. Please try again.");
       setIsLoading(false);
       setProgress(0);
