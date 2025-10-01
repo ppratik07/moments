@@ -1,6 +1,6 @@
 # Contributing to Moments
 
-First off, thanks for your interest in contributing to Moments! 🎉
+First off, thanks for your interest in contributing to Moments! ♡
 
 This guide will help you get started and ensure consistency across all contributions made to this repository.
 
