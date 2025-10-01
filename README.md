@@ -100,7 +100,7 @@ Make sure you have the following installed on your machine:
     ```
 
 3.  **Set up environment variables:**
-    Create a `.env.local` file in the `moments` directory and add the necessary Clerk environment variables. You can find these in your Clerk dashboard.
+    Copy the `.env.example` to a new file named `.env.local` and add the necessary Clerk environment variables. You can find these in your Clerk dashboard.
     ```
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
     CLERK_SECRET_KEY=your_clerk_secret_key
