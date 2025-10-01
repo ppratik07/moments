@@ -99,7 +99,7 @@ export default function DashboardPage() {
   };
 
   const baseImageUrl =
-    process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
+    process.env.NEXT_PUBLIC_IMAGE_R2_URL || '';
 
   return (
     <div>
