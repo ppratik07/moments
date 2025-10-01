@@ -101,7 +101,7 @@ app.post("/api/users", authMiddleware, async (req: Request, res: Response): Prom
       data: {
         projectName,
         bookName,
-        dueDate: new Date(dueDate),
+        dueDate: dueDate ? new Date(dueDate) : null,
         eventType,
         eventDescription,
         userId: req.userId || "",
