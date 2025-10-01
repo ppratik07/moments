@@ -2,7 +2,7 @@
 
 First off, thanks for your interest in contributing to Moments! 🎉
 
-We love contributions — whether it's fixing bugs, adding features, improving documentation, or suggesting ideas. This guide will help you get started and ensure consistency across contributions.
+This guide will help you get started and ensure consistency across all contributions made to this repository.
 
 ## Table of Contents
 
@@ -48,7 +48,7 @@ We love contributions — whether it's fixing bugs, adding features, improving d
    ```
 
 7. **Open a Pull Request**  
-   Include a short description of your changes and attach a working video showing your feature/bug fix in action.
+   Include a short description of your changes and make sure to attach a working video showing your feature/bug fix in action, without this it would be hard for us to manually verify all changes made.
 
 ## Project Setup
 
@@ -95,9 +95,9 @@ Use descriptive branch names for clarity:
 
 Use **imperative tense** in your commit messages:
 
-- ✅ `Add image upload progress bar`
-- ✅ `Fix dashboard layout bug`
-- ✅ `Update README with setup instructions`
+-  `Add image upload progress bar`
+-  `Fix dashboard layout bug`
+-  `Update README with setup instructions`
 
 **Optional:** Include a short issue reference:
 
@@ -144,7 +144,5 @@ Use **imperative tense** in your commit messages:
 - For urgent support during development, use Tawk.to chat if applicable.
 
 ## Thank You! 🎉
-
-Your contributions make Moments better for everyone.
 
 Whether it's fixing bugs, improving documentation, or adding exciting new features, we appreciate your help!
