@@ -2,8 +2,11 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { BookOpen, UserPlus, Gift } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const HeroSection = () => {
+    const router  = useRouter();
+  
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-accent to-background py-20 md:py-28">
       <div className="container mx-auto px-4">
@@ -23,10 +26,10 @@ const HeroSection = () => {
               meaningful keepsake for life&apos;s special moments.
             </p>
             <div className="flex flex-wrap gap-4 fade-in-up stagger-2">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white cursor-pointer " onClick={()=> router.push('/new-project')}>
                 Start Your Book
               </Button>
-              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10">
+              <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 cursor-pointer">
                 See Examples
               </Button>
             </div>

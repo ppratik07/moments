@@ -148,7 +148,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                   <SignInButton mode="modal" forceRedirectUrl="/dashboard">
                     <Button
                       variant="outline"
-                      className="w-full border-primary text-primary hover:bg-primary/10"
+                      className="w-full border-primary text-primary hover:bg-primary/10 cursor-pointer"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Log In
@@ -156,7 +156,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                   </SignInButton>
                   <SignUpButton mode="modal">
                     <Button
-                      className="w-full bg-primary hover:bg-primary/90"
+                      className="w-full bg-primary hover:bg-primary/90 cursor-pointer"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Get Started
