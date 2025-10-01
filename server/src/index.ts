@@ -55,10 +55,10 @@ const s3 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
   },
 });
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
-}
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// if (!process.env.STRIPE_SECRET_KEY) {
+//   throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
+// }
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
@@ -943,32 +943,32 @@ app.get('/api/pdf/:projectId', async (req: Request, res: Response): Promise<any>
   }
 });
 
-app.post('/api/create-checkout-session', async (req: Request, res: Response): Promise<any> => {
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Book',
-            },
-            unit_amount: 2500, // $25.00
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${req.headers.origin}/success`,
-      cancel_url: `${req.headers.origin}/cancel`,
-    });
+// app.post('/api/create-checkout-session', async (req: Request, res: Response): Promise<any> => {
+//   try {
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ['card'],
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: 'usd',
+//             product_data: {
+//               name: 'Book',
+//             },
+//             unit_amount: 2500, // $25.00
+//           },
+//           quantity: 1,
+//         },
+//       ],
+//       mode: 'payment',
+//       success_url: `${req.headers.origin}/success`,
+//       cancel_url: `${req.headers.origin}/cancel`,
+//     });
 
-    res.status(200).json({ id: session.id });
-  } catch (err) {
-    res.status(500).json({ message : 'Error creating checkout',error : err });
-  }
-})
+//     res.status(200).json({ id: session.id });
+//   } catch (err) {
+//     res.status(500).json({ message : 'Error creating checkout',error : err });
+//   }
+// })
 
 app.get('/api/user-projects/:projectId', authMiddleware, async (req: Request, res: Response): Promise<any> => {
   const { projectId } = req.params;

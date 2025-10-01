@@ -96,7 +96,7 @@ Make sure you have the following installed on your machine:
 
 2.  **Install dependencies:**
     ```bash
-    npm install
+    npm install --force
     ```
 
 3.  **Set up environment variables:**

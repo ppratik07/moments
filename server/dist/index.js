@@ -21,7 +21,6 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const client_1 = require("@prisma/client");
 const middleware_1 = require("./middleware/middleware");
 const request_1 = __importDefault(require("request"));
-const stripe_1 = __importDefault(require("stripe"));
 const axios_1 = __importDefault(require("axios"));
 const razorpay_1 = __importDefault(require("razorpay"));
 const crypto_1 = __importDefault(require("crypto"));
@@ -51,10 +50,10 @@ const s3 = new client_s3_1.S3Client({
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
     },
 });
-if (!process.env.STRIPE_SECRET_KEY) {
-    throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
-}
-const stripe = new stripe_1.default(process.env.STRIPE_SECRET_KEY);
+// if (!process.env.STRIPE_SECRET_KEY) {
+//   throw new Error("STRIPE_SECRET_KEY is not defined in the environment variables");
+// }
+// const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const razorpay = new razorpay_1.default({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -843,32 +842,31 @@ app.get('/api/pdf/:projectId', (req, res) => __awaiter(void 0, void 0, void 0, f
         res.status(500).json({ error: 'Internal server error' });
     }
 }));
-app.post('/api/create-checkout-session', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const session = yield stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: [
-                {
-                    price_data: {
-                        currency: 'usd',
-                        product_data: {
-                            name: 'Book',
-                        },
-                        unit_amount: 2500, // $25.00
-                    },
-                    quantity: 1,
-                },
-            ],
-            mode: 'payment',
-            success_url: `${req.headers.origin}/success`,
-            cancel_url: `${req.headers.origin}/cancel`,
-        });
-        res.status(200).json({ id: session.id });
-    }
-    catch (err) {
-        res.status(500).json({ message: 'Error creating checkout', error: err });
-    }
-}));
+// app.post('/api/create-checkout-session', async (req: Request, res: Response): Promise<any> => {
+//   try {
+//     const session = await stripe.checkout.sessions.create({
+//       payment_method_types: ['card'],
+//       line_items: [
+//         {
+//           price_data: {
+//             currency: 'usd',
+//             product_data: {
+//               name: 'Book',
+//             },
+//             unit_amount: 2500, // $25.00
+//           },
+//           quantity: 1,
+//         },
+//       ],
+//       mode: 'payment',
+//       success_url: `${req.headers.origin}/success`,
+//       cancel_url: `${req.headers.origin}/cancel`,
+//     });
+//     res.status(200).json({ id: session.id });
+//   } catch (err) {
+//     res.status(500).json({ message : 'Error creating checkout',error : err });
+//   }
+// })
 app.get('/api/user-projects/:projectId', middleware_1.authMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { projectId } = req.params;
