@@ -16,7 +16,6 @@ This guide will help you get started and ensure consistency across all contribut
   - [Backend](#backend)
   - [General Guidelines](#general-guidelines)
 - [Communication](#communication)
-- [Thank You!](#thank-you)
 
 ## How to Contribute
 
