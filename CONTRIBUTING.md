@@ -104,7 +104,7 @@ Use **imperative tense** in your commit messages:
 ## Communication
 
 - Ask questions or discuss changes via GitHub issues first.
-- Be respectful and patient — contributors may have different experience levels.
+- Be respectful and patient, contributors may have different experience levels.
 - For urgent support during development, use Tawk.to chat if applicable.
 
 ## Thank You! 🎉
