@@ -32,7 +32,7 @@ model LoginUser {
   id               String                  @id @default(uuid())
   projectName      String
   bookName         String
-  dueDate          DateTime
+  dueDate          DateTime?
   eventType        String
   eventDescription String
   userId           String

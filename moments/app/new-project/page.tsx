@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -22,11 +21,10 @@ import { Progress } from '@/components/ui/progress';
 import TawkMessengerReact from '@tawk.to/tawk-messenger-react'; // Tawk.to React plugin
 
 export default function StartProjectForm() {
-  const [date, setDate] = useState<string | null>(null);
   const { isSignedIn } = useCurrentUser();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const { calculatedDate, showHeadsUp } = useDeliveryDate(date);
+  const { calculatedDate, showHeadsUp } = useDeliveryDate(null);
   const [project, setProject] = useState<string | null>(null);
   const [bookName, setBookName] = useState<string | null>(null);
   const [firstName, setFirstName] = useState<string | null>(null);
@@ -72,7 +70,6 @@ export default function StartProjectForm() {
     const missingFields = [];
     if (!project) missingFields.push("project name,");
     if (!bookName) missingFields.push("Who is this book for?");
-    if (!date) missingFields.push('due date &');
     if (!eventType) missingFields.push('Event type');
 
     if (missingFields.length > 0) {
@@ -90,7 +87,7 @@ export default function StartProjectForm() {
         const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
           projectName: project,
           bookName,
-          dueDate: date,
+          dueDate: null,
           eventType,
           eventDescription: eventsDescription,
         }, {
@@ -200,19 +197,6 @@ export default function StartProjectForm() {
               className="mb-4 mt-2"
             />
 
-            <Label htmlFor="dueDate">When do you need the book?</Label>
-            <div className="relative mb-4">
-              <Input
-                type="date"
-                id="dueDate"
-                value={date ?? ''}
-                onChange={(e) => setDate(e.target.value)}
-                className="pr-10 mt-2"
-                required
-              />
-              <Calendar className="absolute right-3 top-2.5 text-gray-400 h-5 w-5 pointer-events-none" />
-            </div>
-
             <Label htmlFor="eventType">Event Type</Label>
             <Select value={eventType || ''} onValueChange={handleEventTypeChange}>
               <SelectTrigger className="w-full mt-2">
@@ -288,7 +272,7 @@ export default function StartProjectForm() {
       <HeadsUpModal
         visible={showModal}
         onClose={() => setShowModal(false)}
-        enteredDate={date ?? ''}
+        enteredDate={null}
         calculatedDate={calculatedDate}
       />
       {/* Tawk.to Chat Widget */}
