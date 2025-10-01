@@ -7,10 +7,6 @@ This guide will help you get started and ensure consistency across all contribut
 ## Table of Contents
 
 - [How to Contribute](#how-to-contribute)
-- [Project Setup](#project-setup)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
 - [Branch Naming Conventions](#branch-naming-conventions)
 - [Commit Guidelines](#commit-guidelines)
 - [Pull Requests](#pull-requests)
@@ -49,38 +45,6 @@ This guide will help you get started and ensure consistency across all contribut
 
 7. **Open a Pull Request**  
    Include a short description of your changes and make sure to attach a working video showing your feature/bug fix in action, without this it would be hard for us to manually verify all changes made.
-
-## Project Setup
-
-### Prerequisites
-
-- Node.js (v18 or later)
-- npm or yarn
-- PostgreSQL
-
-### Backend Setup
-
-```bash
-cd server
-npm install
-# Set environment variables in .env
-npx prisma migrate dev
-npx prisma db seed # optional
-npm run start
-```
-
-**Backend runs at:** `http://localhost:8080`
-
-### Frontend Setup
-
-```bash
-cd moments
-npm install --force
-# Set environment variables in .env.local
-npm run dev
-```
-
-**Frontend runs at:** `http://localhost:3000`
 
 ## Branch Naming Conventions
 
