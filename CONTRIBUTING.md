@@ -1,163 +1,150 @@
-Contributing to Moments
+# Contributing to Moments
 
 First off, thanks for your interest in contributing to Moments! 🎉
-We love contributions — whether it’s fixing bugs, adding features, improving documentation, or suggesting ideas. This guide will help you get started and ensure consistency across contributions.
 
-Table of Contents
+We love contributions — whether it's fixing bugs, adding features, improving documentation, or suggesting ideas. This guide will help you get started and ensure consistency across contributions.
 
-How to Contribute
+## Table of Contents
 
-Project Setup
+- [How to Contribute](#how-to-contribute)
+- [Project Setup](#project-setup)
+  - [Prerequisites](#prerequisites)
+  - [Backend Setup](#backend-setup)
+  - [Frontend Setup](#frontend-setup)
+- [Branch Naming Conventions](#branch-naming-conventions)
+- [Commit Guidelines](#commit-guidelines)
+- [Pull Requests](#pull-requests)
+- [Reporting Issues](#reporting-issues)
+- [Code Style & Testing](#code-style--testing)
+  - [Frontend](#frontend)
+  - [Backend](#backend)
+  - [General Guidelines](#general-guidelines)
+- [Communication](#communication)
+- [Thank You!](#thank-you)
 
-Branch Naming Conventions
+## How to Contribute
 
-Commit Guidelines
+1. **Fork the repository**  
+   Click the "Fork" button at the top of the repository page.
 
-Pull Requests
+2. **Clone your fork locally**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/moments.git
+   cd moments
+   ```
 
-Reporting Issues
+3. **Create a new branch**  
+   Follow our [branch naming conventions](#branch-naming-conventions).
 
-Code Style & Testing
+4. **Make your changes**  
+   Follow the [code style and testing guidelines](#code-style--testing).
 
-Communication
+5. **Commit your changes**  
+   Use our [commit message format](#commit-guidelines).
 
-How to Contribute
+6. **Push your branch**
+   ```bash
+   git push origin your-branch-name
+   ```
 
-Fork the repository
-Click the “Fork” button at the top of the repository page.
+7. **Open a Pull Request**  
+   Include a short description of your changes and attach a working video showing your feature/bug fix in action.
 
-Clone your fork locally
+## Project Setup
 
-git clone https://github.com/YOUR_USERNAME/moments.git
-cd moments
+### Prerequisites
 
+- Node.js (v18 or later)
+- npm or yarn
+- PostgreSQL
 
-Create a new branch
-Follow our branch naming conventions (see below).
+### Backend Setup
 
-Make your changes
-Follow the code style and testing guidelines.
-
-Commit your changes
-Use our commit message format (see below).
-
-Push your branch
-
-git push origin your-branch-name
-
-
-Open a Pull Request
-Include a short description of your changes and attach a working video showing your feature/bug fix in action.
-
-Project Setup
-Prerequisites
-
-Node.js (v18 or later)
-
-npm or yarn
-
-PostgreSQL
-
-Backend Setup
+```bash
 cd server
 npm install
 # Set environment variables in .env
 npx prisma migrate dev
 npx prisma db seed # optional
 npm run start
+```
 
+**Backend runs at:** `http://localhost:8080`
 
-Backend runs at: http://localhost:8080
+### Frontend Setup
 
-Frontend Setup
+```bash
 cd moments
 npm install --force
 # Set environment variables in .env.local
 npm run dev
+```
 
+**Frontend runs at:** `http://localhost:3000`
 
-Frontend runs at: http://localhost:3000
-
-Branch Naming Conventions
+## Branch Naming Conventions
 
 Use descriptive branch names for clarity:
 
-feature/<feature-name> – for new features
+- `feature/<feature-name>` – for new features
+- `fix/<bug-name>` – for bug fixes
+- `docs/<documentation-update>` – for documentation updates
+- `test/<test-description>` – for adding or updating tests
 
-fix/<bug-name> – for bug fixes
+## Commit Guidelines
 
-docs/<documentation-update> – for documentation updates
+Use **imperative tense** in your commit messages:
 
-test/<test-description> – for adding or updating tests
+- ✅ `Add image upload progress bar`
+- ✅ `Fix dashboard layout bug`
+- ✅ `Update README with setup instructions`
 
-Commit Guidelines
+**Optional:** Include a short issue reference:
 
-Use imperative tense in your commit messages:
+- `Fix user login bug #42`
 
-Add image upload progress bar
-Fix dashboard layout bug
-Update README with setup instructions
+## Pull Requests
 
+- Ensure your branch is up-to-date with `main` before raising a PR.
+- **Add a working video** showing your feature or bug fix. This helps maintainers quickly verify your changes.
+- Use a descriptive PR title and include context in the description.
+- Label your PR appropriately (`feature`, `bug`, `docs`, etc.).
 
-Optional: Include a short issue reference:
+## Reporting Issues
 
-Fix user login bug #42
+- Check the [issues](../../issues) to avoid duplicates.
+- Provide a clear description of the problem.
+- Include screenshots, logs, or steps to reproduce the issue.
 
-Pull Requests
+## Code Style & Testing
 
-Ensure your branch is up-to-date with main before raising a PR.
+### Frontend
 
-Add a working video showing your feature or bug fix. This helps maintainers quickly verify your changes.
+- Use **TypeScript** with **Next.js**
+- Styling with **Tailwind CSS**
+- Components follow **shadcn/ui** conventions
+- State management: **Zustand**
 
-Use a descriptive PR title and include context in the description.
+### Backend
 
-Label your PR appropriately (feature, bug, docs, etc.).
+- **Node.js** + **Express**
+- **Prisma ORM** for PostgreSQL
 
-Reporting Issues
+### General Guidelines
 
-Check the issues
- to avoid duplicates.
+- Keep functions and components small and focused
+- Write descriptive comments for complex logic
+- Include tests for new features or bug fixes
+- Run linter before committing (if available)
 
-Provide a clear description of the problem.
+## Communication
 
-Include screenshots, logs, or steps to reproduce the issue.
+- Ask questions or discuss changes via GitHub issues first.
+- Be respectful and patient — contributors may have different experience levels.
+- For urgent support during development, use Tawk.to chat if applicable.
 
-Code Style & Testing
-Frontend
-
-Use TypeScript with Next.js
-
-Styling with Tailwind CSS
-
-Components follow shadcn/ui conventions
-
-State management: Zustand
-
-Backend
-
-Node.js + Express
-
-Prisma ORM for PostgreSQL
-
-General Guidelines
-
-Keep functions and components small and focused
-
-Write descriptive comments for complex logic
-
-Include tests for new features or bug fixes
-
-Run linter before committing (if available)
-
-Communication
-
-Ask questions or discuss changes via GitHub issues first.
-
-Be respectful and patient — contributors may have different experience levels.
-
-For urgent support during development, use Tawk.to chat if applicable.
-
-Thank You! 🎉
+## Thank You! 🎉
 
 Your contributions make Moments better for everyone.
-Whether it’s fixing bugs, improving documentation, or adding exciting new features, we appreciate your help!
+
+Whether it's fixing bugs, improving documentation, or adding exciting new features, we appreciate your help!
