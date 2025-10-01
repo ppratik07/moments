@@ -14,8 +14,8 @@ const TawkChat = () => {
   return (
     <div>
       <TawkMessengerReact
-        propertyId={process.env.NEXT_PUBLIC_TAWKTO_PROPERTY_ID || '6855b2901445581915fdb1a4'}
-        widgetId={process.env.NEXT_PUBLIC_TAWKTO_WIDGET_ID || '1iu7c31u3'}
+        propertyId={process.env.NEXT_PUBLIC_TAWKTO_PROPERTY_ID || ''}
+        widgetId={process.env.NEXT_PUBLIC_TAWKTO_WIDGET_ID || ''}
         ref={tawkMessengerRef}
         onLoad={() => {}}
         onBeforeLoad={() => {}}

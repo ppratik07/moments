@@ -1,3 +1,15 @@
 node_modules
 # Keep environment variables out of version control
 .env
+/dist
+.dist
+.DS_Store
+npm-debug.log
+yarn-error.log
+.vscode
+.idea
+*.log
+coverage
+*.tsbuildinfo
+/server/dist
+/server/node_modules
