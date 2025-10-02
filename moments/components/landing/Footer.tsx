@@ -1,4 +1,5 @@
 import { BookOpen } from "lucide-react";
+import Link from "next/link";
 
 export const Footer: React.FC = () => {
     return (
@@ -28,7 +29,11 @@ export const Footer: React.FC = () => {
                     <div>
                         <h3 className="font-semibold mb-4">Company</h3>
                         <ul className="space-y-2">
-                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">About</a></li>
+                            <li>
+                                <a href="/about" className="text-sm text-muted-foreground hover:text-primary">
+                                    About
+                                </a>
+                            </li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Careers</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Contact</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Blog</a></li>
