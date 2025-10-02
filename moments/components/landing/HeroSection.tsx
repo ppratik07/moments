@@ -26,7 +26,7 @@ const HeroSection = () => {
               meaningful keepsake for life&apos;s special moments.
             </p>
             <div className="flex flex-wrap gap-4 fade-in-up stagger-2">
-              <Button size="lg" className="bg-primary hover:bg-primary/90 text-white cursor-pointer " onClick={()=> router.push('/new-project')}>
+              <Button size="lg" className="bg-primary hover:bg-primary/90 cursor-pointer " onClick={()=> router.push('/new-project')}>
                 Start Your Book
               </Button>
               <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/10 cursor-pointer">
@@ -44,7 +44,7 @@ const HeroSection = () => {
             </div>
           </div>
           <div className="lg:w-1/2 relative fade-in stagger-2">
-            <div className="relative bg-white shadow-xl rounded-2xl p-4 rotate-3 hover-lift">
+            <div className="relative bg-white shadow-xl rounded-2xl p-4 rotate-3 hover-lift dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
               <Image
                 src="https://images.unsplash.com/photo-1731596153022-4cedafe3330a?q=80&w=2942&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" 
                 alt="Memory Book Example"
@@ -52,7 +52,7 @@ const HeroSection = () => {
                 width={500}
                 height={500}
               />
-              <div className="absolute -bottom-5 -left-5 bg-white p-3 rounded-xl shadow-lg">
+              <div className="absolute -bottom-5 -left-5 bg-white p-3 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/20 p-2 rounded-full">
                     <UserPlus size={20} className="text-primary" />
@@ -63,7 +63,7 @@ const HeroSection = () => {
                   </div>
                 </div>
               </div>
-              <div className="absolute -top-5 -right-5 bg-white p-3 rounded-xl shadow-lg">
+              <div className="absolute -top-5 -right-5 bg-white p-3 rounded-xl shadow-lg dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
                 <div className="flex items-center gap-2">
                   <div className="bg-primary/20 p-2 rounded-full">
                     <BookOpen size={20} className="text-primary" />
@@ -75,7 +75,7 @@ const HeroSection = () => {
                 </div>
               </div>
             </div>
-            <div className="absolute -bottom-10 -right-10 bg-white p-4 rounded-xl shadow-lg rotate-6 hover-lift z-10">
+            <div className="absolute -bottom-10 -right-10 bg-white p-4 rounded-xl shadow-lg rotate-6 hover-lift z-10 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300">
               <div className="flex items-center gap-3">
                 <div className="bg-primary/20 p-2 rounded-full">
                   <Gift size={24} className="text-primary" />

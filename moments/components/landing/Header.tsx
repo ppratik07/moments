@@ -1,10 +1,11 @@
 'use client';
-import { BookOpen, Menu, X } from "lucide-react";
+import { BookOpen, Menu, X, Sun, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTheme } from "@/hooks/useTheme";
 
 interface HeaderProps {
   isSignedIn: boolean;
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
   const router = useRouter();
   const isLandingPage = pathname === '/';
   const isDashboardPage = pathname?.startsWith('/dashboard');
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
@@ -68,6 +70,17 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                 <a href="#testimonials" className="text-sm font-medium hover:text-primary transition-colors">
                   Testimonials
                 </a>
+                <button
+                  aria-label="Toggle Dark Mode"
+                  onClick={toggleTheme}
+                  className="p-2 rounded-md hover:bg-primary/20 transition-colors"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="h-5 w-5 text-yellow-400" />
+                  ) : (
+                    <Moon className="h-5 w-5 text-gray-700" />
+                  )}
+                </button>
                 {isSignedIn ? (
                   <UserButton afterSignOutUrl="/" />
                 ) : (
@@ -99,7 +112,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
       </header>
       {/* Mobile Navigation Overlay */}
       {isLandingPage && isMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-white md:hidden">
+        <div className="fixed inset-0 z-40 bg-background md:hidden">
           <div className="flex flex-col p-6 space-y-6 text-center pt-20">
             <a
               href="#how-it-works"
@@ -129,6 +142,17 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
             >
               Testimonials
             </a>
+            <button
+              aria-label="Toggle Dark Mode"
+              onClick={toggleTheme}
+              className="flex items-center justify-center p-3 rounded-md hover:bg-primary/20 transition-colors mx-auto"
+            >
+              {theme === 'dark' ? (
+                <Sun className="h-6 w-6 text-yellow-400" />
+              ) : (
+                <Moon className="h-6 w-6 text-gray-700" />
+              )}
+            </button>
             <div className="flex flex-col space-y-4 pt-4">
               {isSignedIn ? (
                 <>

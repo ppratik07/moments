@@ -37,7 +37,7 @@ const Testimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div 
               key={index} 
-              className="bg-white p-8 rounded-xl shadow-sm border border-border flex flex-col h-full fade-in-up hover-lift"
+              className="bg-white p-8 rounded-xl shadow-sm border border-border flex flex-col h-full fade-in-up hover-lift dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
               style={{ animationDelay: `${0.2 * index}s` }}
             >
               <div className="flex mb-4">

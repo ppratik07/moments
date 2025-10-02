@@ -96,7 +96,7 @@ const Features = () => {
           {featuresList.map((feature, index) => (
             <div
               key={index}
-              className="fade-in-up opacity-0 bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border border-border"
+              className="fade-in-up opacity-0 bg-white rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow border border-border dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
             >
               <div className="bg-primary/10 rounded-full w-10 h-10 flex items-center justify-center mb-4">
                 <div className="text-primary">{feature.icon}</div>
