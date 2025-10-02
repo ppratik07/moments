@@ -19,7 +19,6 @@ export const Footer: React.FC = () => {
                         <h3 className="font-semibold mb-4">Product</h3>
                         <ul className="space-y-2">
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Features</a></li>
-                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Pricing</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Examples</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Templates</a></li>
                         </ul>
