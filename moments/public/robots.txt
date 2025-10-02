@@ -1,0 +1,36 @@
+# Allow all search engines to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow crawling of user-specific pages
+Disallow: /dashboard
+Disallow: /orders
+Disallow: /new-project
+Disallow: /contribution/
+Disallow: /download/
+Disallow: /previewbook/
+Disallow: /project/
+Disallow: /thank-you/
+
+# Disallow crawling of API routes
+Disallow: /api/
+
+# Disallow crawling of success/failure pages
+Disallow: /success
+Disallow: /fail
+
+# Allow crawling of static assets
+Allow: /*.css$
+Allow: /*.js$
+Allow: /*.svg$
+Allow: /*.png$
+Allow: /*.jpg$
+Allow: /*.jpeg$
+Allow: /*.gif$
+Allow: /*.webp$
+
+# Sitemap location
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl-delay for polite bots (optional)
+Crawl-delay: 1

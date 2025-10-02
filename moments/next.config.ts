@@ -13,7 +13,16 @@ const nextConfig: NextConfig = {
       "memorylane.db134517dd79f4a26d091b4dcda7e499.r2.cloudflarestorage.com",
       "db134517dd79f4a26d091b4dcda7e499.r2.cloudflarestorage.com"
     ],
+    formats: ['image/avif', 'image/webp'], // Modern image formats for better performance
   },
+  // Enable compression for better performance
+  compress: true,
+  // Generate ETags for better caching
+  generateEtags: true,
+  // Power by header removal for security
+  poweredByHeader: false,
+  // Strict mode for better React development
+  reactStrictMode: true,
 };
 
 export default nextConfig;
