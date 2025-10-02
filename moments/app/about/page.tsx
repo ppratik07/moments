@@ -8,10 +8,10 @@ export default function AboutPage() {
       {/* Header */}
       <section className="text-center space-y-4 mb-16">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-          About <span className="text-indigo-600">Moments</span>
+          About <span className="text-indigo-600">MemoryLane</span>
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Moments (also called <strong>MemoryLane</strong>) is a collaborative
+          <strong>MemoryLane</strong> is a collaborative
           digital memory book platform. Collect memories, photos, and heartfelt
           notes from friends and family into a beautiful keepsake.
         </p>
