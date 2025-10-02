@@ -17,8 +17,80 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MemoryLane - Create Memories Together",
-  description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://yourdomain.com'),
+  title: {
+    default: "MemoryLane - Create Memories Together | Collaborative Photo Books & Memory Keepsakes",
+    template: "%s | MemoryLane"
+  },
+  description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments. Perfect for birthdays, weddings, anniversaries, and more.",
+  keywords: [
+    "memory book",
+    "photo book",
+    "collaborative keepsake",
+    "birthday memories",
+    "wedding memories",
+    "anniversary gift",
+    "memory collection",
+    "photo keepsake",
+    "digital memory book",
+    "personalized gift",
+    "memory sharing",
+    "collaborative photo album",
+    "special occasions",
+    "memory lane",
+    "keepsake creation"
+  ],
+  authors: [{ name: "MemoryLane Team" }],
+  creator: "MemoryLane",
+  publisher: "MemoryLane",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    siteName: "MemoryLane",
+    title: "MemoryLane - Create Memories Together",
+    description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments.",
+    images: [
+      {
+        url: "/og-image.png", // You'll need to add this image
+        width: 1200,
+        height: 630,
+        alt: "MemoryLane - Create Memories Together",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MemoryLane - Create Memories Together",
+    description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments.",
+    images: ["/twitter-image.png"], // You'll need to add this image
+    creator: "@memorylane", // Update with your actual Twitter handle
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: "your-google-verification-code", // Add your Google Search Console verification code
+    // yandex: "your-yandex-verification-code",
+    // bing: "your-bing-verification-code",
+  },
+  alternates: {
+    canonical: "/",
+  },
+  category: "technology",
 };
 
 export default function RootLayout({
