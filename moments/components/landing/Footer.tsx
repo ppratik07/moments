@@ -1,13 +1,13 @@
 import { BookOpen } from "lucide-react";
-// Import the new store using the confirmed file name
+
 import { useVideoModalStore } from "@/store/useVideoModal"; 
 
 export const Footer: React.FC = () => {
-    // Get the openModal function from the store
+
     const { openModal } = useVideoModalStore();
     
     // IMPORTANT: You must replace this placeholder with the actual video URL!
-    // Search the codebase for a previous use of the VideoModal component to find the URL.
+    
     const HOW_IT_WORKS_VIDEO_SRC = "https://pub-replace-this-with-the-real-video-url.mp4"; 
 
     return (
@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
                         <ul className="space-y-2">
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Features</a></li>
                             
-                            {/* NEW 'HOW IT WORKS' BUTTON - Connects to the global store */}
+                            {}
                             <li>
                                 <button
                                     className="text-sm text-muted-foreground hover:text-primary p-0 bg-transparent border-none cursor-pointer text-left"
@@ -69,7 +69,7 @@ export const Footer: React.FC = () => {
                         © {new Date().getFullYear()} MemoryLane. All rights reserved.
                     </p>
                     <div className="flex space-x-6 mt-4 md:mt-0">
-                        {/* Social icons removed for brevity, assuming they are unchanged */}
+                        {}
                     </div>
                 </div>
             </div>

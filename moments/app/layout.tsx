@@ -5,8 +5,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "sonner";
 import { Toaster as Sonner } from "sonner";
 import TawkChat from "@/components/chatbot/TawkChat";
-// app/layout.tsx (Near the top with other imports)
-import VideoModal from "@/components/VideoModal"; // <-- ADD THIS LINE
+
+import VideoModal from "@/components/VideoModal"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

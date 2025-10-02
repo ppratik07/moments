@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-// Import the new global state store
+
 import { useVideoModalStore } from "@/store/useVideoModal"; 
 
 export default function VideoModal() {
@@ -10,7 +10,6 @@ export default function VideoModal() {
 
   const [showModal, setShowModal] = useState(false);
 
-  // This logic is now driven by the global 'isOpen' state from the store
   useEffect(() => {
     if (isOpen) {
       setShowModal(true);
@@ -25,13 +24,12 @@ export default function VideoModal() {
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div
-        // Now uses isOpen from the store
         className={`bg-white rounded-lg relative transition-transform transform ${isOpen ? 'translate-y-0' : 'translate-y-full'} duration-500 ease-in-out`}
         style={{ width: '800px', height: '400px' }}
       >
         <button
           className="absolute top-2 right-3 text-2xl text-black z-10"
-          onClick={closeModal} // This button now calls the global closeModal function
+          onClick={closeModal} 
         >
           ❌
         </button>
