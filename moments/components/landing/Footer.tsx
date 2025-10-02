@@ -1,5 +1,4 @@
 import { BookOpen } from "lucide-react";
-import Link from "next/link";
 export const Footer: React.FC = () => {
     return (
         <footer className="bg-white border-t border-border mt-6 pt-12 pb-0">
