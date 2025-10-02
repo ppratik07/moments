@@ -6,8 +6,6 @@ import { Toaster } from "sonner";
 import { Toaster as Sonner } from "sonner";
 import TawkChat from "@/components/chatbot/TawkChat";
 
-import VideoModal from "@/components/VideoModal"; 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -38,7 +36,6 @@ export default function RootLayout({
           <Sonner />
           {children}
           <TawkChat />
-          <VideoModal />
         </body>
       </html>
     </ClerkProvider>

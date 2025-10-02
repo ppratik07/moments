@@ -1,14 +1,13 @@
-"use client"
-
 import { useState, useEffect } from 'react';
 
-import { useVideoModalStore } from "@/store/useVideoModal"; 
+interface VideoModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  videoSrc: string; // e.g. https://pub-...r2.dev/yourfile.mp4
+}
 
-export default function VideoModal() {
-  // Read state and control function directly from the global store
-  const { isOpen, videoSrc, closeModal } = useVideoModalStore();
-
-  const [showModal, setShowModal] = useState(false);
+export default function VideoModal({ isOpen, onClose, videoSrc }: VideoModalProps) {
+  const [showModal, setShowModal] = useState(isOpen);
 
   useEffect(() => {
     if (isOpen) {
@@ -29,13 +28,13 @@ export default function VideoModal() {
       >
         <button
           className="absolute top-2 right-3 text-2xl text-black z-10"
-          onClick={closeModal} 
+          onClick={onClose}
         >
           ❌
         </button>
         <div className="relative w-full h-full">
           <video
-            src={videoSrc} // Use videoSrc from the store
+            src={videoSrc}
             controls
             className="absolute top-0 left-0 w-full h-full rounded-lg object-cover"
           >
