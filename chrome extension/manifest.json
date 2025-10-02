@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Moments - Collaborative Photo Books",
+  "version": "1.0.0",
+  "description": "Quick access to Moments. Open and view collaborative photo books instantly.",
+  "permissions": ["tabs"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Moments"
+  }
+}

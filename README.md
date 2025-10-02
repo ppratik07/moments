@@ -117,11 +117,21 @@ Make sure you have the following installed on your machine:
     ```
     The application will be running on `http://localhost:3000`.
 
+## Chrome Extension (Additional Feature)
+You can use Moments as a Chrome extension for quick access.
+
+📦 **Using the Extension**
+
+1 Clone the repository.
+2 Open Chrome → go to Extensions → Developer Mode → Load Unpacked.
+3 Select the Chrome extension folder directly from the cloned repo.
+4 Pin the extension to your browser.
+5 Click the extension icon anytime to open Moments quickly.
 
 ## 📁 Project Structure
 
 The project is organized into two main parts:
-
+-   `chrome-extension`:Contains the Chrome extension folder with manifest.json, icons, and scripts for quick access to Moments.
 -   `moments/`: The Next.js frontend application.
     -   `app/`: Contains all the routes and pages.
     -   `components/`: Shared React components.
