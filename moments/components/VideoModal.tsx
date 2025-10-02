@@ -1,14 +1,16 @@
+"use client"
+
 import { useState, useEffect } from 'react';
+// Import the new global state store
+import { useVideoModalStore } from "@/store/useVideoModal"; 
 
-interface VideoModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  videoSrc: string; // e.g. https://pub-...r2.dev/yourfile.mp4
-}
+export default function VideoModal() {
+  // Read state and control function directly from the global store
+  const { isOpen, videoSrc, closeModal } = useVideoModalStore();
 
-export default function VideoModal({ isOpen, onClose, videoSrc }: VideoModalProps) {
-  const [showModal, setShowModal] = useState(isOpen);
+  const [showModal, setShowModal] = useState(false);
 
+  // This logic is now driven by the global 'isOpen' state from the store
   useEffect(() => {
     if (isOpen) {
       setShowModal(true);
@@ -23,18 +25,19 @@ export default function VideoModal({ isOpen, onClose, videoSrc }: VideoModalProp
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
       <div
+        // Now uses isOpen from the store
         className={`bg-white rounded-lg relative transition-transform transform ${isOpen ? 'translate-y-0' : 'translate-y-full'} duration-500 ease-in-out`}
         style={{ width: '800px', height: '400px' }}
       >
         <button
           className="absolute top-2 right-3 text-2xl text-black z-10"
-          onClick={onClose}
+          onClick={closeModal} // This button now calls the global closeModal function
         >
           ❌
         </button>
         <div className="relative w-full h-full">
           <video
-            src={videoSrc}
+            src={videoSrc} // Use videoSrc from the store
             controls
             className="absolute top-0 left-0 w-full h-full rounded-lg object-cover"
           >
