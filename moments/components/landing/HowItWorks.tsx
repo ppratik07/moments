@@ -1,7 +1,9 @@
 import React from 'react';
 import { UserPlus, Image, Calendar } from 'lucide-react';
+import { useTheme } from '../../hooks/useTheme';
 
 const HowItWorks = () => {
+  const { theme } = useTheme();
   const steps = [
     {
       icon: <UserPlus className="text-primary h-10 w-10" />,
@@ -42,7 +44,7 @@ const HowItWorks = () => {
             <div 
               key={index}
               className="bg-white rounded-xl p-8 shadow-sm border border-border relative z-10 
-                       hover:shadow-md transition-shadow fade-in-up"
+                         hover:shadow-md transition-shadow fade-in-up dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300"
               style={{ animationDelay: `${0.2 * (index + 1)}s` }}
             >
               <div className="bg-accent rounded-full w-16 h-16 flex items-center justify-center mb-6 mx-auto">

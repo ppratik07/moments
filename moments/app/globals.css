@@ -118,6 +118,7 @@
   }
   body {
     @apply bg-background text-foreground;
+    transition: background-color 0.3s, color 0.3s;
   }
   button:not([disabled]),
   [role="button"]:not([disabled]) {
