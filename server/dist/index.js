@@ -91,7 +91,7 @@ app.post("/api/users", middleware_1.authMiddleware, (req, res) => __awaiter(void
             data: {
                 projectName,
                 bookName,
-                dueDate: new Date(dueDate),
+                dueDate: dueDate ? new Date(dueDate) : null,
                 eventType,
                 eventDescription,
                 userId: req.userId || "",
