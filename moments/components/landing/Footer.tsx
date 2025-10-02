@@ -1,9 +1,8 @@
 import { BookOpen } from "lucide-react";
-import Link from "next/link";
 
 export const Footer: React.FC = () => {
     return (
-        <footer className="bg-white border-t border-border py-12">
+        <footer className="bg-white border-t border-border mt-6 pt-12 pb-0">
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-4 gap-8">
                     <div>
@@ -29,14 +28,11 @@ export const Footer: React.FC = () => {
                     <div>
                         <h3 className="font-semibold mb-4">Company</h3>
                         <ul className="space-y-2">
-                            <li>
-                                <a href="/about" className="text-sm text-muted-foreground hover:text-primary">
-                                    About
-                                </a>
-                            </li>
+                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">About</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Careers</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Contact</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Blog</a></li>
+                            <li><a href="/faqs" className="text-sm text-muted-foreground hover:text-primary">FAQs</a></li>
                         </ul>
                     </div>
 
