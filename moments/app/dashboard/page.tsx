@@ -11,7 +11,7 @@ import { Header } from '@/components/landing/Header';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { getImageUrl } from '@/helpers/getImageUrl';
 export default function DashboardPage() {
   interface Project {
     id: string;
@@ -98,8 +98,7 @@ export default function DashboardPage() {
     }
   };
 
-  const baseImageUrl =
-    process.env.NEXT_PUBLIC_IMAGE_R2_URL || '';
+  const baseImageUrl = process.env.NEXT_PUBLIC_IMAGE_R2_URL || 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane';
 
   return (
     <div>
@@ -132,7 +131,7 @@ export default function DashboardPage() {
                   {/* Background image */}
                   <div className="absolute inset-0">
                     <Image
-                      src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
+                      src={getImageUrl(project.imageKey) || '/fallback.jpg'}
                       alt={project.projectName}
                       fill
                       className="object-cover"
