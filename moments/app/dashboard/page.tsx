@@ -11,6 +11,7 @@ import { Header } from '@/components/landing/Header';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AuthWrapper } from '@/components/AuthWrapper';
 
 export default function DashboardPage() {
   interface Project {
@@ -102,24 +103,25 @@ export default function DashboardPage() {
     process.env.NEXT_PUBLIC_IMAGE_R2_URL || '';
 
   return (
-    <div>
-      <Header isSignedIn={isSignedIn ?? false} />
-      <div className="min-h-screen bg-gray-100 p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <RotatingLines
-              visible={true}
-              strokeColor="gray"
-              strokeWidth="5"
-              animationDuration="0.75"
-              width="96"
-              ariaLabel="rotating-lines-loading"
-            />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => {
+    <AuthWrapper requireAuth={true}>
+      <div>
+        <Header isSignedIn={isSignedIn ?? false} />
+        <div className="min-h-screen bg-gray-100 p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="96"
+                ariaLabel="rotating-lines-loading"
+              />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {projects.map((project) => {
               const createdDate = new Date(project.createdAt);
               const isClosed = new Date().getTime() - createdDate.getTime() > 365 * 24 * 60 * 60 * 1000;
               const tagLabel = isClosed ? 'Closed' : 'New';
@@ -191,7 +193,8 @@ export default function DashboardPage() {
         {!loading && projects.length === 0 && (
           <p className="text-center text-gray-500 mt-8">No projects found.</p>
         )}
+        </div>
       </div>
-    </div>
+    </AuthWrapper>
   );
 }
