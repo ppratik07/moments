@@ -13,23 +13,18 @@ export function AuthWrapper({ children, requireAuth = false }: AuthWrapperProps)
   const { isLoaded, userId, isSignedIn } = useAuth()
   const { user } = useUser()
   const router = useRouter()
-  const [isChecking, setIsChecking] = useState(true)
+  const [isStabilized, setIsStabilized] = useState(false)
 
   useEffect(() => {
     if (!isLoaded) return
 
-    // Wait a bit for auth state to stabilize
+    // Small delay to allow auth state to stabilize after OAuth redirect
     const timer = setTimeout(() => {
-      setIsChecking(false)
+      setIsStabilized(true)
       
       if (requireAuth && !isSignedIn) {
+        console.log('User not signed in, redirecting to sign-in')
         router.push('/sign-in')
-        return
-      }
-
-      // Ensure user data is properly loaded for Google OAuth
-      if (isSignedIn && !user?.emailAddresses?.[0]?.emailAddress) {
-        console.log('User signed in but email not loaded, waiting...')
         return
       }
 
@@ -39,19 +34,23 @@ export function AuthWrapper({ children, requireAuth = false }: AuthWrapperProps)
           userId,
           email: user.emailAddresses?.[0]?.emailAddress,
           name: user.fullName,
-          provider: user.externalAccounts?.[0]?.provider || 'email'
+          provider: user.externalAccounts?.[0]?.provider || 'email',
+          hasSession: !!userId
         })
       }
-    }, 500) // Small delay to let auth state stabilize
+    }, 300) // Reduced from 500ms to 300ms for faster response
 
     return () => clearTimeout(timer)
   }, [isLoaded, isSignedIn, userId, user, requireAuth, router])
 
   // Show loading while checking auth state
-  if (!isLoaded || isChecking) {
+  if (!isLoaded || !isStabilized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -59,9 +58,9 @@ export function AuthWrapper({ children, requireAuth = false }: AuthWrapperProps)
   // Redirect if auth is required but user is not signed in
   if (requireAuth && !isSignedIn) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <div className="text-center">
-          <p>Redirecting to sign in...</p>
+          <p className="text-gray-600">Redirecting to sign in...</p>
         </div>
       </div>
     )

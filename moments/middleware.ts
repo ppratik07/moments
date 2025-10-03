@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
-import { HTTP_BACKEND } from "@/utils/config";
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 // Define session claims interface
 interface SessionClaims {
@@ -10,7 +9,7 @@ interface SessionClaims {
   [key: string]: unknown;
 }
 
-// Define protected routes
+// Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/orders(.*)',
@@ -22,27 +21,59 @@ const isProtectedRoute = createRouteMatcher([
   '/thank-you(.*)'
 ])
 
+// Public routes that should be accessible without auth
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks(.*)'
+])
+
 export default clerkMiddleware(async (auth, req: NextRequest) => {
+  const { pathname } = req.nextUrl
+
+  // Allow public routes without protection
+  if (isPublicRoute(req)) {
+    return NextResponse.next()
+  }
+
   // Protect routes that require authentication
   if (isProtectedRoute(req)) {
-    await auth.protect()
+    try {
+      await auth.protect()
+    } catch (error) {
+      console.error('Auth protection error:', error)
+      // Redirect to sign-in if protection fails
+      const signInUrl = new URL('/sign-in', req.url)
+      signInUrl.searchParams.set('redirect_url', pathname)
+      return NextResponse.redirect(signInUrl)
+    }
   }
 
   // Get authentication state after protection check
   const authObject = await auth()
   const { userId, sessionClaims } = authObject
 
-  // Sync authenticated users to backend
+  // Sync authenticated users to backend (non-blocking)
   if (userId && sessionClaims) {
-    // Use async function to handle user sync
+    // Don't await - let it run in background without blocking the request
     syncUserToBackend(userId, sessionClaims as SessionClaims).catch(error => {
-      console.error('Error syncing user to backend:', error)
+      console.error('Background user sync error:', error)
     })
   }
+
+  return NextResponse.next()
 })
 
-// Async function to sync user data to backend
+// Async function to sync user data to backend (runs in background)
 async function syncUserToBackend(userId: string, sessionClaims: SessionClaims) {
+  // Only sync if we have a backend URL configured
+  const HTTP_BACKEND = process.env.HTTP_BACKEND || process.env.NEXT_PUBLIC_HTTP_BACKEND
+  if (!HTTP_BACKEND) {
+    console.log('No backend URL configured, skipping user sync')
+    return
+  }
+
   try {
     const response = await fetch(`${HTTP_BACKEND}/api/users`, {
       method: "POST",
@@ -57,10 +88,13 @@ async function syncUserToBackend(userId: string, sessionClaims: SessionClaims) {
     });
     
     if (!response.ok) {
-      console.error('Failed to sync user:', await response.text());
+      console.error('Failed to sync user:', response.status, await response.text());
+    } else {
+      console.log('User synced successfully:', userId)
     }
   } catch (error) {
-    console.error('Error syncing user:', error);
+    // Don't throw - backend sync failures should not affect user experience
+    console.error('Error syncing user to backend:', error);
   }
 }
 
