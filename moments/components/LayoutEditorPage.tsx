@@ -452,7 +452,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
 
             <div className="flex justify-between items-center mt-4 gap-2">
               <label className="px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded cursor-pointer hover:bg-gray-300">
-                Replace Photo
+                {selectedComponent.image_url ? 'Replace Photo' : 'Add a Photo'}
                 <input
                   type="file"
                   accept="image/*"
