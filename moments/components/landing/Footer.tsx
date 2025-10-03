@@ -4,7 +4,7 @@ export const Footer: React.FC = () => {
     return (
         <footer className="bg-white border-t border-border mt-6 pt-12 pb-0">
             <div className="container mx-auto px-4">
-                <div className="grid md:grid-cols-4 gap-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center md:text-left">
                     <div>
                         <div className="flex items-center gap-2 mb-4">
                             <BookOpen className="h-6 w-6 text-primary" />
