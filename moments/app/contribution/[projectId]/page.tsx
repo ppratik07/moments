@@ -1,6 +1,7 @@
 'use client';
 
-// Imports remain unchanged
+import { useVideoModalStore } from "@/store/useVideoModal";
+const HOW_IT_WORKS_VIDEO_SRC = 'https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233344.mp4';
 import { PageNavigation } from "@/components/contribution/PageNavigation";
 import { Page, ProjectData, SignatureEditModal } from "@/components/contribution/SignatureEditModal";
 import StepIndicator from "@/components/contribution/StepIndicator";
@@ -21,7 +22,7 @@ import { RotatingLines } from "react-loader-spinner";
 import VideoModal from "@/components/VideoModal";
 import { Button } from "@/components/ui/button";
 
-// Type definitions remain unchanged
+
 interface Position {
   x_position?: number;
   y_position?: number;
@@ -90,15 +91,14 @@ export default function ContributionPage() {
   const [showLayoutModal, setShowLayoutModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
   const [, setContributionId] = useState<string | null>(null);
   const router = useRouter();
-
+  const { openModal } = useVideoModalStore(); 
   const { projectId } = useParams() as { projectId: string };
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const videoSrc = 'https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4';
+  //const videoSrc = 'https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4';
 
   useEffect(() => {
     const fetchProjectData = async () => {
@@ -106,7 +106,7 @@ export default function ContributionPage() {
         setIsLoading(true);
         setLoadError(null);
         
-        // First try to get from localStorage
+      
         const raw = localStorage.getItem(`project-${projectId}`);
         if (raw) {
           setProjectData(JSON.parse(raw));
@@ -114,7 +114,6 @@ export default function ContributionPage() {
           return;
         }
 
-        // If not in localStorage, try to fetch from backend
         const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`);
         if (response.data && response.data.project) {
           const projectData = {
@@ -123,7 +122,7 @@ export default function ContributionPage() {
             eventDescription: response.data.project.eventDescription || '',
           };
           setProjectData(projectData);
-          // Save to localStorage for future use
+      
           localStorage.setItem(`project-${projectId}`, JSON.stringify(projectData));
         } else {
           throw new Error('Project data not found');
@@ -396,11 +395,8 @@ export default function ContributionPage() {
                 {projectData.eventDescription}
               </p>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                <button onClick={() => setShowVideoModal(true)}
-                  className="bg-white border border-purple-600 text-purple-600 rounded-sm px-4 py-2.5 text-sm sm:text-base hover:shadow min-h-[44px] w-full sm:w-auto"
-                  aria-label="Learn how it works"
-                >
-                  How it Works
+                <button onClick={() => openModal(HOW_IT_WORKS_VIDEO_SRC)}>
+                  Learn how it works
                 </button>
                 <button
                   className="bg-purple-600 text-white rounded-sm px-4 py-2.5 text-sm sm:text-base hover:bg-purple-700 min-h-[44px] w-full sm:w-auto"
@@ -432,7 +428,7 @@ export default function ContributionPage() {
           </section>
 
           <StepIndicator currentStep={1} />
-          <VideoModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} videoSrc={videoSrc} />
+          <VideoModal/>
           <section className="my-6 sm:my-8 md:my-16" id="layout-editor-section">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">
               Contribute

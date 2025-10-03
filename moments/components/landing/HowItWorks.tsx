@@ -35,7 +35,7 @@ const HowItWorks = () => {
         </div>
         
         <div className="grid md:grid-cols-3 gap-8 relative">
-          {/* Connecting line for desktop */}
+          {}
           <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-accent via-primary to-accent" />
           
           {steps.map((step, index) => (

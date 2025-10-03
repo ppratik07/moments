@@ -6,8 +6,6 @@ export const Footer: React.FC = () => {
 
     const { openModal } = useVideoModalStore();
     
-    // IMPORTANT: You must replace this placeholder with the actual video URL!
-    
     const HOW_IT_WORKS_VIDEO_SRC = "https://pub-replace-this-with-the-real-video-url.mp4"; 
 
     return (

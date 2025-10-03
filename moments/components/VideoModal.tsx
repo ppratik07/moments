@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react';
 import { useVideoModalStore } from "@/store/useVideoModal"; 
 
 export default function VideoModal() {
-  // Read state and control function directly from the global store
-  const { isOpen, videoSrc, closeModal } = useVideoModalStore();
+  const { isOpen, closeModal } = useVideoModalStore();
 
   const [showModal, setShowModal] = useState(false);
 
@@ -14,7 +13,6 @@ export default function VideoModal() {
     if (isOpen) {
       setShowModal(true);
     } else {
-      // Animate out before unmount
       setTimeout(() => setShowModal(false), 300);
     }
   }, [isOpen]);
@@ -35,7 +33,7 @@ export default function VideoModal() {
         </button>
         <div className="relative w-full h-full">
           <video
-            src={videoSrc} // Use videoSrc from the store
+            src="https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4"
             controls
             className="absolute top-0 left-0 w-full h-full rounded-lg object-cover"
           >

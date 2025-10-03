@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 
-
-// Interface Definitions
 export interface Page {
   layout: number;
   images: (string | null)[];
@@ -16,7 +14,6 @@ export interface ProjectData {
   imageKey?: string;
 }
 
-// Signature Edit Modal Component
 export const SignatureEditModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
