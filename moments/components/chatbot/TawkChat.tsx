@@ -12,7 +12,7 @@ const TawkChat = () => {
   };
 
   return (
-    <div>
+    <div className="h-0">
       <TawkMessengerReact
         propertyId={process.env.NEXT_PUBLIC_TAWKTO_PROPERTY_ID || ''}
         widgetId={process.env.NEXT_PUBLIC_TAWKTO_WIDGET_ID || ''}
