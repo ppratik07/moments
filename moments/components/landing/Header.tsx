@@ -1,6 +1,4 @@
-// moments/components/landing/Header.tsx
-
-"use client";
+'use client';
 import { BookOpen, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
@@ -16,13 +14,13 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const isLandingPage = pathname === "/";
-  const isDashboardPage = pathname?.startsWith("/dashboard");
+  const isLandingPage = pathname === '/';
+  const isDashboardPage = pathname?.startsWith('/dashboard');
 
   useEffect(() => {
-    document.body.style.overflow = isMenuOpen ? "hidden" : "unset";
+    document.body.style.overflow = isMenuOpen ? 'hidden' : 'unset';
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = 'unset';
     };
   }, [isMenuOpen]);
 
@@ -31,7 +29,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
       <header className="bg-gradient-to-b from-accent to-background sticky top-0 z-50">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
-            <Link href="/">
+            <Link href='/'>
               <div className="flex items-center gap-2">
                 <BookOpen className="h-8 w-8 text-primary" />
                 <span className="text-xl font-bold">MemoryLane</span>
@@ -41,7 +39,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
               <div className="flex justify-between items-center mb-2">
                 <Button
                   className="cursor-pointer"
-                  onClick={() => router.push("/new-project")}
+                  onClick={() => router.push('/new-project')}
                 >
                   Create New Project
                 </Button>
@@ -53,54 +51,29 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 aria-label="Toggle menu"
               >
-                {isMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             )}
             {isLandingPage && (
               <nav className="hidden md:flex items-center space-x-8">
-                <a
-                  href="#how-it-works"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
+                <a href="#how-it-works" className="text-sm font-medium hover:text-primary transition-colors">
                   How It Works
                 </a>
-                <a
-                  href="#features"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
+                <a href="#features" className="text-sm font-medium hover:text-primary transition-colors">
                   Features
                 </a>
-                <a
-                  href="#occasions"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
+                <a href="#occasions" className="text-sm font-medium hover:text-primary transition-colors">
                   Occasions
                 </a>
-                <a
-                  href="#testimonials"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
+                <a href="#testimonials" className="text-sm font-medium hover:text-primary transition-colors">
                   Testimonials
                 </a>
-                <Link
-                  href="/blog"
-                  className="text-sm font-medium hover:text-primary transition-colors"
-                >
-                  Blog
-                </Link>
                 {isSignedIn ? (
                   <UserButton afterSignOutUrl="/" />
                 ) : (
                   <>
                     <SignInButton mode="modal" forceRedirectUrl="/dashboard">
-                      <Button
-                        variant="outline"
-                        className="border-primary text-primary hover:bg-primary/10"
-                      >
+                      <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                         Log In
                       </Button>
                     </SignInButton>
@@ -113,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
                 )}
                 {isSignedIn && (
                   <Button
-                    onClick={() => router.push("/dashboard")}
+                    onClick={() => router.push('/dashboard')}
                     className="text-sm cursor-pointer font-medium"
                   >
                     Go to Dashboard
@@ -156,20 +129,13 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
             >
               Testimonials
             </a>
-            <Link
-              href="/blog"
-              className="text-lg font-medium py-2 hover:text-primary transition-colors"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Blog
-            </Link>
             <div className="flex flex-col space-y-4 pt-4">
               {isSignedIn ? (
                 <>
                   <UserButton afterSignOutUrl="/" />
                   <Button
                     onClick={() => {
-                      router.push("/dashboard");
+                      router.push('/dashboard');
                       setIsMenuOpen(false);
                     }}
                     className="w-full bg-primary hover:bg-primary/90"
