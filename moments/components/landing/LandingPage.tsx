@@ -16,7 +16,7 @@ export const LandingPage = () => {
     return (
         <div className="min-h-screen">
             <Header isSignedIn={isSignedIn ?? false}/>
-            <main>
+            <main className='pt-20'>
                 <HeroSection />
                 <div id="how-it-works">
                     <HowItWorks />
