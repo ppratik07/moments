@@ -40,14 +40,13 @@ export const metadata: Metadata = {
     "memory lane",
     "keepsake creation"
   ],
+  icons: {
+    icon: "/favicon_i.png"
+  },
   authors: [{ name: "MemoryLane Team" }],
   creator: "MemoryLane",
   publisher: "MemoryLane",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
+  formatDetection: { email: false, address: false, telephone: false },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -56,20 +55,15 @@ export const metadata: Metadata = {
     title: "MemoryLane - Create Memories Together",
     description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments.",
     images: [
-      {
-        url: "/og-image.png", // You'll need to add this image
-        width: 1200,
-        height: 630,
-        alt: "MemoryLane - Create Memories Together",
-      },
-    ],
+      { url: "/og-image.png", width: 1200, height: 630, alt: "MemoryLane - Create Memories Together" }
+    ]
   },
   twitter: {
     card: "summary_large_image",
     title: "MemoryLane - Create Memories Together",
     description: "Collect memories, photos, and messages from friends and family to create a meaningful keepsake for life's special moments.",
-    images: ["/twitter-image.png"], // You'll need to add this image
-    creator: "@memorylane", // Update with your actual Twitter handle
+    images: ["/twitter-image.png"],
+    creator: "@memorylane"
   },
   robots: {
     index: true,
@@ -77,21 +71,18 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
   },
   verification: {
-    google: "your-google-verification-code", // Add your Google Search Console verification code
-    // yandex: "your-yandex-verification-code",
-    // bing: "your-bing-verification-code",
+    google: "your-google-verification-code"
   },
-  alternates: {
-    canonical: "/",
-  },
-  category: "technology",
+  alternates: { canonical: "/" },
+  category: "technology"
 };
+
 
 export default function RootLayout({
   children,
