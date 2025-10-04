@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     "keepsake creation"
   ],
   icons: {
-    icon: "/favicon_i.png"
+    icon: "/favicon_icon.jpeg"
   },
   authors: [{ name: "MemoryLane Team" }],
   creator: "MemoryLane",
