@@ -14,6 +14,7 @@ interface ImageSlotProps {
     slotIndex: number
   ) => void;
   handleRemoveImage: (pageIndex: number, slotIndex: number) => void;
+  handleFileDrop?: (file: File, pageIndex: number, slotIndex: number) => void;
 }
 
 export const ImageSlot: React.FC<ImageSlotProps> = ({
@@ -23,8 +24,29 @@ export const ImageSlot: React.FC<ImageSlotProps> = ({
   uploading,
   handleFileUpload,
   handleRemoveImage,
+  handleFileDrop,
 }) => (
-  <div className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-xs sm:text-sm cursor-pointer w-full">
+  <div
+    className="bg-gray-100 relative aspect-[4/3] flex items-center justify-center text-gray-700 font-medium text-xs sm:text-sm cursor-pointer w-full border border-dashed"
+    onDragOver={(e) => {
+      if (handleFileDrop && !image) {
+        e.preventDefault();
+        e.currentTarget.classList.add('border-blue-500');
+      }
+    }}
+    onDragLeave={(e) => {
+      e.currentTarget.classList.remove('border-blue-500');
+    }}
+    onDrop={(e) => {
+      if (!handleFileDrop || image) return;
+      e.preventDefault();
+      e.currentTarget.classList.remove('border-blue-500');
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+        handleFileDrop(file, pageIndex, index);
+      }
+    }}
+  >
     <div className="absolute inset-0 opacity-40 bg-[url('/mock-trees-bg.svg')] bg-center bg-contain bg-no-repeat" />
     <div className="relative z-10 text-center">
       {image ? (
@@ -79,7 +101,7 @@ export const ImageSlot: React.FC<ImageSlotProps> = ({
                 ariaLabel="rotating-lines-loading"
               />
             ) : (
-              <span className="text-xs sm:text-sm">ADD A PHOTO</span>
+              <span className="text-xs sm:text-sm">ADD A PHOTO or DROP HERE</span>
             )}
           </div>
         </label>
