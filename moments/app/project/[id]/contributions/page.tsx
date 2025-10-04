@@ -8,6 +8,7 @@ import { Contribution, useContributions } from "@/hooks/useContribution";
 import { useFetchProject } from "@/hooks/useFetchProject";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { RotatingLines } from "react-loader-spinner";
 
 export default function ContributionsPage() {
   const params: Record<string, string | string[]> | null = useParams();
@@ -54,10 +55,21 @@ export default function ContributionsPage() {
         <Sidebar imageKey={imageKey || ''} projectId={projectId} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold">{projectName || 'Loading...'}</h1>
-          </div>
-
+          <h1 className="text-2xl sm:text-3xl font-bold">
+          {projectName || (
+            <span className="flex items-center gap-2">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="28"
+                ariaLabel="rotating-lines-loading"
+              />
+            </span>
+          )}
+        </h1>
+        
           {/* Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 sm:mb-10">
             <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
@@ -78,7 +90,16 @@ export default function ContributionsPage() {
 
           {/* Contributions - Masonry Board */}
           {loading ? (
-            <p className="text-gray-600 text-sm sm:text-base">Loading contributions...</p>
+            <div className="flex justify-center items-center h-64">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="96"
+                ariaLabel="rotating-lines-loading"
+              />
+            </div>
           ) : error ? (
             <p className="text-red-500 text-sm sm:text-base">{error}</p>
           ) : contributionsData && contributionsData.contributions.length > 0 ? (
