@@ -267,7 +267,18 @@ const PreviewBookPage = () => {
   }
 
   if (isLoading) {
-    return <div className="text-center mt-6 sm:mt-10 text-sm sm:text-base">Loading book preview...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center space-y-4">
+          {/* Spinner */}
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-blue-500"></div>
+          {/* Text */}
+          <p className="text-gray-700 text-base sm:text-lg font-medium">
+            Loading preview...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
