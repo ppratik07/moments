@@ -261,7 +261,7 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
         <Image
           src={imageUrl}
           alt="Project cover"
-          className="mb-6"
+          className="mb-6 object-contain"
           width={300}
           height={300}
         />
