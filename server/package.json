@@ -3,7 +3,7 @@
     "@aws-sdk/client-s3": "^3.787.0",
     "@aws-sdk/s3-request-presigner": "^3.787.0",
     "@clerk/clerk-sdk-node": "^4.13.23",
-    "@prisma/client": "^6.6.0",
+    "@prisma/client": "^6.16.3",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
     "@types/jsonwebtoken": "^9.0.9",
@@ -23,7 +23,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-     "dev": "ts-node src/index.ts",
+    "dev": "ts-node src/index.ts",
     "build": "tsc -b",
     "start": "node dist/index.js",
     "seed": "ts-node src/prisma/seed.ts",
@@ -35,7 +35,7 @@
   "description": "",
   "devDependencies": {
     "@types/request": "^2.48.12",
-    "prisma": "^6.6.0",
+    "prisma": "^6.16.3",
     "ts-node": "^10.9.2"
   }
 }
