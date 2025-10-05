@@ -422,7 +422,8 @@ export default function NewEventPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-4 md:px-6">
+      <Header isSignedIn={isSignedIn ?? false} />
+      <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-4 md:px-6 z-50">
         {/* Top section with avatar and title */}
         <div className="flex items-center gap-2 mb-4 md:mb-0">
           <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xl font-bold">N</div>
@@ -462,8 +463,6 @@ export default function NewEventPage() {
         </div>
       </div>
 
-
-      <Header isSignedIn={isSignedIn ?? false} />
 
       <main className="max-w-6xl mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
