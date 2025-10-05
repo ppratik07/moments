@@ -385,7 +385,7 @@ export default function ContributionPage() {
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       <Header isSignedIn={false} />
-      <main className="bg-gradient-to-b from-white to-purple-50 pb-20 flex-grow">
+      <main className="bg-gradient-to-b from-white to-purple-50 flex-grow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="py-6 sm:py-8 md:py-12 flex flex-col md:grid md:grid-cols-2 gap-4 sm:gap-8 md:gap-12">
             <div className="space-y-3 sm:space-y-4">
