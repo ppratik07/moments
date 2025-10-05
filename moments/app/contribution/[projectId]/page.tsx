@@ -187,14 +187,7 @@ export default function ContributionPage() {
     return url.replace(prefix, '');
   };
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-    pageIndex: number,
-    slotIndex: number
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
+  const uploadFileToSlot = async (file: File, pageIndex: number, slotIndex: number) => {
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
       setError('File size must be less than 5MB');
@@ -249,8 +242,26 @@ export default function ContributionPage() {
       setError('Failed to upload image. Please try again.');
     } finally {
       setUploading(false);
-      event.target.value = '';
     }
+  };
+
+  const handleFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+    pageIndex: number,
+    slotIndex: number
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    await uploadFileToSlot(file, pageIndex, slotIndex);
+    event.target.value = '';
+  };
+
+  const handleFileDrop = async (
+    file: File,
+    pageIndex: number,
+    slotIndex: number
+  ) => {
+    await uploadFileToSlot(file, pageIndex, slotIndex);
   };
 
   const handleRemoveImage = async (pageIndex: number, slotIndex: number) => {
@@ -473,6 +484,7 @@ export default function ContributionPage() {
                 availableLayouts={availableLayouts}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
+                handleFileDrop={handleFileDrop}
                 uploading={uploading}
                 error={error}
               />

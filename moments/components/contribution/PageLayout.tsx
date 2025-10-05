@@ -16,6 +16,7 @@ interface PageLayoutProps {
     slotIndex: number
   ) => void;
   handleRemoveImage: (pageIndex: number, slotIndex: number) => void;
+  handleFileDrop?: (file: File, pageIndex: number, slotIndex: number) => void;
   signature: string;
   editingMessage: boolean;
   setEditingMessage: (value: boolean) => void;
@@ -33,6 +34,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   setShowLayoutModal,
   handleFileUpload,
   handleRemoveImage,
+  handleFileDrop,
   signature,
   editingMessage,
   setEditingMessage,
@@ -86,6 +88,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                   uploading={uploading}
                   handleFileUpload={handleFileUpload}
                   handleRemoveImage={handleRemoveImage}
+                  handleFileDrop={handleFileDrop}
                 />
               ))}
               {error && (
@@ -106,6 +109,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                   uploading={uploading}
                   handleFileUpload={handleFileUpload}
                   handleRemoveImage={handleRemoveImage}
+                  handleFileDrop={handleFileDrop}
                 />
               ))}
               {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
@@ -133,6 +137,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 uploading={uploading}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
+                handleFileDrop={handleFileDrop}
               />
               {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
             </div>
@@ -146,6 +151,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 uploading={uploading}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
+                handleFileDrop={handleFileDrop}
               />
               <div className="grid grid-cols-2 gap-2">
                 {page.images.slice(1, 3).map((image, i) => (
@@ -157,6 +163,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     uploading={uploading}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
+                    handleFileDrop={handleFileDrop}
                   />
                 ))}
               </div>
@@ -174,6 +181,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     uploading={uploading}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
+                    handleFileDrop={handleFileDrop}
                   />
                   {page.images[i + 2] && (
                     <ImageSlot
@@ -183,6 +191,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                       uploading={uploading}
                       handleFileUpload={handleFileUpload}
                       handleRemoveImage={handleRemoveImage}
+                      handleFileDrop={handleFileDrop}
                     />
                   )}
                 </div>
@@ -213,6 +222,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 uploading={uploading}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
+                handleFileDrop={handleFileDrop}
               />
               {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
             </>
