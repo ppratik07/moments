@@ -19,6 +19,8 @@ import { Courier } from "../types/types";
 import Razorpay from "razorpay";
 import crypto from 'crypto';
 import { generateBookHtml } from "./services/generateBookHtml";
+import { Resend } from "resend";
+import { EmailTemplate } from "./utils/template/emailTemplate";
 
 dotenv.config();
 
@@ -130,7 +132,7 @@ app.get("/api/get-presign-url", async (req, res) => {
   const key = `${uuidv4()}.${fileExtension}`;
 
   const command = new PutObjectCommand({
-    Bucket: process.env.R2_BUCKET_NAME!,
+    Bucket: process.env.NEXT_PUBLIC_R2_BUCKET_NAME!,
     Key: key,
     ContentType: fileType,
   });
@@ -1578,6 +1580,32 @@ app.get('/api/check-payment-status',authMiddleware,async(req,res) : Promise<any>
       console.error('Error checking payment status:', error);
       res.status(500).json({ error: 'Failed to check payment status' });
     }
+})
+
+const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY)
+
+app.post("/api/email/contribution", async  (req: Request, res: Response): Promise<any> => {
+  const {email, projectName} = req.body
+
+  try {
+    const {data, error} = await resend.emails.send({
+      from: 'MemoryLane <onboarding@resend.dev>',
+      to: email,
+      subject: `🎉 Thank You for Contributing to ${projectName}!`,
+      react: EmailTemplate({ projectName: projectName}),
+    })
+
+    if(error) {
+      return res.json({error})
+    }
+
+    return res.status(200).json(data)
+
+  }
+  catch(err) {
+    console.error(err);
+    res.status(500).json({ error: "Could not submit contribution" });
+  }
 })
 
 // Health check endpoint

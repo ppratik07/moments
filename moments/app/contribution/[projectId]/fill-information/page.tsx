@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,12 +43,21 @@ export default function YourInformationPage() {
         const idIndex = (parts?.indexOf("contribution") ?? -1) + 1;
         return parts?.[idIndex] ?? null;
     }, [pathname]);
+    const [projectName, setProjectName] = useState("")
 
     const [showDialog, setShowDialog] = useState(false);
 
     const handleChange = (field: string, value: string | boolean) => {
         setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+    useEffect(() => {
+        const storedData = sessionStorage.getItem("projectName");
+        if(storedData) {
+            const parsed = JSON.parse(storedData)
+            setProjectName(parsed.projectName)
+        }
+    })
 
     const validate = () => {
         if (!form.firstName.trim()) {
@@ -93,6 +102,19 @@ export default function YourInformationPage() {
 
             if (updateResponse.status !== 200) {
                 throw new Error(updateResponse.data.error || "Failed to update contribution");
+            }
+
+
+            const sentEmail = await axios.post(
+                `${HTTP_BACKEND}/api/email/contribution`, 
+                {
+                    email: form.email,
+                    projectName: projectName
+                }
+            )
+
+            if(sentEmail.status !== 200) {
+                throw new Error(sentEmail.data.error || "Failed to send confirmation email!")
             }
 
             setShowDialog(true);
