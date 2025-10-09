@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
 // Imports remain unchanged
 import { PageNavigation } from "@/components/contribution/PageNavigation";
-import { Page, ProjectData, SignatureEditModal } from "@/components/contribution/SignatureEditModal";
+import {
+  Page,
+  ProjectData,
+  SignatureEditModal,
+} from "@/components/contribution/SignatureEditModal";
 import StepIndicator from "@/components/contribution/StepIndicator";
 import TipsBox from "@/components/contribution/TipsBox";
 import { Header } from "@/components/landing/Header";
@@ -14,7 +18,7 @@ import axios from "axios";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import LayoutEditorPage from '@/components/LayoutEditorPage';
+import LayoutEditorPage from "@/components/LayoutEditorPage";
 import { availableLayouts } from "@/components/contribute/availableLayouts";
 import { layoutCategories } from "@/components/contribute/layoutCategories";
 import { RotatingLines } from "react-loader-spinner";
@@ -59,7 +63,7 @@ interface Original {
 }
 
 interface Component {
-  type: 'heading' | 'signature' | 'paragraph' | 'caption' | 'photo';
+  type: "heading" | "signature" | "paragraph" | "caption" | "photo";
   position: Position;
   size: Size;
   styles?: Styles;
@@ -82,9 +86,14 @@ interface ExtendedPage extends Page {
 
 export default function ContributionPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
-  const [signature, setSignature] = useState('Your Name Here');
+  const [signature, setSignature] = useState("Your Name Here");
   const [pages, setPages] = useState<ExtendedPage[]>([
-    { layout: 0, images: [null, null, null, null], message: '', components: availableLayouts[0].components },
+    {
+      layout: 0,
+      images: [null, null, null, null],
+      message: "",
+      components: availableLayouts[0].components,
+    },
   ]);
   const [activePage, setActivePage] = useState(0);
   const [showLayoutModal, setShowLayoutModal] = useState(false);
@@ -98,14 +107,15 @@ export default function ContributionPage() {
   const [projectData, setProjectData] = useState<ProjectData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const videoSrc = 'https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4';
+  const videoSrc =
+    "https://pub-e59ed743ceb3452ea4c0987a8c6bd376.r2.dev/VN20250623_233347.mp4";
 
   useEffect(() => {
     const fetchProjectData = async () => {
       try {
         setIsLoading(true);
         setLoadError(null);
-        
+
         // First try to get from localStorage
         const raw = localStorage.getItem(`project-${projectId}`);
         if (raw) {
@@ -115,22 +125,27 @@ export default function ContributionPage() {
         }
 
         // If not in localStorage, try to fetch from backend
-        const response = await axios.get(`${HTTP_BACKEND}/api/user-projects/${projectId}`);
+        const response = await axios.get(
+          `${HTTP_BACKEND}/api/user-projects/${projectId}`
+        );
         if (response.data && response.data.project) {
           const projectData = {
             projectName: response.data.project.projectName,
             imageKey: response.data.project.imageKey,
-            eventDescription: response.data.project.eventDescription || '',
+            eventDescription: response.data.project.eventDescription || "",
           };
           setProjectData(projectData);
           // Save to localStorage for future use
-          localStorage.setItem(`project-${projectId}`, JSON.stringify(projectData));
+          localStorage.setItem(
+            `project-${projectId}`,
+            JSON.stringify(projectData)
+          );
         } else {
-          throw new Error('Project data not found');
+          throw new Error("Project data not found");
         }
       } catch (error) {
-        console.error('Error loading project data:', error);
-        setLoadError('Failed to load project data. Please try again later.');
+        console.error("Error loading project data:", error);
+        setLoadError("Failed to load project data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -152,8 +167,12 @@ export default function ContributionPage() {
         pages: pages.map((page) => ({
           guid: page.guid || `page-${Math.random().toString(36).substr(2, 9)}`,
           layoutId: page.layout >= 0 ? page.layout : 0,
-          images: page.images.filter((image): image is string => image !== null),
-          message: page.components?.find((comp) => comp.type === 'paragraph')?.value || '',
+          images: page.images.filter(
+            (image): image is string => image !== null
+          ),
+          message:
+            page.components?.find((comp) => comp.type === "paragraph")?.value ||
+            "",
           components: (page.components ?? []).map((component) => ({
             type: component.type,
             position: component.position || null,
@@ -167,10 +186,13 @@ export default function ContributionPage() {
         })),
       };
 
-      const response = await axios.post(`${HTTP_BACKEND}/api/save-contribution`, contributionData);
+      const response = await axios.post(
+        `${HTTP_BACKEND}/api/save-contribution`,
+        contributionData
+      );
 
       if (response.status !== 200) {
-        throw new Error('Failed to save contribution');
+        throw new Error("Failed to save contribution");
       }
       setContributionId(response.data.contributionId);
 
@@ -180,16 +202,17 @@ export default function ContributionPage() {
       
       router.push(`/contribution/${projectId}/fill-information?contributionId=${response.data.contributionId}`);
     } catch (error) {
-      console.error('Error saving contribution:', error);
-      setError('Failed to save your contribution. Please try again.');
+      console.error("Error saving contribution:", error);
+      setError("Failed to save your contribution. Please try again.");
     } finally {
       setUploading(false);
     }
   };
 
   const extractKeyFromUrl = (url: string): string => {
-    const prefix = 'https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/';
-    return url.replace(prefix, '');
+    const prefix =
+      "https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/";
+    return url.replace(prefix, "");
   };
 
   const handleFileUpload = async (
@@ -202,11 +225,11 @@ export default function ContributionPage() {
 
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      setError('File size must be less than 5MB');
+      setError("File size must be less than 5MB");
       return;
     }
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
+    if (!file.type.startsWith("image/")) {
+      setError("Please upload an image file");
       return;
     }
 
@@ -215,32 +238,51 @@ export default function ContributionPage() {
 
     try {
       const response = await fetch(
-        `${HTTP_BACKEND}/api/get-presign-url?fileType=${encodeURIComponent(file.type)}`
+        `${HTTP_BACKEND}/api/get-presign-url?fileType=${encodeURIComponent(
+          file.type
+        )}`
       );
       if (!response.ok) {
-        throw new Error(`Failed to fetch presigned URL: ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch presigned URL: ${response.statusText}`
+        );
       }
       const { uploadUrl, key } = await response.json();
 
       const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
-        headers: { 'Content-Type': file.type },
+        headers: { "Content-Type": file.type },
       });
 
       if (!uploadResponse.ok) {
-        throw new Error(`Failed to upload image to R2: ${uploadResponse.statusText}`);
+        throw new Error(
+          `Failed to upload image to R2: ${uploadResponse.statusText}`
+        );
       }
 
       const imageUrl = `https://pub-7e95bf502cc34aea8d683b14cb66fc8d.r2.dev/memorylane/${key}`;
 
       setPages((prev) => {
         const newPages = [...prev];
-        const updatedComponents = newPages[pageIndex].components?.map((comp, compIndex) =>
-          comp.type === 'photo' && compIndex === slotIndex
-            ? { ...comp, image_url: imageUrl, original: { url: imageUrl, cropping_info: { x_position: 0, y_position: 0, width: 0, height: 0 } } }
-            : comp
-        ) || [];
+        const updatedComponents =
+          newPages[pageIndex].components?.map((comp, compIndex) =>
+            comp.type === "photo" && compIndex === slotIndex
+              ? {
+                  ...comp,
+                  image_url: imageUrl,
+                  original: {
+                    url: imageUrl,
+                    cropping_info: {
+                      x_position: 0,
+                      y_position: 0,
+                      width: 0,
+                      height: 0,
+                    },
+                  },
+                }
+              : comp
+          ) || [];
         newPages[pageIndex] = {
           ...newPages[pageIndex],
           images: [...newPages[pageIndex].images],
@@ -250,11 +292,11 @@ export default function ContributionPage() {
         return newPages;
       });
     } catch (error) {
-      console.error('Upload error:', error);
-      setError('Failed to upload image. Please try again.');
+      console.error("Upload error:", error);
+      setError("Failed to upload image. Please try again.");
     } finally {
       setUploading(false);
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
@@ -262,7 +304,7 @@ export default function ContributionPage() {
     try {
       const imageUrl = pages[pageIndex].images[slotIndex];
       if (!imageUrl) {
-        throw new Error('No image to delete');
+        throw new Error("No image to delete");
       }
 
       const key = extractKeyFromUrl(imageUrl);
@@ -276,11 +318,24 @@ export default function ContributionPage() {
 
       setPages((prev) => {
         const newPages = [...prev];
-        const updatedComponents = newPages[pageIndex].components?.map((comp, compIndex) =>
-          comp.type === 'photo' && compIndex === slotIndex
-            ? { ...comp, image_url: '', original: { url: '', cropping_info: { x_position: 0, y_position: 0, width: 0, height: 0 } } }
-            : comp
-        ) || [];
+        const updatedComponents =
+          newPages[pageIndex].components?.map((comp, compIndex) =>
+            comp.type === "photo" && compIndex === slotIndex
+              ? {
+                  ...comp,
+                  image_url: "",
+                  original: {
+                    url: "",
+                    cropping_info: {
+                      x_position: 0,
+                      y_position: 0,
+                      width: 0,
+                      height: 0,
+                    },
+                  },
+                }
+              : comp
+          ) || [];
         newPages[pageIndex] = {
           ...newPages[pageIndex],
           images: [...newPages[pageIndex].images],
@@ -290,11 +345,11 @@ export default function ContributionPage() {
         return newPages;
       });
     } catch (error) {
-      console.error('Error removing image:', error);
+      console.error("Error removing image:", error);
       if (axios.isAxiosError(error) && error.response?.data?.error) {
         setError(error.response.data.error);
       } else {
-        setError('Failed to remove image. Please try again.');
+        setError("Failed to remove image. Please try again.");
       }
     }
   };
@@ -314,7 +369,12 @@ export default function ContributionPage() {
     setPages((prev) => {
       const newPages = [
         ...prev,
-        { layout: 0, images: [null, null, null, null], message: '', components: availableLayouts[0].components },
+        {
+          layout: 0,
+          images: [null, null, null, null],
+          message: "",
+          components: availableLayouts[0].components,
+        },
       ];
       setActivePage(newPages.length - 1);
       return newPages;
@@ -353,9 +413,7 @@ export default function ContributionPage() {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-white">
         <p className="text-red-500 mb-4">{loadError}</p>
-        <Button onClick={() => window.location.reload()}>
-          Try Again
-        </Button>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
       </div>
     );
   }
@@ -364,9 +422,7 @@ export default function ContributionPage() {
     return (
       <div className="flex flex-col justify-center items-center h-screen bg-white">
         <p className="text-gray-500 mb-4">Project not found</p>
-        <Button onClick={() => window.location.href = '/'}>
-          Go to Home
-        </Button>
+        <Button onClick={() => (window.location.href = "/")}>Go to Home</Button>
       </div>
     );
   }
@@ -376,7 +432,10 @@ export default function ContributionPage() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const layoutIndex = layoutId % 10;
     //console.log('Layoutindex', layoutIndex);
-    const layoutPosition = categoryIndex >= 0 && categoryIndex < availableLayouts.length ? categoryIndex : 0;
+    const layoutPosition =
+      categoryIndex >= 0 && categoryIndex < availableLayouts.length
+        ? categoryIndex
+        : 0;
     return availableLayouts[layoutPosition] || availableLayouts[0];
   };
 
@@ -390,7 +449,7 @@ export default function ContributionPage() {
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       <Header isSignedIn={false} />
-      <main className="bg-gradient-to-b from-white to-purple-50 pb-20 flex-grow">
+      <main className="bg-gradient-to-b from-white to-purple-50 pb-20 flex-grow pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="py-6 sm:py-8 md:py-12 flex flex-col md:grid md:grid-cols-2 gap-4 sm:gap-8 md:gap-12">
             <div className="space-y-3 sm:space-y-4">
@@ -401,7 +460,8 @@ export default function ContributionPage() {
                 {projectData.eventDescription}
               </p>
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                <button onClick={() => setShowVideoModal(true)}
+                <button
+                  onClick={() => setShowVideoModal(true)}
                   className="bg-white border border-purple-600 text-purple-600 rounded-sm px-4 py-2.5 text-sm sm:text-base hover:shadow min-h-[44px] w-full sm:w-auto"
                   aria-label="Learn how it works"
                 >
@@ -410,9 +470,13 @@ export default function ContributionPage() {
                 <button
                   className="bg-purple-600 text-white rounded-sm px-4 py-2.5 text-sm sm:text-base hover:bg-purple-700 min-h-[44px] w-full sm:w-auto"
                   onClick={() => {
-                    const layoutEditorSection = document.querySelector("#layout-editor-section");
+                    const layoutEditorSection = document.querySelector(
+                      "#layout-editor-section"
+                    );
                     if (layoutEditorSection) {
-                      layoutEditorSection.scrollIntoView({ behavior: "smooth" });
+                      layoutEditorSection.scrollIntoView({
+                        behavior: "smooth",
+                      });
                     }
                   }}
                   aria-label="Contribute to the project"
@@ -424,7 +488,7 @@ export default function ContributionPage() {
             <div className="w-full mt-16">
               {projectData.imageKey && (
                 <Image
-                  src={getImageUrl(projectData.imageKey) ?? ''}
+                  src={getImageUrl(projectData.imageKey) ?? ""}
                   alt="Event image"
                   width={600}
                   height={400}
@@ -437,17 +501,23 @@ export default function ContributionPage() {
           </section>
 
           <StepIndicator currentStep={1} />
-          <VideoModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} videoSrc={videoSrc} />
+          <VideoModal
+            isOpen={showVideoModal}
+            onClose={() => setShowVideoModal(false)}
+            videoSrc={videoSrc}
+          />
           <section className="my-6 sm:my-8 md:my-16" id="layout-editor-section">
             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4 sm:mb-6 text-gray-900">
               Contribute
             </h2>
             <ol className="text-gray-700 text-xs sm:text-sm md:text-base list-decimal list-inside mb-4 sm:mb-6">
               <li>
-                Click <strong>Add Text</strong> to add a memory you have of John.
+                Click <strong>Add Text</strong> to add a memory you have of
+                John.
               </li>
               <li>
-                Click <strong>Add a Photo</strong> to add a photo of you and John.
+                Click <strong>Add a Photo</strong> to add a photo of you and
+                John.
               </li>
             </ol>
 
@@ -466,9 +536,14 @@ export default function ContributionPage() {
                 //@ts-expect-error : Not sure of the types
                 setPages={(newPages: Page[]) => {
                   const updatedPages = newPages.map((page, index) => ({
-                    layout: layoutCategories.findIndex((cat) => cat.title === availableLayouts[page.layout]?.name),
+                    layout: layoutCategories.findIndex(
+                      (cat) => cat.title === availableLayouts[page.layout]?.name
+                    ),
                     images: pages[index].images,
-                    message: (page as ExtendedPage).components?.find((comp) => comp.type === 'paragraph')?.value || '',
+                    message:
+                      (page as ExtendedPage).components?.find(
+                        (comp) => comp.type === "paragraph"
+                      )?.value || "",
                     components: (page as ExtendedPage).components,
                   }));
                   setPages(updatedPages);
@@ -499,8 +574,13 @@ export default function ContributionPage() {
             newPages[activePage] = {
               layout: layoutId,
               images: [
-                ...currentImages.slice(0, Math.min(currentImages.length, newSlotCount)),
-                ...Array(Math.max(0, newSlotCount - currentImages.length)).fill(null),
+                ...currentImages.slice(
+                  0,
+                  Math.min(currentImages.length, newSlotCount)
+                ),
+                ...Array(Math.max(0, newSlotCount - currentImages.length)).fill(
+                  null
+                ),
               ],
               message: newPages[activePage].message,
               components: availableLayouts[layoutId].components,

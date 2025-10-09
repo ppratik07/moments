@@ -40,7 +40,7 @@ export function useImageUpload({
           "Content-Type": file.type,
         },
       });
-       await axios.patch(`${HTTP_BACKEND}/api/users/${projectId}/upload-image`, {
+      await axios.patch(`${HTTP_BACKEND}/api/users/${projectId}/upload-image`, {
         imageKey: key,
         uploadUrl: uploadUrl,
       });
