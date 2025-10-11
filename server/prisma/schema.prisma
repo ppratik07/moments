@@ -34,7 +34,7 @@ model LoginUser {
   bookName         String
   dueDate          DateTime?
   eventType        String
-  eventDescription String
+  eventDescription String?
   userId           String
   createdAt        DateTime                @default(now())
   imageKey         String?
@@ -53,7 +53,7 @@ model FillYourDetails {
   id                       String         @id @default(uuid())
   first_name               String
   last_name                String
-  email                    String         @unique
+  email                    String         
   relationship             String
   ExcludeFromOnlineVersion Boolean        @default(false)
   ExcludeFromPromotion     Boolean        @default(false)
