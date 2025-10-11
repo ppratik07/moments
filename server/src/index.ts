@@ -137,7 +137,7 @@ app.get("/api/get-presign-url", async (req, res) => {
   const key = `${uuidv4()}.${fileExtension}`;
 
   const command = new PutObjectCommand({
-    Bucket: process.env.NEXT_PUBLIC_R2_BUCKET_NAME!,
+    Bucket: process.env.R2_BUCKET_NAME!,
     Key: key,
     ContentType: fileType,
   });
@@ -1825,9 +1825,14 @@ const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY)
 app.post("/api/email/contribution", async  (req: Request, res: Response): Promise<any> => {
   const {email, projectName} = req.body
 
+  if (!email || typeof email !== "string" || email.trim() === "" || !projectName || 
+      typeof projectName !== "string" || projectName.trim() === "") {
+        return res.status(400).json({ error: "Missing or invalid email or projectName" });
+  }
+
   try {
     const {data, error} = await resend.emails.send({
-      from: 'MemoryLane <onboarding@resend.dev>',
+      from: `MemoryLane <${process.env.NEXT_PUBLIC_SENDER_EMAIL || "onboarding@resend.dev"}>`,
       to: email,
       subject: `🎉 Thank You for Contributing to ${projectName}!`,
       react: EmailTemplate({ projectName: projectName}),

@@ -57,7 +57,7 @@ export default function YourInformationPage() {
             const parsed = JSON.parse(storedData)
             setProjectName(parsed.projectName)
         }
-    })
+    }, [])
 
     const validate = () => {
         if (!form.firstName.trim()) {
@@ -93,7 +93,7 @@ export default function YourInformationPage() {
                 toast.error("Failed to submit information.");
                 return;
             }
-            toast.success("Information submitted successfully!");
+            
             const fillYourDetailsId = response.data.user.id;
             const updateResponse = await axios.patch(
                 `${HTTP_BACKEND}/api/update-contribution/${contributionId}`,
@@ -104,6 +104,7 @@ export default function YourInformationPage() {
                 throw new Error(updateResponse.data.error || "Failed to update contribution");
             }
 
+            toast.success("Information submitted successfully!");
 
             const sentEmail = await axios.post(
                 `${HTTP_BACKEND}/api/email/contribution`, 
@@ -113,9 +114,13 @@ export default function YourInformationPage() {
                 }
             )
 
-            if(sentEmail.status !== 200) {
-                throw new Error(sentEmail.data.error || "Failed to send confirmation email!")
+            console.log(sentEmail)
+
+            if(sentEmail.data.error) {
+                throw new Error(sentEmail.data.error.message || "Failed to send confirmation email!")
             }
+
+            toast.success("Contribution email sent successfully!")
 
             setShowDialog(true);
         } catch (e) {
