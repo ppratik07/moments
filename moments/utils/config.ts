@@ -1,5 +1,5 @@
-// let HTTP_BACKEND = 'https://memorylane-preview.onrender.com'; 
-let HTTP_BACKEND = 'http://localhost:5000'; // default for local
+let HTTP_BACKEND = 'https://memorylane-preview.onrender.com'; 
+// let HTTP_BACKEND = 'http://localhost:5000'; // default for local
 
 if (typeof window !== "undefined") {
   const hostname = window.location.hostname;
