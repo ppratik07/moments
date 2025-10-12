@@ -1820,36 +1820,33 @@ app.get(
   }
 );
 
-const resend = new Resend(process.env.NEXT_PUBLIC_RESEND_API_KEY)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-app.post("/api/email/contribution", async  (req: Request, res: Response): Promise<any> => {
-  const {email, projectName} = req.body
+app.post("/api/email/contribution", async (req: Request, res: Response): Promise<any> => {
+  const { email, projectName } = req.body;
 
-  if (!email || typeof email !== "string" || email.trim() === "" || !projectName || 
-      typeof projectName !== "string" || projectName.trim() === "") {
-        return res.status(400).json({ error: "Missing or invalid email or projectName" });
+  if (!email || typeof email !== "string" || email.trim() === "" || 
+      !projectName || typeof projectName !== "string" || projectName.trim() === "") {
+    return res.status(400).json({ error: "Missing or invalid email or projectName" });
   }
 
   try {
-    const {data, error} = await resend.emails.send({
-      from: `MemoryLane <${process.env.NEXT_PUBLIC_SENDER_EMAIL || "onboarding@resend.dev"}>`,
+    const { data, error } = await resend.emails.send({
+      from: `MemoryLane <${process.env.RESEND_SENDER_EMAIL || "onboarding@resend.dev"}>`,
       to: email,
       subject: `🎉 Thank You for Contributing to ${projectName}!`,
-      react: EmailTemplate({ projectName: projectName}),
-    })
+      react: EmailTemplate({ projectName }),
+    });
 
-    if(error) {
-      return res.json({error})
-    }
+    if (error) return res.status(500).json({ error });
 
-    return res.status(200).json(data)
-
-  }
-  catch(err) {
+    return res.status(200).json(data);
+  } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not submit contribution" });
   }
-})
+});
+
 
 // Health check endpoint
 app.get("/api/health", (req: Request, res: Response) => {
