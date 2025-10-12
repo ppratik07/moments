@@ -195,9 +195,12 @@ export default function ContributionPage() {
         throw new Error("Failed to save contribution");
       }
       setContributionId(response.data.contributionId);
-      router.push(
-        `/contribution/${projectId}/fill-information?contributionId=${response.data.contributionId}`
-      );
+
+      sessionStorage.setItem("projectName", JSON.stringify({
+        projectName: projectData?.projectName
+      }))
+      
+      router.push(`/contribution/${projectId}/fill-information?contributionId=${response.data.contributionId}`);
     } catch (error) {
       console.error("Error saving contribution:", error);
       setError("Failed to save your contribution. Please try again.");
