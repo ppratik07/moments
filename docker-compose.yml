@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: moments-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-moments}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - moments-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: moments-server
+    restart: unless-stopped
+    ports:
+      - "${SERVER_PORT:-5000}:5000"
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-moments}
+      # Add your other environment variables here
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - moments-network
+    volumes:
+      - ./server/prisma:/app/prisma
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./moments
+      dockerfile: Dockerfile
+    container_name: moments-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      # Add your frontend environment variables here
+      NEXT_PUBLIC_SITE_URL: https://yourdomain.com
+      NEXT_PUBLIC_SITE_NAME: MemoryLane
+      NEXT_PUBLIC_TWITTER_HANDLE: '@memorylane'
+      NEXT_PUBLIC_GOOGLE_VERIFICATION: your-google-verification-code
+      # Image and Storage
+      NEXT_PUBLIC_IMAGE_R2_URL:
+      # Payment
+      NEXT_PUBLIC_RAZORPAY_KEY_ID:
+      # Chat Support
+      NEXT_PUBLIC_TAWKTO_PROPERTY_ID:
+      NEXT_PUBLIC_TAWKTO_WIDGET_ID:
+      # Authentication
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+    depends_on:
+      - server
+    networks:
+      - moments-network
+
+networks:
+  moments-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
