@@ -27,6 +27,7 @@
     "@uppy/progress-bar": "^4.2.1",
     "@uppy/react": "^4.2.3",
     "@uppy/transloadit": "^4.2.2",
+    "@vercel/speed-insights": "^1.2.0",
     "animejs": "^4.0.1",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.8.4",
