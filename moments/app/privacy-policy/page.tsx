@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
           </h1>
         </div>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          At <span className="font-semibold text-gray-900">Moments</span> (also referred to as "MemoryLane" in some project files), we are committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information.
+          At <span className="font-semibold text-gray-900">Moments</span> (also referred to as &ldquo;MemoryLane&rdquo; in some project files), we are committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information.
         </p>
       </section>
 
@@ -210,7 +210,7 @@ export default function PrivacyPolicyPage() {
           <div className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Changes to This Policy</h3>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              We may update this policy periodically. Changes will be posted here with a new "Last updated" date. Significant changes will be notified via email.
+              We may update this policy periodically. Changes will be posted here with a new &ldquo;Last updated&rdquo; date. Significant changes will be notified via email.
             </p>
           </div>
           <div className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
