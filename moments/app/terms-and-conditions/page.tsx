@@ -13,7 +13,7 @@ export default function TermsPage() {
           </h1>
         </div>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-          Welcome to <span className="font-semibold text-gray-900">Moments</span> (also referred to as "MemoryLane" in some project files). These Terms and Conditions ("Terms") govern your access to and use of our collaborative photo book creator service. By using the Service, you agree to these Terms.
+          Welcome to <span className="font-semibold text-gray-900">Moments</span> (also referred to as &ldquo;MemoryLane&rdquo; in some project files). These Terms and Conditions (&ldquo;Terms&rdquo;) govern your access to and use of our collaborative photo book creator service. By using the Service, you agree to these Terms.
         </p>
       </section>
 
@@ -24,7 +24,7 @@ export default function TermsPage() {
           <span>Acceptance of Terms</span>
         </h2>
         <p className="text-gray-600 dark:text-gray-300">
-          By accessing or using the Moments website, web application, or any related services (collectively, the "Service"), you confirm that you have read, understood, and agree to be bound by these Terms, our Privacy Policy, and any applicable additional terms. If you do not agree, you must not use the Service. Use of the Service is at your own risk.
+          By accessing or using the Moments website, web application, or any related services (collectively, the &ldquo;Service&rdquo;), you confirm that you have read, understood, and agree to be bound by these Terms, our Privacy Policy, and any applicable additional terms. If you do not agree, you must not use the Service. Use of the Service is at your own risk.
         </p>
       </section>
 
@@ -58,7 +58,7 @@ export default function TermsPage() {
         </h2>
         <div className="space-y-4">
           <p className="text-gray-600 dark:text-gray-300">
-            "User Content" includes photos, messages, project metadata, layouts, and other materials you or your collaborators upload or generate via the Service.
+            &ldquo;User Content&rdquo; includes photos, messages, project metadata, layouts, and other materials you or your collaborators upload or generate via the Service.
           </p>
             <div className="grid md:grid-cols-2 gap-6">
             <ContentCard
@@ -151,7 +151,7 @@ export default function TermsPage() {
         <div className="space-y-4">
           <div className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Disclaimers</h3>
-            <p className="text-gray-600 dark:text-gray-300 text-sm">The Service is provided "as is" without warranties of any kind. We do not guarantee uninterrupted access, error-free operation, or that User Content will be secure from loss.</p>
+            <p className="text-gray-600 dark:text-gray-300 text-sm">The Service is provided &ldquo;as is&rdquo; without warranties of any kind. We do not guarantee uninterrupted access, error-free operation, or that User Content will be secure from loss.</p>
           </div>
           <div className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Limitation of Liability</h3>
@@ -180,7 +180,7 @@ export default function TermsPage() {
           <div className="p-6 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
             <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-white">Changes to Terms</h3>
             <p className="text-gray-600 dark:text-gray-300 text-sm">
-              We may update these Terms at any time. Changes will be posted here with a new "Last updated" date. Your continued use after changes constitutes acceptance. We may notify you of material changes via email.
+              We may update these Terms at any time. Changes will be posted here with a new &ldquo;Last updated&rdquo; date. Your continued use after changes constitutes acceptance. We may notify you of material changes via email.
             </p>
           </div>
         </div>
