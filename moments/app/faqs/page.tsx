@@ -87,7 +87,7 @@ const FAQPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header isSignedIn={isSignedIn ?? false} />
 
-      <main className="flex-grow bg-gradient-to-b from-accent/30 to-background">
+      <main className="flex-grow bg-gradient-to-b from-accent/30 to-background mt-20">
         <div className="container mx-auto px-4 py-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
