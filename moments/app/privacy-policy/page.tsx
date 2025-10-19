@@ -1,3 +1,4 @@
+'use client';
 import React from "react";
 import { Shield, User, Image as ImageIcon, Settings, Mail } from "lucide-react";
 import { Footer } from "@/components/landing/Footer";
