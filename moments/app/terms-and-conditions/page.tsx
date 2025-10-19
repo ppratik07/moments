@@ -1,3 +1,4 @@
+'use client';
 import React from "react";
 import { FileText, User, Image as ImageIcon, AlertCircle, CreditCard, Shield, Mail, Gavel, Settings } from "lucide-react";
 import { Header } from "@/components/landing/Header";
