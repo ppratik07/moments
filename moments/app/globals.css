@@ -128,3 +128,10 @@
 html{
   scroll-behavior: smooth;
 }
+
+.text-gradient {
+  background: linear-gradient(135deg, oklch(0.205 0 0), oklch(0.708 0 0));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
