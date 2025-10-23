@@ -91,7 +91,7 @@ const DownloadPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </Head>
       <Header isSignedIn />
-      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-100">
+      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-100 pt-20">
         <Sidebar projectId={project_id} />
         <div className="flex-1 p-4 sm:p-6 lg:p-8">
           <div className="mb-6 sm:mb-8">

@@ -41,9 +41,24 @@ export const metadata: Metadata = {
     "memory lane",
     "keepsake creation"
   ],
+  // Favicon configuration for optimal browser and device support
+  // Includes standard favicon formats and iOS home screen icon
   icons: {
-    icon: "/favicon_icon.jpeg"
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-96x96.png', sizes: '96x96', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      { url: '/web-app-manifest-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/web-app-manifest-512x512.png', sizes: '512x512', type: 'image/png' },
+    ],
   },
+  // Web App Manifest for PWA support
+  manifest: '/site.webmanifest',
   authors: [{ name: "MemoryLane Team" }],
   creator: "MemoryLane",
   publisher: "MemoryLane",

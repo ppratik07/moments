@@ -51,7 +51,7 @@ export default function ContributionsPage() {
   return (
     <div>
       <Header isSignedIn={true} />
-      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-50">
+      <div className="flex flex-col sm:flex-row min-h-screen bg-gray-50 pt-20">
         <Sidebar imageKey={imageKey || ''} projectId={projectId} />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Header */}

@@ -1,3 +1,4 @@
+'use client'; 
 import React from "react";
 import { BookOpen, Users, Image, Shield, Download } from "lucide-react";
 import { Header } from "@/components/landing/Header";

@@ -102,10 +102,16 @@ export default function DashboardPage() {
 
   return (
     <div>
+<<<<<<< HEAD
       <Header isSignedIn={isSignedIn ?? false} compact={true} />
       {/* add top padding so content is not hidden behind fixed header */}
       <div className="min-h-screen bg-gray-100 p-6 pt-24 md:pt-28">
   <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+=======
+      <Header isSignedIn={isSignedIn ?? false} />
+      <div className="min-h-screen bg-gray-100 p-6 pt-26">
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+>>>>>>> main
         {loading ? (
           <div className="flex justify-center items-center h-64">
             <div className="flex justify-center items-center w-full">
