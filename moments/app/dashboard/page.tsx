@@ -5,7 +5,6 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { format } from 'date-fns';
 import { HTTP_BACKEND } from '@/utils/config';
 import { Header } from '@/components/landing/Header';
 import { useAuth, useClerk } from '@clerk/nextjs';
@@ -103,19 +102,23 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <Header isSignedIn={isSignedIn ?? false} />
-      <div className="min-h-screen bg-gray-100 p-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+      <Header isSignedIn={isSignedIn ?? false} compact={true} />
+      {/* add top padding so content is not hidden behind fixed header */}
+      <div className="min-h-screen bg-gray-100 p-6 pt-24 md:pt-28">
+  <h1 className="text-xl md:text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <RotatingLines
-              visible={true}
-              strokeColor="gray"
-              strokeWidth="5"
-              animationDuration="0.75"
-              width="96"
-              ariaLabel="rotating-lines-loading"
-            />
+            <div className="flex justify-center items-center w-full">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="4"
+                animationDuration="0.75"
+                // width prop expects a string; guard window access
+                width={typeof window !== 'undefined' && window.innerWidth < 640 ? '48' : '72'}
+                ariaLabel="rotating-lines-loading"
+              />
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -167,9 +170,9 @@ export default function DashboardPage() {
                   {/* Overlay content */}
                   <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
                     <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
-                    <p className="text-sm mb-3">
-                      Created on: {format(createdDate, 'MMMM dd, yyyy')}
-                    </p>
+                          <p className="text-sm mb-3">
+                            Created on: {createdDate.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' })}
+                          </p>
                     <Button
                       className={`w-full ${isClosed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
                       onClick={() => {
