@@ -8,9 +8,10 @@ import Link from "next/link";
 
 interface HeaderProps {
   isSignedIn: boolean;
+  compact?: boolean; // when true render a smaller header (used on dashboard)
 }
 
-export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
+export const Header: React.FC<HeaderProps> = ({ isSignedIn, compact = false }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
@@ -28,15 +29,15 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
     <div>
       <header className="bg-gradient-to-b from-accent to-background fixed top-0 left-0 w-full z-50">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-20 md:h-20">
+          <div className={`flex items-center justify-between ${compact ? 'h-14 md:h-20' : 'h-20 md:h-20'}`}>
             <Link href='/'>
               <div className="flex items-center gap-2">
-                <BookOpen className="h-8 w-8 text-primary" />
-                <span className="text-xl font-bold">MemoryLane</span>
+                <BookOpen className={`${compact ? 'h-6 w-6 md:h-8 md:w-8' : 'h-8 w-8'} text-primary`} />
+                <span className={`${compact ? 'text-base md:text-xl' : 'text-xl'} font-bold`}>MemoryLane</span>
               </div>
             </Link>
             {isDashboardPage && (
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center">
                 <Button
                   className="cursor-pointer"
                   onClick={() => router.push('/new-project')}
