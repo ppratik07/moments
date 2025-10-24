@@ -78,6 +78,7 @@ interface LayoutEditorProps {
   handleRemoveImage: (pageIndex: number, slotIndex: number) => void;
   uploading: boolean;
   error: string | null;
+  handleFileDrop?: (file: File, pageIndex: number, slotIndex: number) => void;
 }
 
 const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
@@ -89,6 +90,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   handleFileUpload,
   handleRemoveImage,
   uploading,
+  handleFileDrop,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [isAddingNewPage, setIsAddingNewPage] = useState(false);
@@ -197,6 +199,24 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
             boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)',
           }}
           onClick={() => handleComponentClick(index)}
+          onDragOver={(e) => {
+            if (!comp.image_url && handleFileDrop) {
+              e.preventDefault();
+              e.currentTarget.classList.add('border-blue-500');
+            }
+          }}
+          onDragLeave={(e) => {
+            e.currentTarget.classList.remove('border-blue-500');
+          }}
+          onDrop={(e) => {
+            if (comp.image_url || !handleFileDrop) return;
+            e.preventDefault();
+            e.currentTarget.classList.remove('border-blue-500');
+            const file = e.dataTransfer.files?.[0];
+            if (file && file.type.startsWith('image/')) {
+              handleFileDrop(file, currentPageIndex, index);
+            }
+          }}
         >
           {!comp.image_url && uploading && <span className="text-gray-500 text-sm">Uploading...</span>}
           {!comp.image_url && !uploading && (
