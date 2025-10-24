@@ -256,12 +256,12 @@ export default function Sidebar({ imageKey, projectId }: { imageKey?: string; pr
   ];
 
   return (
-    <aside className="w-[19rem] bg-white border-r p-4">
+    <aside className="w-full sm:w-[19rem] bg-white border-r p-4">
       {imageUrl && (
         <Image
           src={imageUrl}
           alt="Project cover"
-          className="mb-6"
+          className="mb-6 object-contain"
           width={300}
           height={300}
         />

@@ -1,7 +1,7 @@
 import { BookOpen } from "lucide-react";
 export const Footer: React.FC = () => {
     return (
-        <footer className="bg-white border-t border-border mt-6 pt-12 pb-0">
+        <footer className="bg-white border-t border-border mt-6 pt-12 pb-6">
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center md:text-left">
                     <div>
@@ -43,8 +43,8 @@ export const Footer: React.FC = () => {
                         <h3 className="font-semibold mb-4">Support</h3>
                         <ul className="space-y-2">
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Help Center</a></li>
-                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Privacy</a></li>
-                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Terms</a></li>
+                            <li><a href="/privacy-policy" className="text-sm text-muted-foreground hover:text-primary">Privacy Policy</a></li>
+                            <li><a href="/terms-and-conditions" className="text-sm text-muted-foreground hover:text-primary">Terms and Conditions</a></li>
                         </ul>
                     </div>
                 </div>

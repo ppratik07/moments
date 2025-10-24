@@ -39,7 +39,7 @@ const HeroSection = () => {
             <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 fade-in-up stagger-2">
               <Button
                 size="lg"
-                className="bg-primary hover:bg-primary/90 text-white cursor-pointer w-full sm:w-auto"
+                className="bg-primary hover:bg-primary/90 text-white cursor-pointer w-full sm:w-auto transition-transform duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg"
                 onClick={() => router.push('/new-project')}
               >
                 Start Your Book
@@ -47,7 +47,7 @@ const HeroSection = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-primary text-primary hover:bg-primary/10 cursor-pointer w-full sm:w-auto"
+                className="border-primary text-primary hover:bg-primary/10 cursor-pointer w-full sm:w-auto transition-transform duration-300 ease-in-out hover:scale-[1.02] hover:shadow-lg"
               >
                 See Examples
               </Button>

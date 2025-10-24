@@ -27,6 +27,7 @@
     "@uppy/progress-bar": "^4.2.1",
     "@uppy/react": "^4.2.3",
     "@uppy/transloadit": "^4.2.2",
+    "@vercel/speed-insights": "^1.2.0",
     "animejs": "^4.0.1",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.8.4",
@@ -39,11 +40,11 @@
     "lucide-react": "^0.488.0",
     "next": "^15.5.4",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
+    "react": "^18.3.1",
     "react-beautiful-dnd": "^13.1.1",
     "react-confetti": "^6.4.0",
     "react-datepicker": "^8.3.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "^18.3.1",
     "react-loader-spinner": "^6.1.6",
     "react-pageflip": "^2.0.3",
     "react-use": "^17.6.0",
@@ -63,6 +64,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }

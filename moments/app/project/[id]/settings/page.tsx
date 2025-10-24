@@ -57,9 +57,9 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header isSignedIn={!!isSignedIn} />
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen pt-20">
         {/* Sidebar */}
-        <div className="w-[19rem] min-w-[19rem] bg-white shadow-md flex-shrink-0">
+        <div className="w-full sm:w-[19rem] sm:min-w-[19rem] bg-white shadow-md flex-shrink-0">
           <Sidebar projectId={projectId} />
         </div>
 

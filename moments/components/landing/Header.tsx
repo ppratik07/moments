@@ -26,9 +26,9 @@ export const Header: React.FC<HeaderProps> = ({ isSignedIn }) => {
 
   return (
     <div>
-      <header className="bg-gradient-to-b from-accent to-background sticky top-0 z-50">
+      <header className="bg-gradient-to-b from-accent to-background fixed top-0 left-0 w-full z-50">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-20 md:h-20">
             <Link href='/'>
               <div className="flex items-center gap-2">
                 <BookOpen className="h-8 w-8 text-primary" />
