@@ -105,7 +105,7 @@ export default function DashboardPage() {
     <div>
       <Header isSignedIn={isSignedIn ?? false} />
       <div className="min-h-screen bg-gray-100 p-6 pt-26">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
         {loading ? (
           // Center spinner horizontally and vertically; show a smaller spinner on mobile only
           <div className="w-full flex justify-center items-center min-h-[40vh]">
