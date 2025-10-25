@@ -105,17 +105,33 @@ export default function DashboardPage() {
     <div>
       <Header isSignedIn={isSignedIn ?? false} />
       <div className="min-h-screen bg-gray-100 p-6 pt-26">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
+  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <RotatingLines
-              visible={true}
-              strokeColor="gray"
-              strokeWidth="5"
-              animationDuration="0.75"
-              width="96"
-              ariaLabel="rotating-lines-loading"
-            />
+          // Center spinner horizontally and vertically; show a smaller spinner on mobile only
+          <div className="w-full flex justify-center items-center min-h-[40vh]">
+            {/* Mobile spinner: visible on small screens (below md) */}
+            <div className="block md:hidden">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="64"
+                ariaLabel="rotating-lines-loading-mobile"
+              />
+            </div>
+
+            {/* Desktop spinner: keep original size on md+ screens */}
+            <div className="hidden md:flex">
+              <RotatingLines
+                visible={true}
+                strokeColor="gray"
+                strokeWidth="5"
+                animationDuration="0.75"
+                width="96"
+                ariaLabel="rotating-lines-loading-desktop"
+              />
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
