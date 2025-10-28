@@ -34,7 +34,7 @@ export const Footer: React.FC = () => {
                             </li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Careers</a></li>
                             <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Contact</a></li>
-                            <li><a href="#" className="text-sm text-muted-foreground hover:text-primary">Blog</a></li>
+                            <li><a href="/blog" className="text-sm text-muted-foreground hover:text-primary">Blog</a></li>
                             <li><a href="/faqs" className="text-sm text-muted-foreground hover:text-primary">FAQs</a></li>
                         </ul>
                     </div>
