@@ -77,6 +77,8 @@ interface LayoutEditorProps {
   ) => void;
   handleRemoveImage: (pageIndex: number, slotIndex: number) => void;
   uploading: boolean;
+  uploadingSlots: Record<string, boolean>;
+  setUploadingSlots: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   error: string | null;
 }
 
@@ -89,6 +91,8 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   handleFileUpload,
   handleRemoveImage,
   uploading,
+  uploadingSlots,
+  setUploadingSlots,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [isAddingNewPage, setIsAddingNewPage] = useState(false);

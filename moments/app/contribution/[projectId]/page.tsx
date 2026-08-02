@@ -97,7 +97,7 @@ export default function ContributionPage() {
   ]);
   const [activePage, setActivePage] = useState(0);
   const [showLayoutModal, setShowLayoutModal] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingSlots, setUploadingSlots] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState<boolean>(false);
   const [, setContributionId] = useState<string | null>(null);
@@ -233,7 +233,7 @@ export default function ContributionPage() {
       return;
     }
 
-    setUploading(true);
+    setUploadingSlots(prev => ({ ...prev, [`${pageIndex}-${slotIndex}`]: true }));
     setError(null);
 
     try {
@@ -295,7 +295,7 @@ export default function ContributionPage() {
       console.error("Upload error:", error);
       setError("Failed to upload image. Please try again.");
     } finally {
-      setUploading(false);
+      setUploadingSlots(prev => ({ ...prev, [`${pageIndex}-${slotIndex}`]: false }));
       event.target.value = "";
     }
   };
@@ -554,6 +554,8 @@ export default function ContributionPage() {
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
                 uploading={uploading}
+      uploadingSlots={uploadingSlots}
+      setUploadingSlots={setUploadingSlots}
                 error={error}
               />
             </div>
