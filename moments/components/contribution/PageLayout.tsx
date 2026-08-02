@@ -3,6 +3,8 @@ import { MessageSection } from "./MessageSection";
 import { Page } from "./SignatureEditModal";
 
 interface PageLayoutProps {
+  uploadingSlots: Record<string, boolean>;
+  setUploadingSlots: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   page: Page;
   pageIndex: number;
   activePage: number;
@@ -38,6 +40,8 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   setEditingMessage,
   setIsSignatureModalOpen,
   setPages,
+  uploadingSlots,
+  setUploadingSlots,
 }) => {
   const getSelectedLayoutComponent = () => {
     const layoutId = page.layout;
@@ -83,7 +87,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                   image={image}
                   index={i}
                   pageIndex={pageIndex}
-                  uploading={uploading}
+                  uploadingSlots={uploadingSlots}
                   handleFileUpload={handleFileUpload}
                   handleRemoveImage={handleRemoveImage}
                 />
@@ -103,7 +107,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                   image={image}
                   index={i}
                   pageIndex={pageIndex}
-                  uploading={uploading}
+                  uploadingSlots={uploadingSlots}
                   handleFileUpload={handleFileUpload}
                   handleRemoveImage={handleRemoveImage}
                 />
@@ -120,7 +124,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     image={image}
                     index={i}
                     pageIndex={pageIndex}
-                    uploading={uploading}
+                    uploadingSlots={uploadingSlots}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
                   />
@@ -130,7 +134,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 image={page.images[2]}
                 index={2}
                 pageIndex={pageIndex}
-                uploading={uploading}
+                uploadingSlots={uploadingSlots}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
               />
@@ -143,7 +147,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 image={page.images[0]}
                 index={0}
                 pageIndex={pageIndex}
-                uploading={uploading}
+                uploadingSlots={uploadingSlots}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
               />
@@ -154,7 +158,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     image={image}
                     index={i + 1}
                     pageIndex={pageIndex}
-                    uploading={uploading}
+                    uploadingSlots={uploadingSlots}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
                   />
@@ -171,7 +175,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     image={image}
                     index={i}
                     pageIndex={pageIndex}
-                    uploading={uploading}
+                    uploadingSlots={uploadingSlots}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
                   />
@@ -180,7 +184,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                       image={page.images[i + 2]}
                       index={i + 2}
                       pageIndex={pageIndex}
-                      uploading={uploading}
+                      uploadingSlots={uploadingSlots}
                       handleFileUpload={handleFileUpload}
                       handleRemoveImage={handleRemoveImage}
                     />
@@ -210,7 +214,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 image={page.images[0]}
                 index={0}
                 pageIndex={pageIndex}
-                uploading={uploading}
+                uploadingSlots={uploadingSlots}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
               />
@@ -223,7 +227,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 image={page.images[0]}
                 index={0}
                 pageIndex={pageIndex}
-                uploading={uploading}
+                uploadingSlots={uploadingSlots}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
               />
@@ -248,7 +252,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     image={image}
                     index={i}
                     pageIndex={pageIndex}
-                    uploading={uploading}
+                    uploadingSlots={uploadingSlots}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
                   />
@@ -284,7 +288,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                     image={image}
                     index={i}
                     pageIndex={pageIndex}
-                    uploading={uploading}
+                    uploadingSlots={uploadingSlots}
                     handleFileUpload={handleFileUpload}
                     handleRemoveImage={handleRemoveImage}
                   />
@@ -308,7 +312,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
                 image={page.images[0]}
                 index={0}
                 pageIndex={pageIndex}
-                uploading={uploading}
+                uploadingSlots={uploadingSlots}
                 handleFileUpload={handleFileUpload}
                 handleRemoveImage={handleRemoveImage}
               />
