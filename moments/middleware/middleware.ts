@@ -28,6 +28,13 @@ export default async function middleware(req: NextRequest) {
     }
   }
 
+  // Protect dashboard route - redirect unauthenticated users to sign-in
+  if (req.nextUrl.pathname.startsWith('/dashboard') && !userId) {
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
   return NextResponse.next();
 }
 
