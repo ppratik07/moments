@@ -1,4 +1,6 @@
+import "dotenv/config";
 import express from "express";
+import path from "path";
 import cors from "cors";
 import {
   S3Client,
@@ -8,7 +10,6 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
-import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { authMiddleware } from "./middleware/middleware";
@@ -21,8 +22,14 @@ import crypto from "crypto";
 import { generateBookHtml } from "./services/generateBookHtml";
 import { Resend } from "resend";
 import { EmailTemplate } from "./utils/template/emailTemplate";
-
-dotenv.config();
+import {
+  deleteObject,
+  ensureUploadDir,
+  localUploadDir,
+  publicImageUrlForKey,
+  putObject,
+  useLocalFileStorage,
+} from "./storage";
 
 const app = express();
 const PORT = process.env.PORT;
@@ -41,6 +48,11 @@ app.use(
 //   res.status(204).end();
 // });
 app.use(express.json());
+
+if (useLocalFileStorage()) {
+  void ensureUploadDir();
+  app.use("/uploads", express.static(localUploadDir()));
+}
 
 const prisma = new PrismaClient();
 
@@ -71,6 +83,23 @@ function stripQueryParams(url: string) {
   const index = url.indexOf("?");
   return index !== -1 ? url.substring(0, index) : url;
 }
+
+function extensionFromContentType(contentType: string): string {
+  const normalized = contentType.split(";")[0].trim().toLowerCase();
+  const map: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/heic": "heic",
+    "image/heif": "heif",
+  };
+  if (map[normalized]) return map[normalized];
+  const fromType = normalized.split("/")[1];
+  return fromType && fromType !== "*" ? fromType : "jpg";
+}
+
 // Existing Endpoints (unchanged)
 app.get("/event-type", async (req: Request, res: Response): Promise<any> => {
   const { name } = req.query;
@@ -126,10 +155,11 @@ app.post(
   }
 );
 
-app.get("/api/get-presign-url", async (req, res) => {
+app.get("/api/get-presign-url", async (req: Request, res: Response): Promise<void> => {
   const fileType = req.query.fileType as string;
 
   if (!fileType) {
+    res.status(400).json({ error: "fileType query parameter is required" });
     return;
   }
 
@@ -161,12 +191,7 @@ app.delete("/api/delete-image", async (req, res) => {
     res.status(400).json({ error: "Missing or invalid key parameter" });
   }
   try {
-    const deleteCommand = new DeleteObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME!,
-      Key: key as string,
-    });
-
-    await s3.send(deleteCommand);
+    await deleteObject(key as string);
 
     res.status(200).json({ message: "Image deleted successfully" });
   } catch (error) {
@@ -237,6 +262,63 @@ app.get(
     } catch (error) {
       console.error("Error fetching user projects:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+app.post(
+  "/api/users/:projectId/upload-cover",
+  authMiddleware,
+  express.raw({
+    type: (req) => req.headers["content-type"]?.startsWith("image/") ?? false,
+    limit: "12mb",
+  }),
+  async (req: AuthRequest, res: Response): Promise<any> => {
+    const { projectId } = req.params;
+    const body = req.body;
+
+    if (!projectId || typeof projectId !== "string") {
+      return res.status(400).json({ error: "Invalid projectId" });
+    }
+    if (!Buffer.isBuffer(body) || body.length === 0) {
+      return res.status(400).json({ error: "Missing image data" });
+    }
+
+    const contentType =
+      (req.headers["content-type"]?.split(";")[0].trim() as string) ||
+      "image/jpeg";
+    const key = `${uuidv4()}.${extensionFromContentType(contentType)}`;
+    const uploadUrl = publicImageUrlForKey(key);
+
+    try {
+      const project = await prisma.loginUser.findUnique({
+        where: { id: projectId },
+        select: { id: true, userId: true },
+      });
+
+      if (!project) {
+        return res.status(404).json({ error: "Project not found" });
+      }
+      if (project.userId && req.userId && project.userId !== req.userId) {
+        return res.status(403).json({ error: "Not allowed to update this project" });
+      }
+
+      await putObject(key, body, contentType);
+
+      const updatedProject = await prisma.loginUser.update({
+        where: { id: projectId },
+        data: { imageKey: key, uploadUrl },
+      });
+
+      return res.status(200).json({
+        message: "Image uploaded successfully",
+        key,
+        uploadUrl,
+        project: updatedProject,
+      });
+    } catch (error) {
+      console.error("Failed to upload cover image:", error);
+      return res.status(500).json({ error: "Upload failed" });
     }
   }
 );
@@ -378,8 +460,6 @@ app.post("/api/save-contribution", async (req, res): Promise<any> => {
   } catch (error) {
     console.error("Error saving contribution:", error);
     res.status(500).json({ error: "Failed to save contribution" });
-  } finally {
-    await prisma.$disconnect();
   }
 });
 
@@ -681,25 +761,31 @@ app.post(
           .json({ error: "Project not found or unauthorized" });
       }
 
-      await prisma.layout.deleteMany({
-        where: { projectId },
-      });
+      await prisma.$transaction(async (tx) => {
+        await tx.layout.deleteMany({
+          where: { projectId },
+        });
 
-      const savedLayouts = await prisma.layout.createMany({
-        data: layouts.map((layout) => ({
-          id: layout.id,
-          projectId,
-          userId,
-          pageType: layout.pageType,
-          isPreview: layout.isPreview,
-          section: layout.section,
-          config: layout.config,
-        })),
+        if (layouts.length === 0) {
+          return;
+        }
+
+        await tx.layout.createMany({
+          data: layouts.map((layout) => ({
+            id: uuidv4(),
+            projectId,
+            userId,
+            pageType: layout.pageType,
+            isPreview: layout.isPreview,
+            section: layout.section ?? null,
+            config: layout.config,
+          })),
+        });
       });
 
       res.status(201).json({
         message: "Layouts saved successfully",
-        count: savedLayouts.count,
+        count: layouts.length,
       });
     } catch (error) {
       console.error("Error saving layouts:", error);
@@ -1426,8 +1512,6 @@ app.patch(
     } catch (error) {
       console.error("Error updating contribution:", error);
       res.status(500).json({ error: "Failed to update contribution" });
-    } finally {
-      await prisma.$disconnect();
     }
   }
 );
@@ -1856,4 +1940,9 @@ app.get("/api/health", (req: Request, res: Response) => {
 // Listening to the server
 app.listen(PORT, () => {
   console.log(`Server is running on ${PORT}`);
+  if (useLocalFileStorage()) {
+    console.log(
+      `Local object storage: serving uploads from ${path.join(process.cwd(), "uploads")}`
+    );
+  }
 });

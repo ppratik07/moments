@@ -5,10 +5,9 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
-import { Header } from '@/components/landing/Header';
 import { getImageUrl } from '@/helpers/getImageUrl';
 import { useImageUpload } from '@/hooks/useImageUpload';
-import Footer from '@/pages/Footer';
+import SiteFooter from '@/components/layout/SiteFooter';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { toast } from 'sonner';
 import VideoModal from '@/components/VideoModal';
@@ -17,6 +16,8 @@ import axios from 'axios';
 import { HTTP_BACKEND } from '@/utils/config';
 import { CurrentUser, Layout } from '@/types/frontlayout.types';
 import { useAuth } from '@clerk/nextjs';
+import '@/app/stitch-landing.css';
+import { cn } from '@/lib/utils';
 
 
 // Custom debounce hook
@@ -339,7 +340,8 @@ export default function NewEventPage() {
       setProjectImageKeyState(key);
       setImageKey(key);
     },
-    projectId: projectId || '',
+    projectId: projectId || null,
+    getAuthToken: () => getToken(),
   });
 
   const saveUpdatedLayouts = async () => {
@@ -420,126 +422,153 @@ export default function NewEventPage() {
     (layout) => layout.pageType === 'front_cover' && layout.isPreview
   ) as Layout | undefined;
 
+  const inviteInitial = (projectName?.trim()[0] || 'N').toUpperCase();
+  const toolbarButtonClass =
+    'shrink-0 rounded-md bg-neutral-900 text-white hover:bg-neutral-800 px-4 py-2 h-auto font-medium cursor-pointer';
+
   return (
-    <div className="min-h-screen bg-white">
-      <Header isSignedIn={isSignedIn ?? false} />
-      <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 text-white py-4 px-4 md:px-6 z-50">
-        {/* Top section with avatar and title */}
-        <div className="flex items-center gap-2 mb-4 md:mb-0">
-          <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-xl font-bold">N</div>
-          <span className="font-semibold">Invite Your Friends</span>
-        </div>
+    <div className="min-h-screen bg-white text-[var(--color-on-surface)]">
+      {/* Invite toolbar */}
+      <div className="relative z-40 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-600 text-white shadow-md">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black text-lg font-bold"
+              aria-hidden
+            >
+              {inviteInitial}
+            </div>
+            <span className="text-base font-semibold sm:text-lg">Invite Your Friends</span>
+          </div>
 
-        {/* Middle section: share link and copy button */}
-        <div className="flex flex-col items-stretch gap-2 md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:flex-row md:items-center">
-          <input
-            type="text"
-            value={shareLink}
-            readOnly
-            className="bg-white text-black px-4 py-2 rounded w-full md:w-auto"
-          />
-          <Button
-            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
-            onClick={handleCopy}
-          >
-            {copied ? 'Copied!' : 'Copy Link'}
-          </Button>
-        </div>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:max-w-xl lg:flex-1 lg:px-6">
+            <input
+              type="text"
+              value={shareLink}
+              readOnly
+              aria-label="Share link"
+              className="min-w-0 flex-1 truncate rounded-md bg-white px-4 py-2.5 text-sm text-black shadow-sm"
+            />
+            <Button className={toolbarButtonClass} onClick={handleCopy}>
+              {copied ? 'Copied!' : 'Copy Link'}
+            </Button>
+          </div>
 
-        {/* Right section: dashboard and edit buttons */}
-        <div className="flex gap-2 mt-4 md:mt-0 md:absolute md:right-6 md:top-1/2 md:-translate-y-1/2">
-          <Button
-            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
-            onClick={handleDashboardClick}
-          >
-            Dashboard
-          </Button>
-          <Button
-            className="bg-primary text-white px-4 py-2 rounded cursor-pointer"
-            onClick={() => setShowEditModal(true)}
-          >
-            Edit this Page
-          </Button>
+          <div className="flex flex-wrap gap-2 lg:justify-end">
+            <Button className={toolbarButtonClass} onClick={handleDashboardClick}>
+              Dashboard
+            </Button>
+            <Button className={toolbarButtonClass} onClick={() => setShowEditModal(true)}>
+              Edit this Page
+            </Button>
+          </div>
         </div>
       </div>
 
-
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+      <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2 md:gap-12">
           <div>
-            <h1 className="text-4xl font-bold mb-4">{projectName}</h1>
-            <p className="text-lg text-gray-700 mb-4">{projectDescription}</p>
-            <Button variant="outline" onClick={() => setShowVideoModal(true)}>
+            <h1 className="font-serif text-4xl font-bold tracking-tight text-[var(--color-on-surface)] sm:text-5xl">
+              {projectName || 'Your project'}
+            </h1>
+            <p className="mt-4 text-base leading-relaxed text-gray-700 sm:text-lg">{projectDescription}</p>
+            <Button
+              variant="outline"
+              className="mt-6 rounded-md border-gray-300 bg-white px-5 py-2 font-medium hover:bg-gray-50"
+              onClick={() => setShowVideoModal(true)}
+            >
               How it Works
             </Button>
           </div>
 
           {projectImageKey && (
-            <Image
-              src={
-                typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
-                  ? projectImageKey
-                  : getImageUrl(projectImageKey) || ''
-              }
-              alt="Celebration"
-              width={600}
-              height={600}
-              className="shadow-md h-[350px]"
-            />
+            <div className="flex justify-center md:justify-end">
+              <Image
+                src={
+                  typeof projectImageKey === 'string' && projectImageKey.startsWith('data:')
+                    ? projectImageKey
+                    : getImageUrl(projectImageKey) || ''
+                }
+                alt="Project cover"
+                width={600}
+                height={400}
+                className="h-auto max-h-[360px] w-full max-w-lg rounded-lg object-cover shadow-md"
+              />
+            </div>
           )}
         </div>
+      </main>
 
-        <div className="mt-12">
-          <h2 className="text-4xl font-bold mb-4 text-left">Contribute</h2>
-          <p className="text-md text-gray-600 mb-6 text-left">
-            Add a memory, well wish, or photo. Want to add more photos? Simply click view layout on the contribution page
-            and view the other layouts and update the photos and description. Share it to your friends, family, and
-            colleagues.
+      <section className="border-t border-gray-100 bg-gray-50/90 py-12 sm:py-14">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="font-serif text-4xl font-bold text-[var(--color-on-surface)]">Contribute</h2>
+          <p className="mt-3 max-w-3xl text-base leading-relaxed text-gray-600">
+            Add a memory, well wish, or photo. Want to add more photos? Simply click view layout on the
+            contribution page and view the other layouts and update the photos and description. Share it to
+            your friends, family, and colleagues.
           </p>
 
           {frontCoverLayout ? (
-            <div className="flex justify-center">
+            <div className="mt-10 flex justify-center">
               <div
-                className={`relative bg-white ${frontCoverLayout.config.containerStyle?.shadow ?? ''} ${frontCoverLayout.config.containerStyle?.border ?? ''
-                  } w-[150mm] h-[210mm] p-8 flex flex-col items-center overflow-hidden transform-gpu transition-transform duration-500 ease-in-out ${frontCoverLayout.config.hoverEffects?.rotate ?? ''
-                  } ${frontCoverLayout.config.hoverEffects?.scale ?? ''} ${frontCoverLayout.config.hoverEffects?.shadow ?? ''
-                  }`}
+                className={cn(
+                  'relative flex h-[210mm] w-[150mm] flex-col items-center overflow-hidden bg-white p-8 transform-gpu transition-transform duration-500 ease-in-out',
+                  frontCoverLayout.config.containerStyle?.shadow ?? 'shadow-2xl',
+                  frontCoverLayout.config.containerStyle?.border ?? 'border border-gray-200',
+                  frontCoverLayout.config.hoverEffects?.rotate ?? '',
+                  frontCoverLayout.config.hoverEffects?.scale ?? '',
+                  frontCoverLayout.config.hoverEffects?.shadow ?? ''
+                )}
               >
-                <div className="absolute inset-4 border-2 border-dashed border-gray-400 pointer-events-none"></div>
-                <div className="relative flex flex-col items-center w-full">
-                  <h1
-                    className={`${frontCoverLayout.config.titleStyle?.fontSize ?? ''} ${frontCoverLayout.config.titleStyle?.fontWeight ?? ''
-                      } ${frontCoverLayout.config.titleStyle?.marginBottom ?? ''} ${frontCoverLayout.config.titleStyle?.textAlign ?? ''
-                      } ${frontCoverLayout.config.titleStyle?.marginTop ?? ''} break-words`}
+                <div className="pointer-events-none absolute inset-4 rounded-sm border-2 border-dashed border-gray-400" />
+                <div className="relative flex w-full flex-col items-center">
+                  <h3
+                    className={cn(
+                      'break-words',
+                      frontCoverLayout.config.titleStyle?.fontSize ?? 'text-3xl',
+                      frontCoverLayout.config.titleStyle?.fontWeight ?? 'font-bold',
+                      frontCoverLayout.config.titleStyle?.marginBottom ?? 'mb-6',
+                      frontCoverLayout.config.titleStyle?.textAlign ?? 'text-center',
+                      frontCoverLayout.config.titleStyle?.marginTop ?? 'mt-3'
+                    )}
                   >
                     {frontCoverLayout.config.title || 'No Title'}
-                  </h1>
+                  </h3>
                   {frontCoverLayout.config.imageKey && (
-                    <div className={frontCoverLayout.config.imageStyle?.marginBottom ?? ''}>
+                    <div className={frontCoverLayout.config.imageStyle?.marginBottom ?? 'mb-6'}>
                       <Image
                         src={
                           typeof frontCoverLayout.config.imageKey === 'string' &&
-                            frontCoverLayout.config.imageKey.startsWith('data:')
+                          frontCoverLayout.config.imageKey.startsWith('data:')
                             ? frontCoverLayout.config.imageKey
                             : getImageUrl(frontCoverLayout.config.imageKey) || ''
                         }
-                        alt="Celebration"
+                        alt="Book preview"
                         width={frontCoverLayout.config.imageStyle?.width ?? 280}
                         height={frontCoverLayout.config.imageStyle?.height ?? 200}
-                        className={`${frontCoverLayout.config.imageStyle?.objectFit ?? ''} ${frontCoverLayout.config.imageStyle?.shadow ?? ''
-                          }`}
+                        className={cn(
+                          frontCoverLayout.config.imageStyle?.objectFit ?? 'object-contain',
+                          frontCoverLayout.config.imageStyle?.shadow ?? 'shadow-md'
+                        )}
                       />
                     </div>
                   )}
                   {frontCoverLayout.config.description && (
                     <div
-                      className={`${frontCoverLayout.config.descriptionStyle?.maxWidth ?? ''} ${frontCoverLayout.config.descriptionStyle?.color ?? ''
-                        } ${frontCoverLayout.config.descriptionStyle?.fontSize ?? ''} ${frontCoverLayout.config.descriptionStyle?.textAlign ?? ''
-                        } ${frontCoverLayout.config.descriptionStyle?.marginTop ?? ''}`}
+                      className={cn(
+                        frontCoverLayout.config.descriptionStyle?.maxWidth ?? 'max-w-[80%]',
+                        frontCoverLayout.config.descriptionStyle?.color ?? 'text-gray-700',
+                        frontCoverLayout.config.descriptionStyle?.fontSize ?? 'text-[13px]',
+                        frontCoverLayout.config.descriptionStyle?.textAlign ?? 'text-center',
+                        frontCoverLayout.config.descriptionStyle?.marginTop ?? 'mt-4'
+                      )}
                     >
                       <p
-                        className={`${frontCoverLayout.config.descriptionStyle?.fontStyle ?? ''} ${frontCoverLayout.config.descriptionStyle?.lineHeight ?? ''
-                          } break-words`}
+                        className={cn(
+                          'break-words',
+                          frontCoverLayout.config.descriptionStyle?.fontStyle ?? 'italic',
+                          frontCoverLayout.config.descriptionStyle?.lineHeight ?? 'leading-relaxed'
+                        )}
                       >
                         {frontCoverLayout.config.description}
                       </p>
@@ -549,25 +578,40 @@ export default function NewEventPage() {
               </div>
             </div>
           ) : (
-            <p>No front cover layout found. Please try refreshing or editing the page.</p>
+            <p className="mt-8 text-center text-gray-600">
+              No front cover layout found. Please try refreshing or editing the page.
+            </p>
           )}
         </div>
-      </main>
-      <Footer />
+      </section>
+
+      <SiteFooter />
 
       <VideoModal isOpen={showVideoModal} onClose={() => setShowVideoModal(false)} videoSrc={videoSrc} />
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md">
-            <h3 className="text-lg font-bold mb-2">🎉 Project Created!</h3>
-            <p className="text-sm mb-2">Your project has been created and this is the landing page for your project!</p>
-            <p className="text-sm mb-2 font-bold">✏️ Edit this Page</p>
-            <p className="text-xs mb-2">Click Edit this Page at the top to customize it.</p>
-            <p className="text-sm font-bold">📨 Invite Friends!</p>
-            <p className="text-xs">Copy the sharing link above to invite your friends.</p>
-            <div className="text-right mt-4">
-              <Button size="sm" onClick={() => setShowModal(false)}>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-4">
+          <div
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-labelledby="project-created-title"
+          >
+            <h3 id="project-created-title" className="text-lg font-bold text-gray-900">
+              🎉 Project Created!
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-700">
+              Your project has been created and this is the landing page for your project!
+            </p>
+            <p className="mt-4 text-sm font-bold text-gray-900">✏️ Edit this Page</p>
+            <p className="text-xs text-gray-600">Click Edit this Page at the top to customize it.</p>
+            <p className="mt-3 text-sm font-bold text-gray-900">📩 Invite Friends!</p>
+            <p className="text-xs text-gray-600">Copy the sharing link above to invite your friends.</p>
+            <div className="mt-6 flex justify-end">
+              <Button
+                size="sm"
+                className="rounded-md bg-neutral-900 px-5 text-white hover:bg-neutral-800"
+                onClick={() => setShowModal(false)}
+              >
                 Got it
               </Button>
             </div>

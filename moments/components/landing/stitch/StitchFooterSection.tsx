@@ -1,6 +1,5 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { STITCH_IMAGES } from '@/lib/stitch/images';
+import { MemoryLaneLogo } from '@/components/brand/MemoryLaneLogo';
 import { MaterialSymbol } from './MaterialSymbol';
 
 export function StitchFooterSection() {
@@ -11,10 +10,7 @@ export function StitchFooterSection() {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 py-16 md:py-20 lg:py-24">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 mb-16 lg:mb-20">
           <div className="md:col-span-5 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <Image src={STITCH_IMAGES.logo} alt="MemoryLane Logo" width={28} height={28} className="h-7 w-auto object-contain" />
-              <span className="font-title-editorial text-[var(--color-primary)] tracking-tight font-medium">MemoryLane</span>
-            </div>
+            <MemoryLaneLogo />
             <p className="font-headline-sm text-[var(--color-on-surface)] font-normal max-w-sm">Create memories together.</p>
             <p className="font-body-sm text-[var(--color-on-surface-variant)] max-w-sm">
               An archival memory studio for life&apos;s milestones—collecting photographs, heartfelt stories, and collective letters into enduring heirloom keepsakes.

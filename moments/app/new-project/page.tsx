@@ -1,16 +1,12 @@
-"use client";
+'use client';
 
 import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Image from 'next/image';
-import { Header } from '@/components/landing/Header';
+import { RotatingLines } from 'react-loader-spinner';
+import { SignInButton } from '@clerk/nextjs';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDeliveryDate } from '@/hooks/useDeliveryDate';
 import { HeadsUpModal } from '@/components/ModalPopup';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useProjectStore } from '@/store/useProjectStore';
 import axios from 'axios';
@@ -18,29 +14,36 @@ import { HTTP_BACKEND } from '@/utils/config';
 import { toast } from 'sonner';
 import { useAuth } from '@clerk/nextjs';
 import { Progress } from '@/components/ui/progress';
-import TawkMessengerReact from '@tawk.to/tawk-messenger-react'; // Tawk.to React plugin
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import '@/app/stitch-landing.css';
+import { StudioAppHeader, studioFieldClassName, studioLabelClassName } from '@/components/dashboard/StudioAppHeader';
+import { STITCH_IMAGES } from '@/lib/stitch/images';
+import { cn } from '@/lib/utils';
 
 export default function StartProjectForm() {
-  const { isSignedIn } = useCurrentUser();
+  const { isSignedIn, isLoaded } = useCurrentUser();
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
   const { calculatedDate, showHeadsUp } = useDeliveryDate(null);
-  const [project, setProject] = useState<string | null>(null);
-  const [bookName, setBookName] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState<string | null>(null);
-  const [lastName, setLastName] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
-  const [eventType, setEventType] = useState<string | null>(null);
+  const [project, setProject] = useState('');
+  const [bookName, setBookName] = useState('');
+  const [eventType, setEventType] = useState('');
   const [eventsDescription, setEventsDescription] = useState<string | null>(null);
-  const [progress, setProgress] = useState<number>(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { getToken } = useAuth();
   const { setProjectName, setEventTypes } = useProjectStore();
 
   useEffect(() => {
-    if (showHeadsUp) {
-      setShowModal(true);
-    }
+    if (showHeadsUp) setShowModal(true);
   }, [showHeadsUp]);
 
   const handleEventTypeChange = async (name: string) => {
@@ -48,237 +51,277 @@ export default function StartProjectForm() {
     useProjectStore.setState({ eventTypes: name });
     setEventTypes(name);
     try {
-      const res = await axios.get(`${HTTP_BACKEND}/event-type`, {
-        params: { name },
-      });
-
-      if (res.data && res.data.description) {
+      const res = await axios.get(`${HTTP_BACKEND}/event-type`, { params: { name } });
+      if (res.data?.description) {
         setEventsDescription(res.data.description);
         useProjectStore.setState({ eventDescription: res.data.description });
       }
     } catch (error) {
-      console.error("Error fetching event type description:", error);
-      toast.error("Error fetching event description.");
+      console.error('Error fetching event type description:', error);
+      toast.error('Error fetching event description.');
     }
   };
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setProgress(10);
 
-    const missingFields = [];
-    if (!project) missingFields.push("project name,");
-    if (!bookName) missingFields.push("Who is this book for?");
-    if (!eventType) missingFields.push('Event type');
+    const missing: string[] = [];
+    if (!project.trim()) missing.push('project name');
+    if (!bookName.trim()) missing.push('who this book is for');
+    if (!eventType) missing.push('event type');
 
-    if (missingFields.length > 0) {
-      toast.error(`Please enter ${missingFields.join("")}`);
-      setIsLoading(false);
-      setProgress(0);
+    if (missing.length > 0) {
+      toast.error(`Please enter ${missing.join(', ')}.`);
       return;
     }
 
+    setIsSubmitting(true);
+    setProgress(10);
+
     const token = await getToken();
     localStorage.setItem('token', token || '');
+
     try {
-      setProgress(30);
-      if (isSignedIn) {
-        const response = await axios.post(`${HTTP_BACKEND}/api/users`, {
-          projectName: project,
-          bookName,
+      setProgress(40);
+      const response = await axios.post(
+        `${HTTP_BACKEND}/api/users`,
+        {
+          projectName: project.trim(),
+          bookName: bookName.trim(),
           dueDate: null,
           eventType,
           eventDescription: eventsDescription,
-        }, {
+        },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
             token: `Bearer ${token}`,
           },
-        });
-        const id = response.data.projectId;
-        useProjectStore.getState().setProjectId(id);
-      } else {
-        if (!firstName || !lastName || !email) {
-          toast.error("Please enter all your information");
-          setIsLoading(false);
-          setProgress(0);
-          return;
         }
-        await axios.post(`${HTTP_BACKEND}/api/user-information`, {
-          firstName,
-          lastName,
-          email,
-        });
-        localStorage.removeItem('token');
-      }
-      setProgress(70);
-
-      setProjectName(project || '');
-
-      setProgress(90);
-
-      setTimeout(() => {
-        setProgress(100);
-        router.push(`/new-project/upload-image`);
-      }, 100);
+      );
+      useProjectStore.getState().setProjectId(response.data.projectId);
+      setProjectName(project.trim());
+      setProgress(100);
+      router.push('/new-project/upload-image');
     } catch (error) {
-      console.error("Error Request",error);
-      toast.error("Something went wrong. Please try again.");
-      setIsLoading(false);
+      console.error('Error Request', error);
+      toast.error('Something went wrong. Please try again.');
       setProgress(0);
       localStorage.removeItem('token');
+      setIsSubmitting(false);
     }
   };
 
-  // If user is not signed in, show sign-in prompt
-  if (!isSignedIn) {
+  if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <Header isSignedIn={false} />
-        <div className="text-center px-4">
-          <h2 className="text-3xl font-bold mb-4">Please Sign In</h2>
-          <p className="text-muted-foreground mb-6">
-            You need to be signed in to start a new project. Please sign in or create an account to continue.
-          </p>
-          <Link href="/">
-            <Button className="bg-primary hover:bg-primary/90">Sign In</Button>
-          </Link>
-        </div>
+      <div className="stitch-landing min-h-screen bg-[var(--color-surface-container-low)] flex items-center justify-center">
+        <p className="font-body-md text-[var(--color-on-surface-variant)]">Loading…</p>
       </div>
     );
   }
 
-  // Render the form if user is signed in
+  if (!isSignedIn) {
+    return (
+      <div className="stitch-landing min-h-screen bg-[var(--color-surface-container-low)]">
+        <StudioAppHeader backHref="/" backLabel="Home" />
+        <main className="max-w-lg mx-auto px-6 py-20 text-center">
+          <h1 className="font-headline-lg text-[var(--color-on-surface)] mb-3">Sign in to get started</h1>
+          <p className="font-body-md text-[var(--color-on-surface-variant)] mb-8">
+            Create a memory book project and invite others to contribute photos and messages.
+          </p>
+          <SignInButton mode="modal" forceRedirectUrl="/new-project">
+            <button
+              type="button"
+              className="bg-[var(--color-primary)] text-[var(--color-on-primary)] font-label-lg px-8 py-3 rounded-lg hover:bg-[var(--color-primary-container)] transition-colors"
+            >
+              Sign in
+            </button>
+          </SignInButton>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      <Header isSignedIn={isSignedIn ?? false} />
-      {isLoading && (
-        <div className="w-full mb-6 px-4">
-          <Progress value={progress} className="h-2" />
+    <div className="stitch-landing min-h-screen bg-[var(--color-surface-container-low)]">
+      <StudioAppHeader backHref="/dashboard" />
+
+      {isSubmitting && (
+        <div className="max-w-3xl mx-auto px-6 sm:px-10 pt-4">
+          <Progress value={progress} className="h-1.5 bg-[var(--color-surface-container)] [&>div]:bg-[var(--color-primary)]" />
         </div>
       )}
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        <div className="overflow-hidden mb-8">
+
+      <main className="max-w-3xl mx-auto px-6 sm:px-10 lg:px-12 pb-16 md:pb-24 pt-8 md:pt-10 relative">
+        <div className="relative w-full aspect-[21/9] max-h-72 rounded-2xl overflow-hidden shadow-[0_12px_32px_-6px_rgba(36,28,26,0.12)] mb-10">
           <Image
-            src="https://images.unsplash.com/photo-1662441899435-8bdee58218cd?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-            alt="Family with sparklers"
-            className="w-full h-96 object-cover"
-            width={500}
-            height={50}
+            src={STITCH_IMAGES.heroFamily}
+            alt="Family celebrating together"
+            fill
+            className="object-cover"
+            sizes="(max-width:768px) 100vw, 768px"
+            priority
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-inverse-surface)]/30 to-transparent" />
         </div>
-        <h2 className="text-5xl font-bold mb-2">Get Started!</h2>
-        <p className="text-muted-foreground mb-10">
-          We will walk you step-by-step through the simple process of setting up your memory book project.
-        </p>
 
-        <div className="grid md:grid-cols-2 gap-10">
-          <div>
-            <h3 className="text-lg font-semibold mb-4 text-blue-600">Project Information</h3>
+        <div className="mb-10">
+          <p className="font-label-eyebrow uppercase text-[var(--color-secondary)] tracking-widest mb-2">Step 1 of 2</p>
+          <h1 className="font-display-hero text-[var(--color-on-surface)] tracking-tight mb-3">Get Started!</h1>
+          <p className="font-body-lg text-[var(--color-on-surface-variant)] max-w-xl">
+            We will walk you step-by-step through the simple process of setting up your memory book project.
+          </p>
+        </div>
 
-            <Label htmlFor="projectName">Project Name</Label>
-            <Input
-              type="text"
-              id="projectName"
-              placeholder="Example: Uncle John's 50th Birthday"
-              value={project ?? ''}
-              onChange={(e) => setProject(e.target.value)}
-              className="mb-4 mt-2"
-            />
-
-            <Label htmlFor="recipient">Who is this book for?</Label>
-            <Input
-              id="recipient"
-              type="text"
-              value={bookName ?? ''}
-              onChange={(e) => setBookName(e.target.value)}
-              placeholder="(person, couple, or group of people)"
-              className="mb-4 mt-2"
-            />
-
-            <Label htmlFor="eventType">Event Type</Label>
-            <Select value={eventType || ''} onValueChange={handleEventTypeChange}>
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder="Select an event type" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="px-3 py-1 text-xs text-muted-foreground uppercase">Special Occasions</div>
-                <SelectItem value="Birthday">Birthday</SelectItem>
-                <SelectItem value="Wedding">Wedding</SelectItem>
-                <SelectItem value="Wedding Anniversary">Wedding Anniversary</SelectItem>
-                <SelectItem value="Mother’s Day">Mother’s Day</SelectItem>
-                <SelectItem value="Father’s Day">Father’s Day</SelectItem>
-                <SelectItem value="School Graduation">School Graduation</SelectItem>
-                <SelectItem value="Memorial">Memorial</SelectItem>
-
-                <div className="px-3 pt-3 pb-1 text-xs text-muted-foreground uppercase">Farewell</div>
-                <SelectItem value="Off to College">Off to College</SelectItem>
-                <SelectItem value="Moving Away">Moving Away</SelectItem>
-                <SelectItem value="Leaving on a Mission">Leaving on a Mission</SelectItem>
-                <SelectItem value="Terminal Illness">Terminal Illness</SelectItem>
-
-                <div className="px-3 pt-3 pb-1 text-xs text-muted-foreground uppercase">Other</div>
-                <SelectItem value="Support">Support</SelectItem>
-                <SelectItem value="Get Well">Get Well</SelectItem>
-                <SelectItem value="Thank You">Thank You</SelectItem>
-                <SelectItem value="Just Because">Just Because</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {!isSignedIn && (
-            <div>
-              <h3 className="text-lg font-semibold mb-4 text-blue-600">Your Information</h3>
-
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                placeholder="Aunt Betty"
-                value={firstName ?? ''}
-                onChange={(e) => setFirstName(e.target.value)}
-                className="mb-4 mt-2"
+        <form
+          onSubmit={handleSubmit}
+          className="relative bg-[var(--color-surface)] rounded-2xl border border-[var(--color-outline-variant)]/50 shadow-sm p-6 sm:p-8 md:p-10 space-y-6"
+        >
+          {isSubmitting && (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-4 rounded-2xl bg-[var(--color-surface)]/85 backdrop-blur-[2px]"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <RotatingLines
+                visible
+                strokeColor="#9a4111"
+                strokeWidth="4"
+                width="56"
+                ariaLabel="Creating project"
               />
-
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                placeholder="Aunt Betty"
-                value={lastName ?? ''}
-                onChange={(e) => setLastName(e.target.value)}
-                className="mb-4 mt-2"
-              />
-
-              <Label htmlFor="email">Your Email</Label>
-              <Input
-                id="email"
-                placeholder="auntbetty@gmail.com"
-                value={email ?? ''}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mb-4 mt-2"
-              />
+              <p className="font-label-lg text-[var(--color-on-surface)]">Creating your project…</p>
             </div>
           )}
-        </div>
 
-        <div className="flex flex-col md:flex-row items-center justify-between mt-12 gap-4">
-          <Link href="/new-project/upload-image">
-            <Button onClick={handleSubmit} className="bg-primary hover:bg-primary/90 cursor-pointer">
-              Create Project
-            </Button>
-          </Link>
-        </div>
+          <fieldset disabled={isSubmitting} className="min-w-0 border-0 p-0 m-0 space-y-6 disabled:opacity-70">
+          <div>
+            <h2 className="font-headline-sm text-[var(--color-primary)] mb-6">Project information</h2>
+
+            <div className="space-y-5">
+              <div>
+                <label htmlFor="projectName" className={studioLabelClassName()}>
+                  Project name
+                </label>
+                <input
+                  id="projectName"
+                  type="text"
+                  placeholder="Example: Uncle John's 50th Birthday"
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  className={studioFieldClassName()}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="recipient" className={studioLabelClassName()}>
+                  Who is this book for?
+                </label>
+                <input
+                  id="recipient"
+                  type="text"
+                  value={bookName}
+                  onChange={(e) => setBookName(e.target.value)}
+                  placeholder="Person, couple, or group of people"
+                  className={studioFieldClassName()}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="eventType" className={studioLabelClassName()}>
+                  Event type
+                </label>
+                <Select value={eventType} onValueChange={handleEventTypeChange}>
+                  <SelectTrigger
+                    className={cn(
+                      studioFieldClassName(),
+                      'h-auto min-h-11 w-full justify-between text-left [&>span]:w-full'
+                    )}
+                  >
+                    <SelectValue placeholder="Select an event type" />
+                  </SelectTrigger>
+                  <SelectContent
+                    sideOffset={6}
+                    position="popper"
+                    className="stitch-landing stitch-select-dropdown z-[100] max-h-[min(14rem,var(--radix-select-content-available-height))] overflow-y-auto overscroll-contain bg-[var(--color-surface)] text-[var(--color-on-surface)] border-[var(--color-outline-variant)] shadow-lg"
+                  >
+                    <SelectGroup>
+                      <SelectLabel className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-on-surface-variant)]">
+                        Special occasions
+                      </SelectLabel>
+                      {['Birthday', 'Wedding', 'Wedding Anniversary', 'Mother’s Day', 'Father’s Day', 'School Graduation', 'Memorial'].map(
+                        (v) => (
+                          <SelectItem key={v} value={v} className="font-body-md">
+                            {v}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel className="px-3 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-on-surface-variant)]">
+                        Farewell
+                      </SelectLabel>
+                      {['Off to College', 'Moving Away', 'Leaving on a Mission', 'Terminal Illness'].map((v) => (
+                        <SelectItem key={v} value={v} className="font-body-md">
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                    <SelectGroup>
+                      <SelectLabel className="px-3 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--color-on-surface-variant)]">
+                        Other
+                      </SelectLabel>
+                      {['Support', 'Get Well', 'Thank You', 'Just Because'].map((v) => (
+                        <SelectItem key={v} value={v} className="font-body-md">
+                          {v}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 flex flex-col sm:flex-row sm:items-center gap-4">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="inline-flex items-center justify-center gap-2.5 bg-[var(--color-primary)] text-[var(--color-on-primary)] font-label-lg px-8 py-3.5 rounded-lg hover:bg-[var(--color-primary-container)] transition-all shadow-[0_4px_12px_-2px_rgba(154,65,17,0.25)] disabled:opacity-60 disabled:cursor-not-allowed min-w-[180px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <RotatingLines
+                    visible
+                    strokeColor="currentColor"
+                    strokeWidth="5"
+                    width="22"
+                    ariaLabel=""
+                  />
+                  Creating…
+                </>
+              ) : (
+                'Create project'
+              )}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => router.push('/dashboard')}
+              className="font-label-lg text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            >
+              Cancel
+            </button>
+          </div>
+          </fieldset>
+        </form>
       </main>
+
       <HeadsUpModal
         visible={showModal}
         onClose={() => setShowModal(false)}
         enteredDate={null}
         calculatedDate={calculatedDate}
-      />
-      {/* Tawk.to Chat Widget */}
-      <TawkMessengerReact
-        propertyId={process.env.NEXT_PUBLIC_TAWKTO_PROPERTY_ID}
-        widgetId={process.env.NEXT_PUBLIC_TAWKTO_WIDGET_ID}
       />
     </div>
   );

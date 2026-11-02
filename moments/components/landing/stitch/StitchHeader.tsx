@@ -1,10 +1,8 @@
 'use client';
 
-import Image from 'next/image';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
-import { STITCH_IMAGES } from '@/lib/stitch/images';
+import { MemoryLaneLogo } from '@/components/brand/MemoryLaneLogo';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const navLinks = [
@@ -21,10 +19,7 @@ export function StitchHeader() {
   return (
     <header className="fixed top-0 left-0 right-0 w-full z-50 bg-[var(--color-surface)]/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
       <div className="h-20 max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3">
-          <Image src={STITCH_IMAGES.logo} alt="MemoryLane Logo" width={32} height={32} className="h-8 w-auto object-contain" />
-          <span className="font-title-editorial text-[var(--color-primary)] tracking-tight font-medium">MemoryLane</span>
-        </Link>
+        <MemoryLaneLogo />
 
         <nav className="hidden md:flex items-center gap-5 lg:gap-6">
           {navLinks.map((link) => (

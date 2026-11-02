@@ -156,3 +156,37 @@
     line-height: 70px;
   }
 }
+
+/* Compact scrollable selects (portaled; class applied on SelectContent) */
+.stitch-landing.stitch-select-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-outline) 55%, transparent) transparent;
+}
+
+.stitch-landing.stitch-select-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.stitch-landing.stitch-select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.stitch-landing.stitch-select-dropdown::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-outline) 45%, var(--color-surface-container));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.stitch-landing.stitch-select-dropdown [data-slot="select-scroll-up-button"],
+.stitch-landing.stitch-select-dropdown [data-slot="select-scroll-down-button"] {
+  color: var(--color-on-surface-variant);
+  background: var(--color-surface-container-low);
+}
+
+.stitch-landing.stitch-select-dropdown [data-slot="select-scroll-up-button"]:hover,
+.stitch-landing.stitch-select-dropdown [data-slot="select-scroll-down-button"]:hover {
+  background: var(--color-surface-container);
+  color: var(--color-on-surface);
+}

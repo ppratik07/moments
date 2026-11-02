@@ -1,5 +1,4 @@
 export const STITCH_IMAGES = {
-  logo: "/stitch-landing/logo.png",
   heroFamily: "/stitch-landing/hero-family.jpg",
   heroGrandpa: "/stitch-landing/hero-grandpa.jpg",
   heroFriends: "/stitch-landing/hero-friends.jpg",

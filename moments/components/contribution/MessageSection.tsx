@@ -21,13 +21,15 @@ interface MessageSectionProps {
     setPages,
   }) => (
     <>
-      <div className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+      <div className="mb-4 flex items-center gap-2 font-serif text-lg font-semibold text-[var(--color-on-surface)]">
         {signature}
         <button
-          className="text-purple-600 text-sm underline"
+          type="button"
+          className="rounded-md px-2 py-0.5 font-label-lg text-[var(--color-primary)] hover:bg-[var(--color-surface-container-low)]"
           onClick={() => setIsSignatureModalOpen(true)}
+          aria-label="Edit signature"
         >
-          ✎
+          Edit
         </button>
       </div>
       {editingMessage ? (
@@ -44,20 +46,18 @@ interface MessageSectionProps {
         />
       ) : (
         <div
-          className="bg-gray-50 border border-dashed border-gray-300 rounded-md p-4 text-center cursor-pointer hover:bg-gray-100 transition-colors"
+          className="min-h-[120px] cursor-pointer rounded-xl border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)]/60 p-6 text-center transition-colors hover:border-[var(--color-primary)]/35 hover:bg-[var(--color-surface-container-low)]"
           onClick={() => setEditingMessage(true)}
         >
           {message ? (
-            <div className="text-gray-800">
-              <p>{message}</p>
-              <div className="mt-2 text-purple-600 text-sm underline">
-                Edit message
-              </div>
+            <div className="text-left text-[var(--color-on-surface)]">
+              <p className="font-body-md leading-relaxed whitespace-pre-wrap">{message}</p>
+              <div className="mt-3 font-label-lg text-[var(--color-primary)]">Edit message</div>
             </div>
           ) : (
-            <div className="text-gray-500">
-              <div className="text-lg mb-1">⊕</div>
-              ADD TEXT
+            <div className="flex flex-col items-center text-[var(--color-on-surface-variant)]">
+              <span className="mb-2 text-2xl leading-none text-[var(--color-primary)]/60">✎</span>
+              <span className="font-label-lg">Add text</span>
             </div>
           )}
         </div>

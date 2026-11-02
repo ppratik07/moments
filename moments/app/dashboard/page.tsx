@@ -1,25 +1,25 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { RotatingLines } from 'react-loader-spinner';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { format } from 'date-fns';
 import { HTTP_BACKEND } from '@/utils/config';
-import { Header } from '@/components/landing/Header';
 import { useAuth } from '@clerk/nextjs';
-import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import '@/app/stitch-landing.css';
+import { DashboardAppHeader } from '@/components/dashboard/DashboardAppHeader';
+import { DashboardProjectCard } from '@/components/dashboard/DashboardProjectCard';
+import { BookOpen, Plus, AlertCircle } from 'lucide-react';
+
+interface Project {
+  id: string;
+  projectName: string;
+  createdAt: string;
+  imageKey?: string;
+}
 
 export default function DashboardPage() {
-  interface Project {
-    id: string;
-    projectName: string;
-    createdAt: string;
-    imageKey?: string;
-  }
-
   const [projects, setProjects] = useState<Project[]>([]);
   const { isSignedIn, isLoaded } = useCurrentUser();
   const [loading, setLoading] = useState(true);
@@ -28,9 +28,7 @@ export default function DashboardPage() {
   const { getToken } = useAuth();
 
   useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
     if (!isSignedIn) {
       router.replace('/');
@@ -47,18 +45,16 @@ export default function DashboardPage() {
           return;
         }
         const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.status === 401 || response.status === 403) {
-          setFetchError('Your session could not be verified with the server. If you are running locally, make sure the API is running and Clerk keys match.');
+          setFetchError(
+            'Your session could not be verified with the server. If you are running locally, make sure the API is running and Clerk keys match.'
+          );
           return;
         }
-        if (!response.ok) {
-          throw new Error('Failed to fetch projects');
-        }
+        if (!response.ok) throw new Error('Failed to fetch projects');
 
         const data = await response.json();
         setProjects(data.projects);
@@ -75,32 +71,23 @@ export default function DashboardPage() {
     fetchProjects();
   }, [isSignedIn, isLoaded, router, getToken]);
 
-  // Function to handle project deletion
   const handleDeleteProject = async (projectId: string) => {
-    // Show confirmation prompt
-    if (!confirm(`Are you sure you want to delete the project? This action cannot be undone.`)) {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
       return;
     }
 
     try {
       const token = await getToken();
-      if (!token) {
-        throw new Error('No token available');
-      }
+      if (!token) throw new Error('No token available');
 
       const response = await fetch(`${HTTP_BACKEND}/api/user-projects/${projectId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to delete project');
-      }
+      if (!response.ok) throw new Error('Failed to delete project');
 
-      // Remove the deleted project from state
-      setProjects(projects.filter((project) => project.id !== projectId));
+      setProjects((prev) => prev.filter((p) => p.id !== projectId));
       toast.success('Project deleted successfully!');
     } catch (error) {
       console.error('Error deleting project:', error);
@@ -108,120 +95,74 @@ export default function DashboardPage() {
     }
   };
 
-  const baseImageUrl =
-    process.env.NEXT_PUBLIC_IMAGE_R2_URL || '';
-
   return (
-    <div>
-      <Header isSignedIn={isSignedIn ?? false} />
-      <div className="min-h-screen bg-gray-100 p-6 pt-26">
-  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8">Your Projects</h1>
-        {loading ? (
-          // Center spinner horizontally and vertically; show a smaller spinner on mobile only
-          <div className="w-full flex justify-center items-center min-h-[40vh]">
-            {/* Mobile spinner: visible on small screens (below md) */}
-            <div className="block md:hidden">
-              <RotatingLines
-                visible={true}
-                strokeColor="gray"
-                strokeWidth="5"
-                animationDuration="0.75"
-                width="64"
-                ariaLabel="rotating-lines-loading-mobile"
-              />
-            </div>
+    <div className="stitch-landing min-h-screen bg-[var(--color-surface-container-low)]">
+      <DashboardAppHeader
+        title="Your Projects"
+        subtitle="Manage your memory books, invite contributors, and pick up where you left off."
+      />
 
-            {/* Desktop spinner: keep original size on md+ screens */}
-            <div className="hidden md:flex">
-              <RotatingLines
-                visible={true}
-                strokeColor="gray"
-                strokeWidth="5"
-                animationDuration="0.75"
-                width="96"
-                ariaLabel="rotating-lines-loading-desktop"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => {
-              const createdDate = new Date(project.createdAt);
-              const isClosed = new Date().getTime() - createdDate.getTime() > 365 * 24 * 60 * 60 * 1000;
-              const tagLabel = isClosed ? 'Closed' : 'New';
-
-              return (
-                <div
-                  key={project.id}
-                  className="relative w-full max-h-[420px] h-80 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
-                >
-                  {/* Background image */}
-                  <div className="absolute inset-0">
-                    <Image
-                      src={project.imageKey ? `${baseImageUrl}/${project.imageKey}` : '/fallback.jpg'}
-                      alt={project.projectName}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-
-                  {/* Dark overlay */}
-                  <div className="absolute inset-0 bg-black/40" />
-
-                  {/* Tag badge */}
-                  <div className="absolute top-3 right-3 z-20">
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        isClosed ? 'bg-red-600' : 'bg-green-500'
-                      } text-white`}
-                    >
-                      {tagLabel}
-                    </span>
-                  </div>
-
-                  {/* Delete icon */}
-                  <div className="absolute top-3 left-3 z-20">
-                    <button
-                      onClick={() => handleDeleteProject(project.id)}
-                      className="p-1 bg-red-600 rounded-full text-white hover:bg-red-700 focus:outline-none"
-                      aria-label="Delete project"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-
-                  {/* Overlay content */}
-                  <div className="absolute inset-0 z-10 flex flex-col justify-end p-4 text-white">
-                    <h2 className="text-lg font-semibold mb-1">{project.projectName}</h2>
-                    <p className="text-sm mb-3">
-                      Created on: {format(createdDate, 'MMMM dd, yyyy')}
-                    </p>
-                    <Button
-                      className={`w-full ${isClosed ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`}
-                      onClick={() => {
-                        if (!isClosed) {
-                          router.push(`/project/${project.id}`);
-                        }
-                      }}
-                      disabled={isClosed}
-                    >
-                      View Project
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+      <main className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 xl:px-20 pb-16 md:pb-24">
+        {loading && (
+          <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
+            <RotatingLines visible strokeColor="#9a4111" strokeWidth="4" width="72" ariaLabel="Loading projects" />
+            <p className="font-body-md text-[var(--color-on-surface-variant)]">Loading your keepsakes…</p>
           </div>
         )}
 
         {!loading && fetchError && (
-          <p className="text-center text-red-600 mt-8 max-w-xl mx-auto">{fetchError}</p>
+          <div
+            role="alert"
+            className="max-w-2xl mx-auto mt-8 flex gap-3 p-5 rounded-xl bg-[var(--color-error-container)]/40 border border-[var(--color-error)]/20 text-[var(--color-on-error-container)]"
+          >
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <p className="font-body-md">{fetchError}</p>
+          </div>
         )}
 
         {!loading && !fetchError && projects.length === 0 && (
-          <p className="text-center text-gray-500 mt-8">No projects found.</p>
+          <div className="max-w-lg mx-auto mt-12 md:mt-16 text-center flex flex-col items-center gap-6 p-8 md:p-12 rounded-2xl bg-[var(--color-surface)] border border-[var(--color-outline-variant)]/50 shadow-sm">
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-primary-fixed)] flex items-center justify-center text-[var(--color-primary)]">
+              <BookOpen className="w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="font-headline-sm text-[var(--color-on-surface)]">No memory books yet</h2>
+              <p className="font-body-md text-[var(--color-on-surface-variant)] mt-2">
+                Start your first collaborative keepsake and invite friends and family to contribute photos and messages.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/new-project')}
+              className="inline-flex items-center gap-2 bg-[var(--color-primary)] text-[var(--color-on-primary)] font-label-lg px-6 py-3 rounded-lg hover:bg-[var(--color-primary-container)] transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Create Your First Book
+            </button>
+          </div>
         )}
-      </div>
+
+        {!loading && !fetchError && projects.length > 0 && (
+          <>
+            <p className="font-body-sm text-[var(--color-on-surface-variant)] mb-6 mt-2">
+              {projects.length} {projects.length === 1 ? 'project' : 'projects'}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
+              {projects.map((project) => (
+                <DashboardProjectCard
+                  key={project.id}
+                  id={project.id}
+                  projectName={project.projectName}
+                  createdAt={project.createdAt}
+                  imageKey={project.imageKey}
+                  onOpen={() => router.push(`/project/${project.id}`)}
+                  onDelete={() => handleDeleteProject(project.id)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }

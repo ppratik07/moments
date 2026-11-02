@@ -3,6 +3,10 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { ImagePlus, LayoutGrid, Plus, Trash2, Type, X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import '@/app/stitch-landing.css';
+import { v4 as uuidv4 } from 'uuid';
 
 // Type definitions remain unchanged
 interface Position {
@@ -80,6 +84,57 @@ interface LayoutEditorProps {
   error: string | null;
 }
 
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 700;
+
+function getComponentPosition(comp: Component): { left: number; top: number } {
+  return {
+    left: comp.position.x_coordinate ?? comp.position.x_position ?? 0,
+    top: comp.position.y_coordinate ?? comp.position.y_position ?? 0,
+  };
+}
+
+function getLayoutContentOffset(components: Component[]): { offsetX: number; offsetY: number } {
+  if (components.length === 0) {
+    return { offsetX: 0, offsetY: 0 };
+  }
+
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  for (const comp of components) {
+    const { left, top } = getComponentPosition(comp);
+    minX = Math.min(minX, left);
+    minY = Math.min(minY, top);
+    maxX = Math.max(maxX, left + comp.size.width);
+    maxY = Math.max(maxY, top + comp.size.height);
+  }
+
+  const contentWidth = maxX - minX;
+  const contentHeight = maxY - minY;
+
+  return {
+    offsetX: (CANVAS_WIDTH - contentWidth) / 2 - minX,
+    offsetY: (CANVAS_HEIGHT - contentHeight) / 2 - minY,
+  };
+}
+
+function toCanvasPercent(
+  comp: Component,
+  offsetX: number,
+  offsetY: number
+): { left: string; top: string; width: string; height: string } {
+  const { left, top } = getComponentPosition(comp);
+  return {
+    left: `${((left + offsetX) / CANVAS_WIDTH) * 100}%`,
+    top: `${((top + offsetY) / CANVAS_HEIGHT) * 100}%`,
+    width: `${(comp.size.width / CANVAS_WIDTH) * 100}%`,
+    height: `${(comp.size.height / CANVAS_HEIGHT) * 100}%`,
+  };
+}
+
 const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
   pages,
   setPages,
@@ -122,9 +177,14 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
 
   const selectLayout = (layout: Layout) => {
     if (isAddingNewPage) {
-      const newPage: Page = { guid: `page-${pages.length + 1}`, layout, components: layout.components };
+      const newPage: Page = {
+        guid: uuidv4(),
+        layout,
+        components: JSON.parse(JSON.stringify(layout.components)) as Component[],
+      };
       setPages([...pages, newPage]);
       setCurrentPageIndex(pages.length);
+      setIsAddingNewPage(false);
     } else {
       const updatedPages = [...pages];
       const currentPage = updatedPages[currentPageIndex];
@@ -180,81 +240,117 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
     setSelectedComponent(null);
   };
 
-  const renderComponent = (comp: Component, index: number) => {
+  const renderComponent = (comp: Component, index: number, offsetX: number, offsetY: number) => {
+    const { left, top } = getComponentPosition(comp);
+    const positionedLeft = left + offsetX;
+    const positionedTop = top + offsetY;
+
     if (comp.type === 'photo') {
       return (
         <div
           key={index}
-          className="absolute border border-gray-300 rounded cursor-pointer flex flex-col items-center justify-center"
+          className={cn(
+            'absolute flex cursor-pointer flex-col items-center justify-center rounded-xl transition-all duration-200',
+            'hover:ring-2 hover:ring-[var(--color-primary)]/25',
+            comp.image_url
+              ? 'overflow-hidden bg-neutral-100 shadow-md ring-1 ring-black/5'
+              : 'border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)]/90'
+          )}
           style={{
-            left: comp.position.x_coordinate,
-            top: comp.position.y_coordinate,
+            left: positionedLeft,
+            top: positionedTop,
             width: comp.size.width,
             height: comp.size.height,
-            backgroundImage: comp.image_url ? `url(${comp.image_url})` : 'none',
+            backgroundImage: comp.image_url ? `url(${comp.image_url})` : undefined,
             backgroundSize: 'cover',
-            backgroundColor: comp.image_url ? 'transparent' : '#a3bffa',
-            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)',
+            backgroundPosition: 'center',
           }}
           onClick={() => handleComponentClick(index)}
         >
-          {!comp.image_url && uploading && <span className="text-gray-500 text-sm">Uploading...</span>}
-          {!comp.image_url && !uploading && (
+          {!comp.image_url && (
             <>
-              <span className="text-gray-500 text-sm mb-2">Add a Photo</span>
-              <div className="text-white text-2xl">+</div>
+              {uploading ? (
+                <span className="font-body-sm text-[var(--color-on-surface-variant)]">Uploading…</span>
+              ) : (
+                <>
+                  <ImagePlus
+                    className="mb-2 h-8 w-8 text-[var(--color-primary)]/70"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <span className="font-label-lg text-[var(--color-on-surface-variant)]">Add a photo</span>
+                </>
+              )}
             </>
           )}
         </div>
       );
-    } else {
-      return (
-        <div
-          key={index}
-          className="absolute border border-gray-300 rounded cursor-pointer bg-white p-2"
-          style={{
-            left: comp.position.x_position,
-            top: comp.position.y_position,
-            width: comp.size.width,
-            height: comp.size.height,
-            fontFamily: comp.styles?.font_family,
-            fontSize: comp.styles?.font_size,
-            fontWeight: comp.styles?.font_weight,
-            boxShadow: '4px 4px 8px rgba(0, 0, 0, 0.2)',
-          }}
-          onClick={() => handleComponentClick(index)}
-        >
-          {comp.value || (
-            <span className="text-gray-500 text-sm">Add Text</span>
-          )}
-        </div>
-      );
     }
+
+    return (
+      <div
+        key={index}
+        className={cn(
+          'absolute cursor-pointer rounded-xl p-3 transition-all duration-200',
+          'hover:ring-2 hover:ring-[var(--color-primary)]/25',
+          comp.value
+            ? 'border border-[var(--color-outline-variant)]/50 bg-white shadow-sm'
+            : 'border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)]'
+        )}
+        style={{
+          left: positionedLeft,
+          top: positionedTop,
+          width: comp.size.width,
+          height: comp.size.height,
+          fontFamily: comp.styles?.font_family,
+          fontSize: comp.styles?.font_size,
+          fontWeight: comp.styles?.font_weight,
+        }}
+        onClick={() => handleComponentClick(index)}
+      >
+        {comp.value ? (
+          <p className="line-clamp-[12] whitespace-pre-wrap font-body-md leading-relaxed text-[var(--color-on-surface)]">
+            {comp.value}
+          </p>
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <Type className="mb-2 h-7 w-7 text-[var(--color-primary)]/70" strokeWidth={1.5} aria-hidden />
+            <span className="font-label-lg text-[var(--color-on-surface-variant)]">Add text</span>
+          </div>
+        )}
+      </div>
+    );
   };
 
-  const renderThumbnail = (page: Page, pageIndex: number) => {
+  const renderThumbnail = (page: Page) => {
+    const { offsetX, offsetY } = getLayoutContentOffset(page.components);
+
     return (
-      <div className="relative w-[150px] h-[120px] bg-gray-100 border border-gray-300 rounded">
-        {page.components.map((comp, compIndex) => (
-          <div
-            key={`${pageIndex}-${compIndex}`}
-            className="absolute border border-gray-400 rounded flex items-center justify-center"
-            style={{
-              left: ((comp.position?.x_coordinate ?? comp.position?.x_position) || 0) / 5,
-              top: ((comp.position?.y_coordinate ?? comp.position?.y_position) || 0) / 5,
-              width: comp.size.width / 5,
-              height: comp.size.height / 5,
-              backgroundColor: comp.type === 'photo' ? '#a3bffa' : '#e0e0e0',
-              backgroundImage: comp.type === 'photo' && comp.image_url ? `url(${comp.image_url})` : 'none',
-              backgroundSize: 'cover',
-              boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)',
-            }}
-          >
-            {comp.type === 'photo' && !comp.image_url && (
-              <div className="text-white text-sm">+</div>
-            )}
-          </div>
-        ))}
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg bg-[var(--color-surface-container-low)] ring-1 ring-[var(--color-outline-variant)]/40">
+        {page.components.map((comp, compIndex) => {
+          const box = toCanvasPercent(comp, offsetX, offsetY);
+          return (
+            <div
+              key={compIndex}
+              className={cn(
+                'absolute rounded-[2px]',
+                comp.type === 'photo'
+                  ? 'bg-[var(--color-surface-container-high)]'
+                  : 'bg-[var(--color-surface-container-lowest)] ring-1 ring-[var(--color-outline-variant)]/30'
+              )}
+              style={{
+                left: box.left,
+                top: box.top,
+                width: box.width,
+                height: box.height,
+                backgroundImage:
+                  comp.type === 'photo' && comp.image_url ? `url(${comp.image_url})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -266,22 +362,37 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
     setCurrentPageIndex(Math.min(index, updatedPages.length - 1));
   };
 
+  const currentComponents = pages[currentPageIndex]?.components ?? [];
+  const { offsetX: canvasOffsetX, offsetY: canvasOffsetY } =
+    getLayoutContentOffset(currentComponents);
+
   return (
-    <div className="flex flex-row gap-4 mx-auto max-w-[1000px]">
-      <div className="flex-1">
-        <div className="relative w-[800px] h-[700px] border border-gray-300 bg-gray-100 rounded-lg">
-          {pages[currentPageIndex]?.components.map((comp, index) => renderComponent(comp, index))}
-          {pages.length > 1 && (
-            <button
-              onClick={() => handleDeletePage(currentPageIndex)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-700"
-            >
-              🗑️
-            </button>
-          )}
+    <div className="stitch-landing mx-auto flex max-w-[1040px] flex-col gap-8 lg:flex-row lg:gap-10">
+      <div className="min-w-0 flex-1">
+        <div className="overflow-x-auto rounded-2xl border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface-container-lowest)] p-4 shadow-[0_12px_40px_rgba(17,28,45,0.06)] sm:p-6">
+          <div className="relative mx-auto flex h-[700px] w-[800px] max-w-full items-center justify-center rounded-xl bg-[var(--color-surface)] ring-1 ring-[var(--color-outline-variant)]/30">
+            {currentComponents.map((comp, index) =>
+              renderComponent(comp, index, canvasOffsetX, canvasOffsetY)
+            )}
+            {pages.length > 1 && (
+              <button
+                type="button"
+                onClick={() => handleDeletePage(currentPageIndex)}
+                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-[var(--color-on-surface-variant)] shadow-sm ring-1 ring-black/5 transition-colors hover:bg-red-50 hover:text-red-600"
+                title="Delete page"
+              >
+                <Trash2 className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+          </div>
         </div>
-        <div className="flex justify-between mt-4">
-          <button onClick={handleViewLayouts} className="text-purple-600 hover:underline text-sm">
+        <div className="mt-5 flex items-center justify-between gap-4 px-1">
+          <button
+            type="button"
+            onClick={handleViewLayouts}
+            className="inline-flex items-center gap-2 font-label-lg text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)]"
+          >
+            <LayoutGrid className="h-4 w-4" aria-hidden />
             View other layouts
           </button>
         </div>
@@ -291,7 +402,7 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
         <Droppable droppableId="pages" isCombineEnabled={false} isDropDisabled={false}>
           {(provided) => (
             <div
-              className="w-[160px] max-h-[700px] overflow-y-auto"
+              className="flex w-full shrink-0 flex-row gap-3 overflow-x-auto pb-2 lg:w-[168px] lg:flex-col lg:overflow-y-auto lg:overflow-x-hidden lg:pb-0 lg:max-h-[760px]"
               {...provided.droppableProps}
               ref={provided.innerRef}
             >
@@ -302,122 +413,154 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={`cursor-pointer border-2 ${index === currentPageIndex ? 'border-purple-600' : 'border-transparent'} mb-2 rounded`}
+                      className={cn(
+                        'w-[140px] shrink-0 cursor-pointer rounded-xl p-1.5 transition-all lg:w-full',
+                        index === currentPageIndex
+                          ? 'bg-[var(--color-surface-container)] ring-2 ring-[var(--color-primary)]'
+                          : 'bg-transparent ring-1 ring-transparent hover:ring-[var(--color-outline-variant)]/60'
+                      )}
                       onClick={() => setCurrentPageIndex(index)}
                     >
-                      {renderThumbnail(page, index)}
+                      <div className="mb-1 flex items-center justify-between px-1">
+                        <span className="font-label-lg text-[var(--color-on-surface-variant)]">
+                          Page {index + 1}
+                        </span>
+                      </div>
+                      {renderThumbnail(page)}
                     </div>
                   )}
                 </Draggable>
               ))}
               {provided.placeholder}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAddingNewPage(true);
+                  setModalOpen(true);
+                }}
+                className="flex h-[120px] w-[140px] shrink-0 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)]/50 font-label-lg text-[var(--color-primary)] transition-colors hover:border-[var(--color-primary)]/40 hover:bg-[var(--color-surface-container-low)] lg:h-auto lg:min-h-[100px] lg:w-full"
+              >
+                <Plus className="h-5 w-5" aria-hidden />
+                Add page
+              </button>
             </div>
           )}
         </Droppable>
       </DragDropContext>
 
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-4xl w-full h-auto max-h-[80vh] overflow-y-auto flex flex-col items-center">
-            <div className="flex justify-between items-center mb-4 w-full">
-              <h2 className="text-lg font-semibold text-gray-800">Pick a Layout</h2>
-              <button onClick={() => setModalOpen(false)} className="text-gray-500 hover:text-gray-700">
-                ✕
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-[var(--color-surface-container-lowest)] shadow-2xl ring-1 ring-[var(--color-outline-variant)]/40">
+            <div className="flex items-center justify-between border-b border-[var(--color-outline-variant)]/30 px-6 py-4">
+              <div>
+                <h2 className="font-serif text-xl font-semibold text-[var(--color-on-surface)]">Choose a layout</h2>
+                <p className="mt-1 font-body-sm text-[var(--color-on-surface-variant)]">
+                  Pick a structure for your photos and message.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalOpen(false);
+                  setIsAddingNewPage(false);
+                }}
+                className="rounded-lg p-2 text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="text-gray-500 text-sm mb-4">Click a layout below to use it!</p>
-            <div className="grid grid-cols-3 gap-4 justify-items-center w-full">
+            <div className="grid grid-cols-1 gap-4 overflow-y-auto p-6 sm:grid-cols-2 lg:grid-cols-3">
               {availableLayouts.map((layout) => {
                 const previewComponents = isAddingNewPage
                   ? layout.components
                   : mapDataToNewLayout(layout, pages[currentPageIndex].components);
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={layout.guid}
-                    className="cursor-pointer border border-gray-300 p-4 rounded hover:border-purple-600 w-[250px] h-full"
+                    className="rounded-xl border border-[var(--color-outline-variant)]/50 bg-[var(--color-surface)] p-4 text-left transition-all hover:border-[var(--color-primary)]/50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
                     onClick={() => selectLayout(layout)}
                   >
-                    <h3 className="text-sm font-semibold text-gray-800 mb-2 text-center">{layout.name}</h3>
-                    <div className="relative w-full h-45 bg-gray-100 rounded">
-                      {previewComponents.map((comp, index) => (
-                        <div
-                          key={index}
-                          className="absolute border border-gray-400 rounded flex items-center justify-center"
-                          style={{
-                            left: ((comp.position?.x_coordinate ?? comp.position?.x_position) || 0) / 4,
-                            top: ((comp.position?.y_coordinate ?? comp.position?.y_position) || 0) / 4,
-                            width: comp.size.width / 4,
-                            height: comp.size.height / 4,
-                            backgroundColor: comp.type === 'photo' ? '#a3bffa' : '#e0e0e0',
-                            backgroundImage: comp.type === 'photo' && comp.image_url ? `url(${comp.image_url})` : 'none',
-                            backgroundSize: 'cover',
-                            boxShadow: '2px 2px 4px rgba(0, 0, 0, 0.2)',
-                          }}
-                        >
-                          {comp.type === 'photo' && !comp.image_url && (
-                            <div className="text-white text-lg">+</div>
-                          )}
-                          {comp.type !== 'photo' && (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <span className="text;gray-500 text-xs">Text</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    <h3 className="mb-3 text-center font-label-lg text-[var(--color-on-surface)]">
+                      {layout.name}
+                    </h3>
+                    <div className="relative mx-auto aspect-[4/5] w-full max-w-[200px] overflow-hidden rounded-lg bg-[var(--color-surface-container-low)] ring-1 ring-[var(--color-outline-variant)]/30">
+                      {(() => {
+                        const { offsetX, offsetY } = getLayoutContentOffset(previewComponents);
+                        return previewComponents.map((comp, index) => {
+                          const box = toCanvasPercent(comp, offsetX, offsetY);
+                          return (
+                            <div
+                              key={index}
+                              className={cn(
+                                'absolute rounded-[2px]',
+                                comp.type === 'photo'
+                                  ? 'bg-[var(--color-surface-container-high)]'
+                                  : 'bg-[var(--color-surface-container-lowest)] ring-1 ring-[var(--color-outline-variant)]/25'
+                              )}
+                              style={{
+                                left: box.left,
+                                top: box.top,
+                                width: box.width,
+                                height: box.height,
+                                backgroundImage:
+                                  comp.type === 'photo' && comp.image_url
+                                    ? `url(${comp.image_url})`
+                                    : undefined,
+                                backgroundSize: 'cover',
+                              }}
+                            />
+                          );
+                        });
+                      })()}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
-            </div>
-            <div className="flex justify-end gap-2 mt-4 w-full">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 text-gray-600 text-sm hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
-              >
-                Add
-              </button>
             </div>
           </div>
         </div>
       )}
 
       {editMessageModalOpen && selectedComponent && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Edit Message</h2>
-              <button onClick={handleCancelMessageEdit} className="text-gray-500 hover:text-gray-700">
-                ✕
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-surface-container-lowest)] p-6 shadow-2xl ring-1 ring-[var(--color-outline-variant)]/40">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-[var(--color-on-surface)]">Your message</h2>
+              <button
+                type="button"
+                onClick={handleCancelMessageEdit}
+                className="rounded-lg p-2 text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
             <div className="relative">
               <textarea
                 value={tempMessage}
                 onChange={(e) => setTempMessage(e.target.value)}
-                placeholder={selectedComponent.editor?.placeholder || 'Enter your message'}
+                placeholder={selectedComponent.editor?.placeholder || 'Share a memory, wish, or note…'}
                 maxLength={507}
-                className="w-full p-2 border border-gray-300 rounded text-sm mb-2 h-32 resize-none"
+                className="mb-2 h-36 w-full resize-none rounded-lg border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-3 py-2 font-body-md text-[var(--color-on-surface)] focus:border-[var(--color-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
-              <div className="text-right text-gray-500 text-xs">
+              <div className="text-right font-body-sm text-[var(--color-on-surface-variant)]">
                 {tempMessage.length}/507
               </div>
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="mt-4 flex justify-end gap-2">
               <button
+                type="button"
                 onClick={handleCancelMessageEdit}
-                className="px-4 py-2 text-gray-600 text-sm hover:text-gray-800"
+                className="rounded-lg px-4 py-2 font-label-lg text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveMessage}
-                className="px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700"
+                className="rounded-lg bg-[var(--color-primary)] px-4 py-2 font-label-lg text-[var(--color-on-primary)] hover:bg-[var(--color-primary-container)]"
               >
                 Save
               </button>
@@ -427,32 +570,37 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
       )}
 
       {editPhotoModalOpen && selectedComponent && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">Edit Photo</h2>
-              <button onClick={handleCancelPhotoEdit} className="text-gray-500 hover:text-gray-700">
-                ✕
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-2xl bg-[var(--color-surface-container-lowest)] p-6 shadow-2xl ring-1 ring-[var(--color-outline-variant)]/40">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="font-serif text-lg font-semibold text-[var(--color-on-surface)]">Photo</h2>
+              <button
+                type="button"
+                onClick={handleCancelPhotoEdit}
+                className="rounded-lg p-2 text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
 
             {selectedComponent.image_url ? (
-              <div className="mb-4">
+              <div className="mb-4 overflow-hidden rounded-xl ring-1 ring-[var(--color-outline-variant)]/40">
                 <Image
                   src={selectedComponent.image_url}
                   alt="Uploaded photo"
                   width={300}
                   height={200}
-                  className="object-cover rounded border border-gray-300"
+                  className="h-auto w-full object-cover"
                 />
               </div>
             ) : (
-              <p className="text-gray-500 text-sm mb-4">No photo added yet.</p>
+              <p className="mb-4 font-body-md text-[var(--color-on-surface-variant)]">No photo yet.</p>
             )}
 
-            <div className="flex justify-between items-center mt-4 gap-2">
-              <label className="px-4 py-2 bg-gray-200 text-sm text-gray-700 rounded cursor-pointer hover:bg-gray-300">
-                {selectedComponent.image_url ? 'Replace Photo' : 'Add a Photo'}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-lg bg-[var(--color-surface-container-high)] px-4 py-2 font-label-lg text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)]">
+                {selectedComponent.image_url ? 'Replace photo' : 'Add a photo'}
                 <input
                   type="file"
                   accept="image/*"
@@ -469,7 +617,8 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
 
               {selectedComponent.image_url && (
                 <button
-                  className="px-4 py-2 text-red-600 hover:text-red-800 text-sm"
+                  type="button"
+                  className="rounded-lg px-4 py-2 font-label-lg text-red-600 hover:bg-red-50"
                   onClick={() => {
                     if (selectedComponent) {
                       const slotIndex = pages[currentPageIndex].components.indexOf(selectedComponent);
@@ -478,13 +627,14 @@ const LayoutEditorPage: React.FC<LayoutEditorProps> = ({
                     setEditPhotoModalOpen(false);
                   }}
                 >
-                  Remove Photo
+                  Remove
                 </button>
               )}
 
               <button
+                type="button"
                 onClick={handleCancelPhotoEdit}
-                className="ml-auto px-4 py-2 text-gray-600 text-sm hover:text-gray-800"
+                className="ml-auto rounded-lg px-4 py-2 font-label-lg text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
               >
                 Cancel
               </button>

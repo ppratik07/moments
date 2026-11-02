@@ -1,6 +1,7 @@
 import { ImageSlot } from "./ImageSlot";
 import { MessageSection } from "./MessageSection";
 import { Page } from "./SignatureEditModal";
+import { cn } from "@/lib/utils";
 
 interface PageLayoutProps {
   page: Page;
@@ -336,15 +337,23 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 
   return (
     <div
-      className={`border-2 rounded-2xl bg-white shadow-lg px-10 py-8 w-full max-w-2xl mx-auto min-h-[500px] ${activePage === pageIndex ? 'border-purple-500' : 'border-gray-200'
-        }`}
+      className={cn(
+        'mx-auto w-full max-w-2xl min-h-[500px] rounded-2xl border-2 bg-[var(--color-surface-container-lowest)] px-8 py-8 shadow-[0_12px_40px_rgba(17,28,45,0.06)] transition-shadow',
+        activePage === pageIndex
+          ? 'border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/15'
+          : 'border-[var(--color-outline-variant)]/40'
+      )}
       onClick={() => setActivePage(pageIndex)}
     >
       <LayoutComponent />
-      <div className="mt-4 flex justify-between text-sm text-purple-600 underline">
+      <div className="mt-6 flex justify-start">
         <button
-          onClick={() => setShowLayoutModal(true)}
-          className="text-purple-600 underline text-sm"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowLayoutModal(true);
+          }}
+          className="font-label-lg text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-container)]"
         >
           View other layouts
         </button>

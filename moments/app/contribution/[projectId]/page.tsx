@@ -7,12 +7,12 @@ import {
   ProjectData,
   SignatureEditModal,
 } from "@/components/contribution/SignatureEditModal";
-import StepIndicator from "@/components/contribution/StepIndicator";
+import { ContributionStepper } from "@/components/contribution/ContributionStepper";
 import TipsBox from "@/components/contribution/TipsBox";
 import { Header } from "@/components/landing/Header";
 import LayoutPickerModal from "@/components/LayoutPickerModel";
 import { getImageUrl } from "@/helpers/getImageUrl";
-import Footer from "@/pages/Footer";
+import SiteFooter from "@/components/layout/SiteFooter";
 import { HTTP_BACKEND } from "@/utils/config";
 import axios from "axios";
 import Image from "next/image";
@@ -24,6 +24,8 @@ import { layoutCategories } from "@/components/contribute/layoutCategories";
 import { RotatingLines } from "react-loader-spinner";
 import VideoModal from "@/components/VideoModal";
 import { Button } from "@/components/ui/button";
+import "@/app/stitch-landing.css";
+import { v4 as uuidv4 } from "uuid";
 
 // Type definitions remain unchanged
 interface Position {
@@ -84,17 +86,41 @@ interface ExtendedPage extends Page {
   components?: Component[];
 }
 
+function cloneLayoutComponents(components: Component[]): Component[] {
+  return JSON.parse(JSON.stringify(components)) as Component[];
+}
+
+function layoutIndexFromEditorLayout(layout: Layout | number): number {
+  if (typeof layout === "number" && !Number.isNaN(layout)) {
+    return layout >= 0 && layout < availableLayouts.length ? layout : 0;
+  }
+  if (layout && typeof layout === "object" && "guid" in layout) {
+    const byGuid = availableLayouts.findIndex((item) => item.guid === layout.guid);
+    if (byGuid >= 0) return byGuid;
+    if (layout.name) {
+      const byName = availableLayouts.findIndex((item) => item.name === layout.name);
+      if (byName >= 0) return byName;
+    }
+  }
+  return 0;
+}
+
+function createEmptyContributionPage(layoutIndex = 0): ExtendedPage {
+  const safeIndex =
+    layoutIndex >= 0 && layoutIndex < availableLayouts.length ? layoutIndex : 0;
+  return {
+    guid: uuidv4(),
+    layout: safeIndex,
+    images: [null, null, null, null],
+    message: "",
+    components: cloneLayoutComponents(availableLayouts[safeIndex].components),
+  };
+}
+
 export default function ContributionPage() {
   const [isSignatureModalOpen, setIsSignatureModalOpen] = useState(false);
   const [signature, setSignature] = useState("Your Name Here");
-  const [pages, setPages] = useState<ExtendedPage[]>([
-    {
-      layout: 0,
-      images: [null, null, null, null],
-      message: "",
-      components: availableLayouts[0].components,
-    },
-  ]);
+  const [pages, setPages] = useState<ExtendedPage[]>([createEmptyContributionPage(0)]);
   const [activePage, setActivePage] = useState(0);
   const [showLayoutModal, setShowLayoutModal] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -367,15 +393,7 @@ export default function ContributionPage() {
 
   const addPage = () => {
     setPages((prev) => {
-      const newPages = [
-        ...prev,
-        {
-          layout: 0,
-          images: [null, null, null, null],
-          message: "",
-          components: availableLayouts[0].components,
-        },
-      ];
+      const newPages = [...prev, createEmptyContributionPage(0)];
       setActivePage(newPages.length - 1);
       return newPages;
     });
@@ -449,7 +467,7 @@ export default function ContributionPage() {
   return (
     <div className="flex flex-col min-h-screen w-full overflow-x-hidden">
       <Header isSignedIn={false} />
-      <main className="bg-gradient-to-b from-white to-purple-50 pb-20 flex-grow pt-20">
+      <main className="stitch-landing flex-grow bg-gradient-to-b from-[var(--color-surface)] to-[var(--color-surface-container-low)] pb-20 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="py-6 sm:py-8 md:py-12 flex flex-col md:grid md:grid-cols-2 gap-4 sm:gap-8 md:gap-12">
             <div className="space-y-3 sm:space-y-4">
@@ -500,7 +518,7 @@ export default function ContributionPage() {
             </div>
           </section>
 
-          <StepIndicator currentStep={1} />
+          <ContributionStepper currentStep={1} className="mb-2" />
           <VideoModal
             isOpen={showVideoModal}
             onClose={() => setShowVideoModal(false)}
@@ -535,18 +553,37 @@ export default function ContributionPage() {
                 pages={mappedPages}
                 //@ts-expect-error : Not sure of the types
                 setPages={(newPages: Page[]) => {
-                  const updatedPages = newPages.map((page, index) => ({
-                    layout: layoutCategories.findIndex(
-                      (cat) => cat.title === availableLayouts[page.layout]?.name
-                    ),
-                    images: pages[index].images,
-                    message:
-                      (page as ExtendedPage).components?.find(
-                        (comp) => comp.type === "paragraph"
-                      )?.value || "",
-                    components: (page as ExtendedPage).components,
-                  }));
+                  const updatedPages: ExtendedPage[] = newPages.map((page, index) => {
+                    const editorPage = page as ExtendedPage & { layout: Layout | number };
+                    const layoutIndex = layoutIndexFromEditorLayout(editorPage.layout);
+                    const previous = pages[index];
+
+                    return {
+                      guid:
+                        editorPage.guid ||
+                        previous?.guid ||
+                        uuidv4(),
+                      layout: layoutIndex,
+                      images: previous?.images ?? [null, null, null, null],
+                      message:
+                        editorPage.components?.find((comp) => comp.type === "paragraph")
+                          ?.value ||
+                        editorPage.components?.find((comp) => comp.type === "caption")?.value ||
+                        editorPage.components?.find((comp) => comp.type === "heading")?.value ||
+                        previous?.message ||
+                        "",
+                      components:
+                        editorPage.components ??
+                        cloneLayoutComponents(availableLayouts[layoutIndex].components),
+                    };
+                  });
                   setPages(updatedPages);
+                  setActivePage((current) => {
+                    if (newPages.length > pages.length) {
+                      return newPages.length - 1;
+                    }
+                    return Math.min(current, Math.max(updatedPages.length - 1, 0));
+                  });
                 }}
                 currentPageIndex={activePage}
                 setCurrentPageIndex={setActivePage}
@@ -562,7 +599,7 @@ export default function ContributionPage() {
           <TipsBox onNextClick={handleNextClick} />
         </div>
       </main>
-      <Footer />
+      <SiteFooter />
       <LayoutPickerModal
         open={showLayoutModal}
         onClose={() => setShowLayoutModal(false)}

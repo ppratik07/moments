@@ -1,6 +1,6 @@
 'use client'; 
 import React from "react";
-import { BookOpen, Users, Image, Shield, Download } from "lucide-react";
+import { BookOpen, Users, Image as ImageIcon, Shield, Download } from "lucide-react";
 import { Header } from "@/components/landing/Header";
 import { Footer } from "@/components/landing/Footer";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -47,7 +47,7 @@ export default function AboutPage() {
               desc="Start a project and let friends & family add their memories — no account needed."
             />
             <FeatureCard
-              icon={<Image className="w-6 h-6 text-indigo-600" />}
+              icon={<ImageIcon className="w-6 h-6 text-indigo-600" aria-hidden />}
               title="Collect Photos & Messages"
               desc="Upload photos and share heartfelt stories in one place."
             />
