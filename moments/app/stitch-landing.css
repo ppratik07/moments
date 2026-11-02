@@ -1,0 +1,158 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap");
+
+.stitch-landing {
+  --font-newsreader: var(--font-stitch-display), "Newsreader", ui-serif, Georgia, serif;
+  --font-plus-jakarta: var(--font-stitch-body), "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+
+  --color-secondary-fixed: #ffdeae;
+  --color-surface-container: #e7eeff;
+  --color-on-primary: #ffffff;
+  --color-surface-container-highest: #d8e3fb;
+  --color-error: #ba1a1a;
+  --color-surface: #f9f9ff;
+  --color-on-primary-container: #fffbff;
+  --color-surface-container-high: #dee8ff;
+  --color-surface-dim: #cfdaf2;
+  --color-primary: #9a4111;
+  --color-on-background: #111c2d;
+  --color-on-surface: #111c2d;
+  --color-secondary: #7f5700;
+  --color-inverse-primary: #ffb596;
+  --color-on-tertiary: #ffffff;
+  --color-outline: #897269;
+  --color-on-surface-variant: #56423b;
+  --color-surface-bright: #f9f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed-variant: #7a300f;
+  --color-tertiary: #954423;
+  --color-on-primary-fixed: #360f00;
+  --color-inverse-on-surface: #ecf1ff;
+  --color-on-secondary: #ffffff;
+  --color-on-tertiary-fixed: #370e00;
+  --color-on-secondary-container: #6f4b00;
+  --color-tertiary-fixed-dim: #ffb59a;
+  --color-tertiary-container: #b45c38;
+  --color-surface-tint: #9d4314;
+  --color-outline-variant: #ddc1b6;
+  --color-on-primary-fixed-variant: #7d2d00;
+  --color-secondary-container: #fdba45;
+  --color-primary-container: #ba5828;
+  --color-surface-variant: #d8e3fb;
+  --color-on-error-container: #93000a;
+  --color-inverse-surface: #263143;
+  --color-surface-container-low: #f0f3ff;
+  --color-on-tertiary-container: #fffbff;
+  --color-tertiary-fixed: #ffdbce;
+  --color-primary-fixed: #ffdbcd;
+  --color-secondary-fixed-dim: #fdba45;
+  --color-on-error: #ffffff;
+  --color-on-secondary-fixed-variant: #604100;
+  --color-primary-fixed-dim: #ffb596;
+  --color-background: #f9f9ff;
+  --color-on-secondary-fixed: #281900;
+  --color-error-container: #ffdad6;
+
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-family: var(--font-plus-jakarta);
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.stitch-landing .material-symbols-outlined {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+}
+
+.stitch-landing .font-display-hero {
+  font-family: var(--font-newsreader);
+  font-size: 56px;
+  line-height: 64px;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+.stitch-landing .font-headline-lg {
+  font-family: var(--font-newsreader);
+  font-size: 40px;
+  line-height: 48px;
+  letter-spacing: -0.015em;
+  font-weight: 500;
+}
+
+.stitch-landing .font-headline-sm {
+  font-family: var(--font-newsreader);
+  font-size: 22px;
+  line-height: 30px;
+  font-weight: 600;
+}
+
+.stitch-landing .font-title-editorial {
+  font-family: var(--font-newsreader);
+  font-size: 18px;
+  line-height: 26px;
+  letter-spacing: 0.01em;
+  font-weight: 500;
+}
+
+.stitch-landing .font-body-lg {
+  font-size: 18px;
+  line-height: 28px;
+}
+
+.stitch-landing .font-body-md {
+  font-size: 15px;
+  line-height: 24px;
+}
+
+.stitch-landing .font-body-sm {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.stitch-landing .font-label-lg {
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+.stitch-landing .font-label-md {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.02em;
+  font-weight: 600;
+}
+
+.stitch-landing .font-label-eyebrow {
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+
+@media (max-width: 1023px) {
+  .stitch-landing .font-display-hero {
+    font-size: 36px;
+    line-height: 44px;
+    letter-spacing: -0.01em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .stitch-landing .lg-display-hero {
+    font-size: 62px;
+    line-height: 70px;
+  }
+}

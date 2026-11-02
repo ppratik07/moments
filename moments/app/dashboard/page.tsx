@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { HTTP_BACKEND } from '@/utils/config';
 import { Header } from '@/components/landing/Header';
-import { useAuth, useClerk } from '@clerk/nextjs';
+import { useAuth } from '@clerk/nextjs';
 import { Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,19 +21,29 @@ export default function DashboardPage() {
   }
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const { isSignedIn } = useCurrentUser();
+  const { isSignedIn, isLoaded } = useCurrentUser();
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const router = useRouter();
   const { getToken } = useAuth();
-  const { signOut } = useClerk();
 
   useEffect(() => {
+    if (!isLoaded) {
+      return;
+    }
+
+    if (!isSignedIn) {
+      router.replace('/');
+      setLoading(false);
+      return;
+    }
+
     const fetchProjects = async () => {
+      setFetchError(null);
       try {
         const token = await getToken();
         if (!token) {
-          //console.log('No token found, redirecting...');
-          await signOut({ redirectUrl: '/' });
+          setFetchError('Could not load your session. Try signing in again.');
           return;
         }
         const response = await fetch(`${HTTP_BACKEND}/api/user-projects`, {
@@ -43,8 +53,7 @@ export default function DashboardPage() {
         });
 
         if (response.status === 401 || response.status === 403) {
-          localStorage.removeItem('token');
-          await signOut({ redirectUrl: '/' });
+          setFetchError('Your session could not be verified with the server. If you are running locally, make sure the API is running and Clerk keys match.');
           return;
         }
         if (!response.ok) {
@@ -55,15 +64,16 @@ export default function DashboardPage() {
         setProjects(data.projects);
       } catch (error) {
         console.error('Error fetching projects:', error);
-        localStorage.removeItem('token');
-        await signOut({ redirectUrl: '/' });
+        setFetchError(
+          'Could not reach the API. For local development, start the backend in server/ and use http://localhost:8080.'
+        );
       } finally {
         setLoading(false);
       }
     };
 
     fetchProjects();
-  }, [isSignedIn, router, getToken, signOut]);
+  }, [isSignedIn, isLoaded, router, getToken]);
 
   // Function to handle project deletion
   const handleDeleteProject = async (projectId: string) => {
@@ -204,7 +214,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {!loading && projects.length === 0 && (
+        {!loading && fetchError && (
+          <p className="text-center text-red-600 mt-8 max-w-xl mx-auto">{fetchError}</p>
+        )}
+
+        {!loading && !fetchError && projects.length === 0 && (
           <p className="text-center text-gray-500 mt-8">No projects found.</p>
         )}
       </div>
